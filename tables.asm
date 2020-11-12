@@ -1839,3 +1839,11 @@ db #$02
 org $30F000 ; PC 0x187000-0x18700F
 CompassTotal:
 db $08, $08, $06, $06, $02, $0A, $0E, $08, $08, $08, $06, $08, $0C, $1B, $00, $00
+
+org $30F010 ; PC 0x187010
+TotalItems:
+dw #216
+
+org $30F012 ; PC 0x187012
+TotalGTBigKey:
+db #22

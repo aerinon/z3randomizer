@@ -164,7 +164,9 @@ LastHexDigit:
     RTS
     
 FindLine:
-    LDY.w #$0000
+    LDY.w #$FFF8
+FindNextLine:
+	INY #8
 
 -   LDA.w CreditsStats,y
     STZ !StatsBottom
@@ -227,6 +229,7 @@ RenderCreditsStatCounter:
     JSR FindLine
     BCS +
     BRL .endStats
+.renderNextStatLine
 +   
     
     ;   XXXX X00L   LLLL LLLL   BBBB SSSS   CCC- ----   ---- ----   AAAA AAAA   AAAA AAAA   AAAA AAAA
@@ -237,9 +240,12 @@ RenderCreditsStatCounter:
     AND #$0003          ; TT
     CMP.w #$0000
     BEQ .normalStat
+	CMP.w #$0002
+	BEQ .normalStat
     BRL .timeStat
 
 .normalStat
+	CMP.w #$0002 : PHP
     ; == Write Stripe header (VRAM address, i.e. tile coordinates) ==
     LDA.w CreditsStats,y  ;   LLLL LLLL XXXX XTTL
     LSR #3
@@ -314,6 +320,7 @@ RenderCreditsStatCounter:
     AND #$00FF
     CMP !RemoveZero
     BNE +
+	PLP : PHP : BEQ +++
     LDA !BlankTile
     BRA ++
 +   DEC !RemoveZero
@@ -321,10 +328,11 @@ RenderCreditsStatCounter:
     ADC !Temp
 ++  %StripeTile()
     
-    LDA $7F5005
++++ LDA $7F5005
     AND #$00FF
     CMP !RemoveZero
     BNE +
+	PLP : PHP : BEQ +++
     LDA !BlankTile
     BRA ++
 +   DEC !RemoveZero
@@ -332,10 +340,11 @@ RenderCreditsStatCounter:
     ADC !Temp
 ++  %StripeTile()
     
-    LDA $7F5006
++++ LDA $7F5006
     AND #$00FF
     CMP !RemoveZero
     BNE +
+	PLP : PHP : BEQ +++
     LDA !BlankTile
     BRA ++
 +   DEC !RemoveZero
@@ -343,13 +352,23 @@ RenderCreditsStatCounter:
     ADC !Temp
 ++  %StripeTile()
     
-    LDA $7F5007
++++ LDA $7F5007
     AND #$00FF
     CLC
     ADC !Temp
     %StripeTile()
-    
-    %StripeEnd()
+	PLP : BNE +
+    LDA !BlankTile
+	%StripeTile()
+	%StripeTile()
+	BRA .getNextLine
+	
++   %StripeEnd()
+	
+.getNextLine
+	JSR FindNextLine
+	BCC .endStats
+	BRL .renderNextStatLine
 .endStats
 
     ;JSR RenderLineNumber
@@ -491,7 +510,7 @@ RenderCreditsStatCounter:
     %StripeTile()
     
     %StripeEnd()
-    BRL .endStats
+    BRL .getNextLine
     
     
 RenderLineNumber:
