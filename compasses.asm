@@ -14,7 +14,7 @@ DrawDungeonCompassCounts:
 	CPX.b #$1B : BCC + ; Skip if not in a valid dungeon ID
 		JMP .done
 	+
-	CMP.w #$0002 : BEQ ++ ; if CompassMode==2, we don't check for the compass
+	BIT.w #$0002 : BNE ++ ; if CompassMode==2, we don't check for the compass
 		TXY : TXA : LSR : TAX : LDA.l ExistsTransfer, X : TAX : LDA CompassExists, X : BEQ ++
 		TYX : LDA CompassField : AND.l DungeonItemMasks, X ; Load compass values to A, mask with dungeon item masks
 		BNE ++
