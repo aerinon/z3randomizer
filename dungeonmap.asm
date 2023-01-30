@@ -21,7 +21,7 @@ DoDungeonMapBossIcon:
 
 	; get dungeon boss room
 ++	REP #$30
-	LDA.l $8AE817,X
+	LDA.l DungeonMapBossRooms, X
 	ASL
 	TAX
 

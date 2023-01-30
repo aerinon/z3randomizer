@@ -324,7 +324,7 @@ GetTileAttribute:
 {
     phk : pea.w .jslrtsreturn-1
     pea.w $02802c
-    jml $02c11d ; mucks with x/y sets a to Tile Attribute, I think
+    jml CalculateTransitionLanding ; mucks with x/y sets a to Tile Attribute, I think
     .jslrtsreturn
     rts
 }
@@ -416,4 +416,28 @@ InroomStairsTrapDoor:
     pla : pla : pla
     jsl StraightStairsTrapDoor_reset
     jml $028b15 ; just some RTS in bank 02
+}
+
+HandleSpecialDoorLanding: {
+    LDA.l $7F2000,X ; what we wrote over
+    SEP #$30
+    JSL HandleIncomingDoorState
+    CMP #$34 : BNE + ; inroom stairs
+        PHA : LDA #$26 : STA $045E : PLA
+    + RTL
+}
+
+; A = tiletype
+HandleIncomingDoorState:
+{
+    PHA
+    LDA.l DRMode : BEQ .noDoor
+    PLA : PHA : AND.b #$FA : CMP.b #$80 : bne .noDoor
+    
+    .setDoorState
+    LDA.w $0418 : AND.b #$02 : BNE + : INC
+    + STA.b $6C
+
+    .noDoor
+    PLA : RTL
 }

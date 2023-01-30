@@ -54,6 +54,8 @@ org $82941a ; <- Bank02.asm : 3748 module 7.12.11 (LDA $0464 : BNE BRANCH_$11513
 jsl StraightStairsTrapDoor : rts
 org $828b54 ; <- Bank02.asm : 2200 (JSL UseImplicitRegIndexedLocalJumpTable)
 jsl InroomStairsTrapDoor
+org $82c146
+jsl HandleSpecialDoorLanding
 
 org $8289a0 ; JSL $0091C4
 jsl QuadrantLoadOrderBeforeScroll
