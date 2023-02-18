@@ -519,6 +519,9 @@ Dungeon_SaveRoomData_justKeys:
 org $02B861
 Dungeon_SaveRoomQuadrantData:
 
+org $02C11D
+CalculateTransitionLanding:
+
 org $02D9B9
 Underworld_LoadSpawnEntrance:
 
@@ -656,6 +659,9 @@ OverworldMap_DarkWorldTilemap:
 
 org $0ABAB9
 OverworldMap_LoadSprGfx:
+
+org $8AE817
+DungeonMapBossRooms:
 
 org $0CD7D1
 NameFile_MakeScreenVisible:

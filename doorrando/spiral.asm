@@ -207,19 +207,16 @@ InroomStairsWarp: {
     .normal
         lda $01 : sta $fe ; trap door
         lda $07 : sta $03 : beq +
-            ldy $a0 : cpy #$51 : beq .specialFix ; throne room
-            cpy #$02 : beq .specialFix ; sewers pull switch
-            cpy #$71 : beq .specialFix ; castle armory
-            lda #$e0
-            bra ++
+            lda $01 : and #$04 : bne .specialFix
+            lda #$e0 : bra ++
             .specialFix
-            lda #$c8
-            bra ++
+            lda #$c8 : bra ++
         +
             %StonewallCheck($43)
-            lda #$1b
-        ++
-        sta $20
+            lda $01 : and #$04 : bne +
+            lda #$1b : bra ++
+            + lda #$33
+        ++ sta $20
         inc $07 : stz $02 : lda #$78 : sta $22
         lda $01 : and #$03 : beq ++
             cmp #$02 : !bge +
