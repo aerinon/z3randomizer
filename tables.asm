@@ -347,7 +347,11 @@ org $B0808A ; PC 0x18008A
 BlockCastleDoorsInRain:
 db $00 ; #$00 - Normal, $01 - Block them (Used by Entrance Rando in Standard Mode)
 ;--------------------------------------------------------------------------------
-; 0x18008B-0x18008D (unused)
+org $30808B ; PC 0x18008B
+AllowAgaDamageBeforeZeldaRescued:
+db #$00 ; #$00 - No damage, $01 - Damage (Used by Entrance Rando in Standard Mode)
+;--------------------------------------------------------------------------------
+; 0x18008C-0x18008D (unused)
 ;--------------------------------------------------------------------------------
 org $B0808E ; PC 0x18008E
 FakeBoots:

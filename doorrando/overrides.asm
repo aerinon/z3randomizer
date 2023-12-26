@@ -96,9 +96,13 @@ RetrieveBunnyState:
 ; A should be how much dmg to do to Aga when leaving this function
 StandardAgaDmg:
 	LDX.b #$00 ; part of what we wrote over
-	LDA.l ProgressFlags : AND #$04 : BEQ + ; zelda's not been rescued
+	LDA.l ProgressFlags : AND #$04 : BEQ .checkShouldAgaTakeDamage ; zelda's not been rescued
 		LDA.b #$10 ; hurt him!
-	+ RTL ; A is zero if the AND results in zero and then Agahnim's invincible!
+	.checkShouldAgaTakeDamage ; should be damage aga anyway?
+		LDA.l AllowAgaDamageBeforeZeldaRescued : BEQ .end;
+		LDA.b #$10 ; hurt him!
+	.end
+	+ RTL ; A is zero if the AND results in zero, and we don't force damage, then Agahnim's invincible!
 
 StandardSaveAndQuit:
 	LDA.b #$0F : STA.b $95 ; what we wrote over
