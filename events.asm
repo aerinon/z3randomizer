@@ -265,6 +265,11 @@ PostItemAnimation:
                 LDA.b #$00 : STA.l TextBoxDefer
         +
 
+        LDA.w ItemReceiptMethod : CMP.b #$01 : BNE +
+                LDA.b LinkDirection : BEQ +
+                        JSL.l IncrementChestTurnCounter
+        +
+
         LDA $1B : BEQ +
         		REP #$20 : LDA $A0 : STA !MULTIWORLD_ROOMID : SEP #$20
         		LDA $0403 : STA !MULTIWORLD_ROOMDATA
@@ -277,10 +282,6 @@ PostItemAnimation:
         		JML.l Ancilla_ReceiveItem_objectFinished
 		+
 
-        LDA.w ItemReceiptMethod : CMP.b #$01 : BNE +
-                LDA.b LinkDirection : BEQ +
-                        JSL.l IncrementChestTurnCounter
-        +
         REP #$20
         PEA.w $7E00
         PLB : PLB
