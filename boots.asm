@@ -8,7 +8,7 @@ ModifyBoots:
         + : CMP.b #$02 : BNE +
             PLA : AND.l AbilityFlags : AND.b #$FB : RTL ; no boots
         + : LDA.l FakeBoots : CMP.b #$01 : BNE +
-            LDA.b LinkSlipping : BEQ ++ : LDA.b $59 : BNE + ; hover check
+            LDA.b LinkSlipping : BEQ ++ : LDA.b PitTileActField : BNE + ; hover check
                 ++ : PLA : AND.l AbilityFlags : ORA.b #$04 : RTL ; yes boots, not hovering
         +
     PLA
@@ -17,15 +17,15 @@ RTL
 ;--------------------------------------------------------------------------------
 AddBonkTremors:
     PHA
-        LDA.b $46 : BNE + ; Check for incapacitated Link
-            JSL.l IncrementBonkCounter
+        LDA.b LinkIncapacitatedTimer : BNE + ; Check for incapacitated Link
+            JSL IncrementBonkCounter
         +
         LDA.l BootsModifier : CMP.b #$01 : BEQ +
         LDA.l BootsEquipment : BNE + ; Check for Boots
             PLA : RTL
         +
     PLA
-    JSL.l AddDashTremor : JSL.l Player_ApplyRumbleToSprites ; things we wrote over
+    JSL AddDashTremor : JSL Player_ApplyRumbleToSprites ; things we wrote over
 RTL
 ;--------------------------------------------------------------------------------
 BonkBreakableWall:
@@ -36,7 +36,7 @@ BonkBreakableWall:
             PLP : PLX : LDA.w #$0000 : RTL
         +
     PLP : PLX
-    LDA.w $0372 : AND.w #$00FF ; things we wrote over
+    LDA.w LinkDashing : AND.w #$00FF ; things we wrote over
 RTL
 ;--------------------------------------------------------------------------------
 BonkRockPile:
@@ -51,10 +51,10 @@ GravestoneHook:
     LDA.l BootsModifier : CMP.b #$01 : BEQ +
     LDA.l BootsEquipment : BEQ .done ; Check for Boots
     +
-    LDA.w $0372 : BEQ .done ; things we wrote over
-        JML.l moveGravestone
+    LDA.w LinkDashing : BEQ .done ; things we wrote over
+        JML moveGravestone
     .done
-    JML.l GravestoneHook_continue
+    JML GravestoneHook_continue
 ;--------------------------------------------------------------------------------
 JumpDownLedge:
     LDA.l BootsModifier : CMP.b #$01 : BEQ +

@@ -1,9 +1,9 @@
 WarpLeft:
     lda.l DRMode : beq .end
 	JSR CheckIfCave : BCS .end
-	lda $20 : ldx $aa
+	lda.b LinkPosY : ldx.b LinkQuadrantV
 	jsr CalcIndex
-	!add #$06 : ldy #$01 ; offsets in A, Y
+	!ADD.b #$06 : ldy.b #$01 ; offsets in A, Y
 	jsr LoadRoomHorz
 .end
 	jsr Cleanup
@@ -12,9 +12,9 @@ WarpLeft:
 WarpRight:
     lda.l DRMode : beq .end
 	JSR CheckIfCave : BCS .end
-	lda $20 : ldx $aa
+	lda.b LinkPosY : ldx.b LinkQuadrantV
 	jsr CalcIndex
-	!add #$12 : ldy #$ff ; offsets in A, Y
+	!ADD.b #$12 : ldy.b #$ff ; offsets in A, Y
 	jsr LoadRoomHorz
 .end
 	jsr Cleanup
@@ -23,9 +23,9 @@ WarpRight:
 WarpUp:
     lda.l DRMode : beq .end
 	JSR CheckIfCave : BCS .end
-	lda $22 : ldx $a9
+	lda.b LinkPosX : ldx.b LinkQuadrantH
 	jsr CalcIndex
-	ldy #$02 ; offsets in A, Y
+	ldy.b #$02 ; offsets in A, Y
 	jsr LoadRoomVert
 .end
 	jsr Cleanup
@@ -33,17 +33,17 @@ WarpUp:
 
 ; Checks if $a0 is equal to <Room>. If it is, opens its stonewall if it's there
 macro StonewallCheck(Room)
-    lda $a0 : cmp.b #<Room> : bne ?end
-        lda.l <Room>*2+$7ef000 : ora #$80 : sta.l <Room>*2+$7ef000
+    lda.b RoomIndex : cmp.b #<Room> : bne ?end
+        lda.l <Room>*2+$7ef000 : ora.b #$80 : sta.l <Room>*2+$7ef000
     ?end
 endmacro
 
 WarpDown:
     lda.l DRMode : beq .end
 	JSR CheckIfCave : BCS .end
-	lda $22 : ldx $a9
+	lda.b LinkPosX : ldx.b LinkQuadrantH
 	jsr CalcIndex
-	!add #$0c : ldy #$ff ; offsets in A, Y
+	!ADD.b #$0c : ldy.b #$ff ; offsets in A, Y
 	jsr LoadRoomVert
     %StonewallCheck($43)
 .end
@@ -54,35 +54,35 @@ WarpDown:
 ; carry clear = we are in dr mode, never use linking doors
 CheckLinkDoorR:
     lda.l DRMode : bne +
-        lda $7ec004 : sta $a0 ; what we wrote over
+        lda.l $7ec004 : sta.b RoomIndex ; what we wrote over
         sec : rtl
     + clc : rtl
 
 CheckLinkDoorL:
     lda.l DRMode : bne +
-        lda $7ec003 : sta $a0 ; what we wrote over
+        lda.l $7ec003 : sta.b RoomIndex ; what we wrote over
         sec : rtl
     + clc : rtl
 
 TrapDoorFixer:
-    lda $fe : and #$0038 : beq .end
-    xba : asl #2 : sta $00
-    stz $0468 : lda $068c : ora $00 : sta $068c
+    lda.b $fe : and.w #$0038 : beq .end
+    xba : asl #2 : sta.b Scrap00
+    stz.w TrapDoorFlag : lda.w $068c : ora.b Scrap00 : sta.w $068c
     .end
-    stz $fe ; clear our fe here because we don't need it anymore
+    stz.b $fe ; clear our fe here because we don't need it anymore
     rts
 
 Cleanup:
-	lda.l DRFlags : and #$10 : beq +
-    	stz $047a
-	+ inc $11
-	lda $ef
+	lda.l DRFlags : and.b #$10 : beq +
+    	stz.w LayerAdjustment
+	+ inc.b GameSubMode
+	lda.b $ef
 	rts
 
 ; carry set if cave, clear otherwise
 CheckIfCave:
 	REP #$30
-	LDA.b $A2 : CMP.w #$00E1 : BCS .invalid
+	LDA.b PreviousRoom : CMP.w #$00E1 : BCS .invalid
 	SEP #$30 : CLC : RTS
 	.invalid
 	SEP #$30 : SEC : RTS
@@ -92,11 +92,11 @@ CheckIfCave:
 CalcIndex: ; A->low byte of Link's Coord, X-> Link's quadrant, DoorOffset x 2 -> A, DoorOffset -> $04 (vert/horz agnostic)
 	cpx.b #00 : bne .largeDoor
 	cmp.b #$d0 : bcc .smallDoor
-	lda #$01 : bra .done ; Middle Door
-	.smallDoor lda #$00 : bra .done
-	.largeDoor lda #$02
+	lda.b #$01 : bra .done ; Middle Door
+	.smallDoor lda.b #$00 : bra .done
+	.largeDoor lda.b #$02
 	.done
-	sta $04
+	sta.b Scrap04
 	asl
 	rts
 
@@ -105,30 +105,30 @@ CalcIndex: ; A->low byte of Link's Coord, X-> Link's quadrant, DoorOffset x 2 ->
 LoadRoomHorz:
 {
     phb : phk : plb
-	sty $06 : sta $07 : lda $a0 : pha ; Store normal room on stack
-	lda $07 : jsr LookupNewRoom ; New room is in A, Room Data is in $00-$01
-	lda $00 : cmp #$03 : bne .gtg
+	sty.b Scrap06 : sta.b Scrap07 : lda.b RoomIndex : pha ; Store normal room on stack
+	lda.b Scrap07 : jsr LookupNewRoom ; New room is in A, Room Data is in $00-$01
+	lda.b Scrap00 : cmp.b #$03 : bne .gtg
 	jsr HorzEdge : pla : bcs .end
-	sta $a0 : bra .end ; Restore normal room, abort (straight staircases and open edges can get in this routine)
+	sta.b RoomIndex : bra .end ; Restore normal room, abort (straight staircases and open edges can get in this routine)
 
 	.gtg ;Good to Go!
 	pla ; Throw away normal room (don't fill up the stack)
-	lda $a0 : and.b #$0F : asl a : !sub $23 : !add $06 : sta $02
-	ldy #$00 : jsr ShiftVariablesMainDir
+	lda.b RoomIndex : and.b #$0F : asl a : !SUB.b LinkPosX+1 : !ADD.b Scrap06 : sta.b Scrap02
+	ldy.b #$00 : jsr ShiftVariablesMainDir
 
-    lda $01 : and #$80 : beq .normal
-    ldy $06 : cpy #$ff : beq +
-        lda $01 : jsr LoadEastMidpoint : bra ++
-    + lda $01 : jsr LoadWestMidpoint
+    lda.b Scrap01 : and.b #$80 : beq .normal
+    ldy.b Scrap06 : cpy.b #$ff : beq +
+        lda.b Scrap01 : jsr LoadEastMidpoint : bra ++
+    + lda.b Scrap01 : jsr LoadWestMidpoint
     ++ jsr PrepScrollToEdge : bra .scroll
 
     .normal
     jsr PrepScrollToNormal
 	.scroll
-	lda $01 : and #$40 : pha
+	lda.b Scrap01 : and.b #$40 : pha
 	jsr ScrollY
 	pla : beq .end
-	    ldy #$06 : jsr ApplyScroll
+	    ldy.b #$06 : jsr ApplyScroll
 	.end
 	plb ; restore db register
     rts
@@ -139,32 +139,32 @@ LoadRoomHorz:
 LoadRoomVert:
 {
     phb : phk : plb
-	sty $06 : sta $07 : lda $a0 : pha ; Store normal room on stack
-	lda $07 : jsr LookupNewRoom ; New room is in A, Room Data is in $00-$01
-	lda $00 : cmp #$03 : bne .gtg
+	sty.b Scrap06 : sta.b Scrap07 : lda.b RoomIndex : pha ; Store normal room on stack
+	lda.b Scrap07 : jsr LookupNewRoom ; New room is in A, Room Data is in $00-$01
+	lda.b Scrap00 : cmp.b #$03 : bne .gtg
 	jsr VertEdge : pla : bcs .end
-	sta $a0 : bra .end ; Restore normal room, abort (straight staircases and open edges can get in this routine)
+	sta.b RoomIndex : bra .end ; Restore normal room, abort (straight staircases and open edges can get in this routine)
 	.gtg ;Good to Go!
 	pla ; Throw away normal room (don't fill up the stack)
-	lda $a0 : and.b #$F0 : lsr #3 : !sub $21 : !add $06 : sta $02
+	lda.b RoomIndex : and.b #$F0 : lsr #3 : !SUB.b LinkPosY+1 : !ADD.b Scrap06 : sta.b Scrap02
 
-	lda $01 : and #$80 : beq .notEdge
-	    ldy #$01 : jsr ShiftVariablesMainDir
-        ldy $06 : cpy #$ff : beq +
-            lda $01 : jsr LoadSouthMidpoint : bra ++
-        + lda $01 : jsr LoadNorthMidpoint
+	lda.b Scrap01 : and.b #$80 : beq .notEdge
+	    ldy.b #$01 : jsr ShiftVariablesMainDir
+        ldy.b Scrap06 : cpy.b #$ff : beq +
+            lda.b Scrap01 : jsr LoadSouthMidpoint : bra ++
+        + lda.b Scrap01 : jsr LoadNorthMidpoint
 	++ jsr PrepScrollToEdge : bra .scroll
 
     .notEdge
-    lda $01 : and #$03 : cmp #$03 : bne .normal
+    lda.b Scrap01 : and.b #$03 : cmp.b #$03 : bne .normal
         jsr ScrollToInroomStairs
-        stz $046d
+        stz.w $046d
         bra .end
     .normal
-	ldy #$01 : jsr ShiftVariablesMainDir
+	ldy.b #$01 : jsr ShiftVariablesMainDir
     jsr PrepScrollToNormal
     .scroll
-    lda $01 : and #$40 : sta $046d
+    lda.b Scrap01 : and.b #$40 : sta.w $046d
     jsr ScrollX
     .end
     plb ; restore db register
@@ -173,14 +173,14 @@ LoadRoomVert:
 
 LookupNewRoom: ; expects data offset to be in A
 {
-    rep #$30 : and #$00FF ;sanitize A reg (who knows what is in the high byte)
-	sta $00 ; offset in 00
-	lda $a2 : tax ; probably okay loading $a3 in the high byte
-	lda.w DoorOffset,x : and #$00FF ;we only want the low byte
-	asl #3 : sta $02 : !add $02 : !add $02 ;multiply by 24 (data size)
-	!add $00 ; should now have the offset of the address I want to load
-	tax : lda.w DoorTable,x : sta $00
-	and #$00FF : sta $a0 ; assign new room
+    rep #$30 : and.w #$00FF ;sanitize A reg (who knows what is in the high byte)
+	sta.b Scrap00 ; offset in 00
+	lda.b PreviousRoom : tax ; probably okay loading $a3 in the high byte
+	lda.w DoorOffset,x : and.w #$00FF ;we only want the low byte
+	asl #3 : sta.b Scrap02 : !ADD.b Scrap02 : !ADD.b Scrap02 ;multiply by 24 (data size)
+	!ADD.b Scrap00 ; should now have the offset of the address I want to load
+	tax : lda.w DoorTable,x : sta.b Scrap00
+	and.w #$00FF : sta.b RoomIndex ; assign new room
 	sep #$30
 	rts
 }
@@ -190,14 +190,14 @@ LookupNewRoom: ; expects data offset to be in A
 ShiftVariablesMainDir:
 {
 	lda.w CoordIndex,y : tax
-	lda $21,x : !add $02 : sta $21,x ; coordinate update
+	lda.b LinkPosY+1,x : !ADD.b Scrap02 : sta.b LinkPosY+1,x ; coordinate update
 	lda.w CameraIndex,y : tax
-	lda $e3,x : !add $02 : sta $e3,x ; scroll register high byte
+	lda.b $e3,x : !ADD.b Scrap02 : sta.b $e3,x ; scroll register high byte
 	lda.w CamQuadIndex,y : tax
-	lda $0605,x : !add $02 : sta $0605,x ; high bytes of these guys
-	lda $0607,x : !add $02 : sta $0607,x
-	lda $0601,x : !add $02 : sta $0601,x
-	lda $0603,x : !add $02 : sta $0603,x
+	lda.w $0605,x : !ADD.b Scrap02 : sta.w $0605,x ; high bytes of these guys
+	lda.w $0607,x : !ADD.b Scrap02 : sta.w $0607,x
+	lda.w $0601,x : !ADD.b Scrap02 : sta.w $0601,x
+	lda.w $0603,x : !ADD.b Scrap02 : sta.w $0603,x
 	rts
 }
 
@@ -205,12 +205,12 @@ ShiftVariablesMainDir:
 ScrollToInroomStairs:
 {
     jsr PrepScrollToInroomStairs
-    ldy #$01 : jsr ShiftVariablesMainDir
+    ldy.b #$01 : jsr ShiftVariablesMainDir
     jsr ScrollX
-    ldy #$00 : jsr ApplyScroll
-    lda $a0 : and #$0f : cmp #$0f : bne +
-        stz $e0 : stz $e2 ; special case camera fix
-        lda #$1f : sta $e1 : sta $e3
+    ldy.b #$00 : jsr ApplyScroll
+    lda.b RoomIndex : and.b #$0f : cmp.b #$0f : bne +
+        stz.b BG1H : stz.b BG2H ; special case camera fix
+        lda.b #$1f : sta.b BG1H+1 : sta.b BG2H+1
     +
     rts
 }
@@ -219,48 +219,48 @@ ScrollToInroomStairs:
 ; Sets $02, $04, $05, $ee, $045e, $045f and things related to Y coordinate
 PrepScrollToInroomStairs:
 {
-    lda $01 : and #$30 : lsr #3 : tay
-    lda.w InroomStairsX,y : sta $04
-    lda.w InroomStairsX+1,y : sta $05
-    lda $06 : cmp #$ff : beq .south
+    lda.b Scrap01 : and.b #$30 : lsr #3 : tay
+    lda.w InroomStairsX,y : sta.b Scrap04
+    lda.w InroomStairsX+1,y : sta.b Scrap05
+    lda.b Scrap06 : cmp.b #$ff : beq .south
         lda.w InroomStairsY+1,y : bne +
-            inc $045f ; flag indicating special screen transition
-            dec $02 ; shift variables further
-            stz $aa
-            lda $a8 : and #%11111101 : sta $a8
-            stz $0613 ; North scroll target
-            inc $0603 : inc $0607
-            dec $0619 : dec $061b
+            inc.w $045f ; flag indicating special screen transition
+            dec.b Scrap02 ; shift variables further
+            stz.b LinkQuadrantV
+            lda.b $a8 : and.b #%11111101 : sta.b $a8
+            stz.w CameraTargetS+1 ; North scroll target
+            inc.w $0603 : inc.w $0607
+            dec.w CameraScrollN+1 : dec.w CameraScrollS+1
         +
-        lda.w InroomStairsY,y : !add #$20 : sta $20
-        !sub #$38 : sta $045e
-        lda $01 : and #$40 : beq +
-            lda $20 : !add #$20 : sta $20
-            stz $045f
+        lda.w InroomStairsY,y : !ADD.b #$20 : sta.b LinkPosY
+        !SUB.b #$38 : sta.w $045e
+        lda.b Scrap01 : and.b #$40 : beq +
+            lda.b LinkPosY : !ADD.b #$20 : sta.b LinkPosY
+            stz.w $045f
         +
-        dec $21
+        dec.b LinkPosY+1
         %StonewallCheck($1b)
         bra ++
     .south
         lda.w InroomStairsY+1,y : beq +
-            inc $045f ; flag indicating special screen transition
-            inc $02 ; shift variables further
-            lda #$02 : sta $aa
-            lda $a8 : ora #%00000010 : sta $a8
-            inc $0611 ; South scroll target
-            dec $0603 : dec $0607
-            inc $0619 : inc $061b
+            inc.w $045f ; flag indicating special screen transition
+            inc.b Scrap02 ; shift variables further
+            lda.b #$02 : sta.b LinkQuadrantV
+            lda.b $a8 : ora.b #%00000010 : sta.b $a8
+            inc.w CameraTargetN+1 ; South scroll target
+            dec.w $0603 : dec.w $0607
+            inc.w CameraScrollN+1 : inc.w CameraScrollS+1
         +
-        lda.w InroomStairsY,y : !sub #$20 : sta $20
-        !add #$38 : sta $045e
-        lda $01 : and #$40 : beq +
-            lda $20 : !sub #$20 : sta $20
-            stz $045f
+        lda.w InroomStairsY,y : !SUB.b #$20 : sta.b LinkPosY
+        !ADD.b #$38 : sta.w $045e
+        lda.b Scrap01 : and.b #$40 : beq +
+            lda.b LinkPosY : !SUB.b #$20 : sta.b LinkPosY
+            stz.w $045f
         +
-        inc $21
+        inc.b LinkPosY+1
     ++
-    lda $01 : and #$04 : lsr #2 : sta $ee : bne +
-    	stz $0476
+    lda.b Scrap01 : and.b #$04 : lsr #2 : sta.b LinkLayer : bne +
+    	stz.w $0476
     + rts
 }
 
@@ -268,13 +268,13 @@ PrepScrollToInroomStairs:
 ; Sets $04 $05 and $ee
 PrepScrollToEdge:
 {
-    sta $04 : lda $01 : and #$20 : beq +
-        lda #01
-    + sta $05
-    lda $01 : and #$10 : beq +
-        lda #01
-    + sta $ee : bne +
-    	stz $0476
+    sta.b Scrap04 : lda.b Scrap01 : and.b #$20 : beq +
+        lda.b #01
+    + sta.b Scrap05
+    lda.b Scrap01 : and.b #$10 : beq +
+        lda.b #01
+    + sta.b LinkLayer : bne +
+    	stz.w $0476
     + rts
 }
 
@@ -282,56 +282,56 @@ PrepScrollToEdge:
 ; Sets $04 $05 and $ee, and $fe
 PrepScrollToNormal:
 {
-    lda $01 : sta $fe : and #$04 : lsr #2 : sta $ee ; trap door and layer
+    lda.b Scrap01 : sta.b $fe : and.b #$04 : lsr #2 : sta.b LinkLayer ; trap door and layer
     bne +
-    	stz $0476
-    + stz $05 : lda #$78 : sta $04
-    lda $01 : and #$03 : beq .end
-        cmp #$02 : !bge +
-            lda #$f8 : sta $04 : bra .end
-        + inc $05
+    	stz.w $0476
+    + stz.b Scrap05 : lda.b #$78 : sta.b Scrap04
+    lda.b Scrap01 : and.b #$03 : beq .end
+        cmp.b #$02 : !BGE +
+            lda.b #$f8 : sta.b Scrap04 : bra .end
+        + inc.b Scrap05
     .end rts
 }
 
 StraightStairsAdj:
 {
-    stx $0464 : sty $012e ; what we wrote over
+    stx.w $0464 : sty.w SFX2 ; what we wrote over
     lda.l DRMode : beq +
-        lda $045e : bne .toInroom
-        lda $046d : beq .noScroll
-            sta $22
-            ldy #$00 : jsr ApplyScroll
-            stz $046d
+        lda.w $045e : bne .toInroom
+        lda.w $046d : beq .noScroll
+            sta.b LinkPosX
+            ldy.b #$00 : jsr ApplyScroll
+            stz.w $046d
         .noScroll
         jsr GetTileAttribute : tax
-        lda $11 : cmp #$12 : beq .goingNorth
-            lda $a2 : cmp #$51 : bne ++
-                rep #$20 : lda #$0018 : !add $20 : sta $20 : sep #$20 ; special fix for throne room
+        lda.b GameSubMode : cmp.b #$12 : beq .goingNorth
+            lda.b PreviousRoom : cmp.b #$51 : bne ++
+                rep #$20 : lda.w #$0018 : !ADD.b LinkPosY : sta.b LinkPosY : sep #$20 ; special fix for throne room
                 jsr GetTileAttribute : tax
             ++ lda.l StepAdjustmentDown, X : bra .end
-;            lda $ee : beq .end
-;                rep #$20 : lda #$ffe0 : !add $20 : sta $20 : sep #$20
+;            lda.b LinkLayer : beq .end
+;                rep #$20 : lda.w #$ffe0 : !ADD.b LinkPosY : sta.b LinkPosY : sep #$20
         .goingNorth
-            cpx #$00 : bne ++
-            lda $a0 : cmp #$51 : bne ++
-                lda #$36 : bra .end ; special fix for throne room
-            ++ ldy $ee : cpy #$00 : beq ++
+            cpx.b #$00 : bne ++
+            lda.b RoomIndex : cmp.b #$51 : bne ++
+                lda.b #$36 : bra .end ; special fix for throne room
+            ++ ldy.b LinkLayer : cpy.b #$00 : beq ++
                 inx
             ++ lda.l StepAdjustmentUp, X
         .end
-        pha : lda $0462 : and #$04 : bne ++
-            pla : !add #$f6 : pha
-        ++ pla : !add $0464 : sta $0464
+        pha : lda.w $0462 : and.b #$04 : bne ++
+            pla : !ADD.b #$f6 : pha
+        ++ pla : !ADD.w $0464 : sta.w $0464
     + rtl
     .toInroom
-    lda #$32 : sta $0464 : stz $045e
+    lda.b #$32 : sta.w $0464 : stz.w $045e
     rtl
 }
 
 GetTileAttribute:
 {
     phk : pea.w .jslrtsreturn-1
-    pea.w $02802c
+    pea.w $82802c
     jml CalculateTransitionLanding ; mucks with x/y sets a to Tile Attribute, I think
     .jslrtsreturn
     rts
@@ -352,15 +352,15 @@ StraightStairsFix:
 {
     pha
     lda.l DRMode : bne +
-        pla : !add $20 : sta $20 : rtl ;what we wrote over
+        pla : !ADD.b LinkPosY : sta.b LinkPosY : rtl ;what we wrote over
     + pla : rtl
 }
 
 StraightStairLayerFix:
 {
     lda.l DRMode : beq +
-        lda $ee : rtl
-    + lda $01c322, x : rtl ; what we wrote over
+        lda.b LinkLayer : rtl
+    + lda.l LayerOfDestination+3, x : rtl ; what we wrote over
 }
 
 DoorToStraight:
@@ -369,61 +369,61 @@ DoorToStraight:
     lda.l DRMode : beq .skip
         pla : bne .end
         pha
-        lda $a0 : cmp #$51 : bne .skip
-        lda #$04 : sta $4e
+        lda.b RoomIndex : cmp.b #$51 : bne .skip
+        lda.b #$04 : sta.b $4e
     .skip pla
-    .end LDX.w $0418 : CMP.b #$02 ; what we wrote over
+    .end LDX.w TransitionDirection : CMP.b #$02 ; what we wrote over
     rtl
 }
 
 DoorToInroom:
 {
-    ldx $045e : bne .end
-        sta $0020, y ; what we wrote over
+    ldx.w $045e : bne .end
+        sta.w $0020, y ; what we wrote over
     .end
-    ldx #$00 ; what we wrote over
+    ldx.b #$00 ; what we wrote over
     rtl
 }
 
 DoorToInroomEnd:
 {
-    ldy $045e : beq .vanilla
-    cmp $045e : bne .return
-        stz $045e ; clear
+    ldy.w $045e : beq .vanilla
+    cmp.w $045e : bne .return
+        stz.w $045e ; clear
     .return
     rtl
     .vanilla
-    cmp $02c034, x ; what we wrote over
+    cmp.l UnderworldTransitionLandingCoordinate, x ; what we wrote over
     rtl
 }
 
 StraightStairsTrapDoor:
 {
-    lda $0464 : bne +
+    lda.w $0464 : bne +
         ; reset function
         .reset phk : pea.w .jslrtsreturn-1
-        pea.w $02802c
-        jml $028c73 ; $10D71 .reset label of Bank02
+        pea.w $82802c
+        jml ResetThenCacheRoomEntryProperties ; $10D71 .reset label of Bank02
         .jslrtsreturn
-        lda $0468 : bne ++
-        lda $a0 : cmp.b #$ac : bne .animateTraps
-        lda $0403 : and.b #$20 : bne .animateTraps
-        lda $0403 : and.b #$10 : beq ++
+        lda.w TrapDoorFlag : bne ++
+        lda.b RoomIndex : cmp.b #$ac : bne .animateTraps
+        lda.w $0403 : and.b #$20 : bne .animateTraps
+        lda.w $0403 : and.b #$10 : beq ++
             .animateTraps
-            lda #$05 : sta $11
-            inc $0468 : stz $068e : stz $0690
+            lda.b #$05 : sta.b GameSubMode
+            inc.w TrapDoorFlag : stz.w TileMapDoorPos : stz.w DoorTimer
         ++ JML Underworld_SetBossOrSancMusicUponEntry_long
     + JML Dungeon_ApproachFixedColor ; what we wrote over
 }
 
 InroomStairsTrapDoor:
 {
-    lda $0200 : cmp #$05 : beq .reset
-    lda $b0 : jml $008781 ; what we wrote over (essentially)
+    lda.w SubModuleInterface : cmp.b #$05 : beq .reset
+    lda.b SubSubModule : jml JumpTableLocal ; what we wrote over (essentially)
     .reset
     pla : pla : pla
     jsl StraightStairsTrapDoor_reset
-    jml $028b15 ; just some RTS in bank 02
+    jml $828b15 ; just some RTS in bank 02
 }
 
 HandleSpecialDoorLanding: {
@@ -436,7 +436,7 @@ HandleSpecialDoorLanding: {
         PLA : PHA : AND.b #$FA : CMP.b #$80 : bne .noDoor
 
         .setDoorState
-        LDA.w $0418 : AND.b #$02 : BNE + : INC
+        LDA.w TransitionDirection : AND.b #$02 : BNE + : INC
         + STA.b $6C
 
         .noDoor

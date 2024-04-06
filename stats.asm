@@ -33,7 +33,7 @@ DecrementSaveCounter:
 RTL
 ;--------------------------------------------------------------------------------
 DungeonHoleWarpTransition:
-	LDA.l $81C31F, X
+	LDA.l LayerOfDestination, X
 	BRA StatTransitionCounter
 DungeonHoleEntranceTransition:
 	JSL EnableForceBlank
@@ -43,7 +43,7 @@ DungeonHoleEntranceTransition:
 	LDA.l BowTracking : AND.b #$40 : BEQ + ; skip if we don't have silvers
 	LDA.l BowEquipment : BEQ + ; skip if we have no bow
 	CMP.b #$03 : !BGE + ; skip if the bow is already silver
-		!ADD #$02 : STA.l BowEquipment ; increase bow to silver
+		!ADD.b #$02 : STA.l BowEquipment ; increase bow to silver
 	+
 	
 	BRA StatTransitionCounter
@@ -71,7 +71,7 @@ IncrementFlute:
 	LDA.l StatsLocked : BNE +
 		LDA.l FluteCounter : INC : STA.l FluteCounter
 	+
-	JSL.l StatTransitionCounter ; also increment transition counter
+	JSL StatTransitionCounter ; also increment transition counter
 RTL
 ;--------------------------------------------------------------------------------
 IncrementSmallKeys:
@@ -80,9 +80,9 @@ IncrementSmallKeys:
 		LDA.l StatsLocked : BNE +
                         LDA.l SmallKeyCounter : INC : STA.l SmallKeyCounter
 		+
-		JSL.l UpdateKeys
-		PHY : LDY.b #24 : JSL.l AddInventory : PLY
-		JSL.l HUD_RebuildLong
+		JSL UpdateKeys
+		PHY : LDY.b #24 : JSL AddInventory : PLY
+		JSL HUD_RebuildLong
                 INC.w UpdateHUDFlag
 	PLX
 RTL
@@ -93,16 +93,16 @@ IncrementSmallKeysNoPrimary:
         LDA.l StatsLocked : BNE +
                 LDA.l SmallKeyCounter : INC : STA.l SmallKeyCounter
         +
-        JSL.l UpdateKeys
+        JSL UpdateKeys
         LDA.b IndoorsFlag : BEQ + ; skip room check if outdoors
                 PHP : REP #$20 ; set 16-bit accumulator
                 LDA.b RoomIndex : CMP.w #$0087 : BNE ++ ; hera basement
-                LDA $A8 : AND #$0003 : CMP #$0002 : BNE ++ ; must be quadrant 2
-                LDA SprDropsItem, X : AND #$00FF : BNE ++ ; must not be a standing item
+                LDA.b $A8 : AND.w #$0003 : CMP.w #$0002 : BNE ++ ; must be quadrant 2
+                LDA.l SprDropsItem, X : AND.w #$00FF : BNE ++ ; must not be a standing item
                         PLP : PHY
                         LDY.b #$24
-                        JSL.l AddInventory
-                        LDA StandingItemsOn : BNE +++
+                        JSL AddInventory
+                        LDA.l StandingItemsOn : BNE +++
                         	JSR CountChestKey
                         +++ PLY
                         BRA +
@@ -110,19 +110,19 @@ IncrementSmallKeysNoPrimary:
                 PLP
         +
         INC.w UpdateHUDFlag
-        JSL.l HUD_RebuildLong
+        JSL HUD_RebuildLong
         PLX
 RTL
 ;--------------------------------------------------------------------------------
 DecrementSmallKeys:
 	STA.l CurrentSmallKeys ; thing we wrote over, write small key count
-	JSL.l UpdateKeys
+	JSL UpdateKeys
 RTL
 ;--------------------------------------------------------------------------------
 CountChestKeyLong:
         PHX : PHP
         SEP #$30
-	JSR.w CountChestKey
+	JSR CountChestKey
         PLP : PLX
 RTL
 ;--------------------------------------------------------------------------------
@@ -154,7 +154,7 @@ RTS
 ;--------------------------------------------------------------------------------
 IncrementAgahnim2Sword:
         PHA
-        JSL.l IncrementBossSword
+        JSL IncrementBossSword
         PLA
 RTL
 ;--------------------------------------------------------------------------------
@@ -212,7 +212,7 @@ DecrementItemCounter:
 RTL
 ;--------------------------------------------------------------------------------
 IncrementBigChestCounter:
-        JSL.l Dungeon_SaveRoomQuadrantData ; thing we wrote over
+        JSL Dungeon_SaveRoomQuadrantData ; thing we wrote over
         PHA
         LDA.l StatsLocked : BNE +
                 LDA.l BigKeysBigChests : INC : AND.b #$0F : TAX
@@ -296,10 +296,10 @@ IncrementUWMirror:
 		LDA.l StatsLocked : BNE +
 		LDA.w DungeonID : CMP.b #$FF : BEQ + ; skip if we're in a cave or house
 			LDA.l UnderworldMirrors : INC : STA.l UnderworldMirrors
-			JSL.l StatTransitionCounter
+			JSL StatTransitionCounter
 		+
 	PLA
-	JSL.l Dungeon_SaveRoomData ; thing we wrote over
+	JSL Dungeon_SaveRoomData ; thing we wrote over
 RTL
 ;--------------------------------------------------------------------------------
 IncrementSpentRupees:
@@ -332,26 +332,26 @@ StatsFinalPrep:
 		LDA.l StatsLocked : BNE .ramPostOnly
 		INC : STA.l StatsLocked
 	
-		JSL.l IncrementFinalSword
+		JSL IncrementFinalSword
 	
 		LDA.l HighestMail : INC : STA.l HighestMail ; add green mail to mail count
 		
 		LDA.l ScreenTransitions : DEC : STA.l ScreenTransitions ; remove extra transition from exiting gtower via duck
 		
 		.ramPostOnly
-		LDA.l SwordBossKills : LSR #4 : !ADD SwordBossKills : STA.l BossKills
-		LDA.l SwordBossKills+1 : LSR #4 : !ADD SwordBossKills+1 : !ADD BossKills : AND.b #$0F : STA.l BossKills
+		LDA.l SwordBossKills : LSR #4 : !ADD.l SwordBossKills : STA.l BossKills
+		LDA.l SwordBossKills+1 : LSR #4 : !ADD.l SwordBossKills+1 : !ADD.l BossKills : AND.b #$0F : STA.l BossKills
 	
-		LDA.l NMIFrames : !SUB LoopFrames : STA.l LagTime
-		LDA.l NMIFrames+1 : SBC LoopFrames+1 : STA.l LagTime+1
-		LDA.l NMIFrames+2 : SBC LoopFrames+2 : STA.l LagTime+2
-		LDA.l NMIFrames+3 : SBC LoopFrames+3 : STA.l LagTime+3
+		LDA.l NMIFrames : !SUB.l LoopFrames : STA.l LagTime
+		LDA.l NMIFrames+1 : SBC.l LoopFrames+1 : STA.l LagTime+1
+		LDA.l NMIFrames+2 : SBC.l LoopFrames+2 : STA.l LagTime+2
+		LDA.l NMIFrames+3 : SBC.l LoopFrames+3 : STA.l LagTime+3
 
-		LDA.l RupeesSpent : !ADD DisplayRupees : STA.l RupeesCollected
-		LDA.l RupeesSpent+1 : ADC DisplayRupees+1 : STA.l RupeesCollected+1
+		LDA.l RupeesSpent : !ADD.l DisplayRupees : STA.l RupeesCollected
+		LDA.l RupeesSpent+1 : ADC.l DisplayRupees+1 : STA.l RupeesCollected+1
 
                 REP #$20
-		LDA.l TotalItemCounter : !SUB ChestsOpened : STA.l NonChestCounter
+		LDA.l TotalItemCounter : !SUB.l ChestsOpened : STA.l NonChestCounter
 
 		.done
 	PLP : PLX : PLA

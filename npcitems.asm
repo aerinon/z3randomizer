@@ -56,7 +56,7 @@ ItemCheck_TreeKid2:
 RTL
 
 ItemCheck_TreeKid3:
-	JSL $8DD030 ; FluteAardvark_Draw - thing we wrote over
+	JSL SpriteDraw_Stumpy ; thing we wrote over
 	LDA.l NpcFlags : AND.b #$08
 	BNE .done
 	LDA.b #$05
@@ -98,8 +98,8 @@ ItemSet_MagicBat:
 RTL
 
 ItemSet_OldMan:
-	PHA : LDA OldManItem_Player : STA !MULTIWORLD_ITEM_PLAYER_ID : PLA
-	JSL.l Link_ReceiveItem ; thing we wrote over
+	PHA : LDA.l OldManItem_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID : PLA
+	JSL Link_ReceiveItem ; thing we wrote over
 	PHA : LDA.l NpcFlags : ORA.b #$01 : STA.l NpcFlags : PLA
 RTL
 
@@ -108,20 +108,20 @@ ItemSet_ZoraKing:
 RTL
 
 ItemSet_SickKid:
-	PHA : LDA SickKidItem_Player : STA !MULTIWORLD_ITEM_PLAYER_ID : PLA
-	JSL.l Link_ReceiveItem ; thing we wrote over
+	PHA : LDA.l SickKidItem_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID : PLA
+	JSL Link_ReceiveItem ; thing we wrote over
 	PHA : LDA.l NpcFlags : ORA.b #$04 : STA.l NpcFlags : PLA
 RTL
 
 ItemSet_TreeKid:
-	PHA : LDA TreeKidItem_Player : STA !MULTIWORLD_ITEM_PLAYER_ID : PLA
-	JSL.l Link_ReceiveItem ; thing we wrote over
+	PHA : LDA.l TreeKidItem_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID : PLA
+	JSL Link_ReceiveItem ; thing we wrote over
 	PHA : LDA.l NpcFlags : ORA.b #$08 : STA.l NpcFlags : PLA
 RTL
 
 ItemSet_Sahasrala:
-	PHA : LDA SahasralaItem_Player : STA !MULTIWORLD_ITEM_PLAYER_ID : PLA
-	JSL.l Link_ReceiveItem ; thing we wrote over
+	PHA : LDA.l SahasralaItem_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID : PLA
+	JSL Link_ReceiveItem ; thing we wrote over
 	PHA : LDA.l NpcFlags : ORA.b #$10 : STA.l NpcFlags : PLA
 RTL
 
@@ -130,8 +130,8 @@ ItemSet_Catfish:
 RTL
 
 ItemSet_Library:
-	PHA : LDA LibraryItem_Player : STA !MULTIWORLD_ITEM_PLAYER_ID : PLA
-	JSL.l Link_ReceiveItem ; thing we wrote over
+	PHA : LDA.l LibraryItem_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID : PLA
+	JSL Link_ReceiveItem ; thing we wrote over
 	PHA : LDA.l NpcFlags : ORA.b #$80 : STA.l NpcFlags : PLA
 RTL
 
@@ -143,7 +143,7 @@ ItemSet_Mushroom:
 			; if for any reason the item value is 0 reload it, just in case
 			%GetPossiblyEncryptedItem(MushroomItem, SpriteItemValues) : TAY
 		+
-	LDA MushroomItem_Player : STA !MULTIWORLD_ITEM_PLAYER_ID
+	LDA.l MushroomItem_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID
 	PLA
 	STZ.w ItemReceiptMethod ; thing we wrote over - the mushroom is an npc for item purposes apparently
 RTL
@@ -165,19 +165,19 @@ Set300RupeeNPCItem:
 	CMP.w #291 : BNE +
 		%GetPossiblyEncryptedItem(RupeeNPC_MoldormCave, SpriteItemValues)
 		TAY ; load moldorm cave value into Y
-		LDA RupeeNPC_MoldormCave_Player
+		LDA.l RupeeNPC_MoldormCave_Player
 		BRA .done
 	+ CMP.w #286 : BNE +
 		%GetPossiblyEncryptedItem(RupeeNPC_NortheastDarkSwampCave, SpriteItemValues)
 		TAY ; load northeast dark swamp cave value into Y
-		LDA RupeeNPC_NortheastDarkSwampCave_Player
+		LDA.l RupeeNPC_NortheastDarkSwampCave_Player
 		BRA .done
 	+
-	LDA #$0000
+	LDA.w #$0000
 	LDY.b #$46 ; default to a normal 300 rupees
 	.done
 	SEP #$20
-	STA !MULTIWORLD_ITEM_PLAYER_ID
+	STA.l !MULTIWORLD_ITEM_PLAYER_ID
 	PLP : PLA
 RTL
 
@@ -185,30 +185,30 @@ RTL
 ; Randomize Zora King
 ;--------------------------------------------------------------------------------
 LoadZoraKingItemGFX:
-		LDA.l ZoraItem_Player : : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
-        LDA.l $9DE1C3 ; location randomizer writes zora item to
-        JSL.l AttemptItemSubstitution
-        JSL.l ResolveLootIDLong
-        STA.w SpriteID,Y
-        TYX
-        JML.l PrepDynamicTile_loot_resolved
+    LDA.l ZoraItem_Player : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
+    LDA.l $9DE1C3 ; location randomizer writes zora item to
+    JSL AttemptItemSubstitution
+    JSL ResolveLootIDLong
+    STA.w SpriteID,Y
+    TYX
+    JML PrepDynamicTile_loot_resolved
 ;--------------------------------------------------------------------------------
 JumpToSplashItemTarget:
 	LDA.w SpriteMovement, X
-	CMP.b #$FF : BNE + : JML.l SplashItem_SpawnSplash : +
-	CMP.b #$00 : JML.l SplashItem_SpawnOther
+	CMP.b #$FF : BNE + : JML SplashItem_SpawnSplash : +
+	CMP.b #$00 : JML SplashItem_SpawnOther
 
 ;================================================================================
 ; Randomize Catfish
 ;--------------------------------------------------------------------------------
 LoadCatfishItemGFX:
-		LDA.l CatfishItem_Player : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
-        LDA.l $9DE185 ; location randomizer writes catfish item to
-        JSL.l AttemptItemSubstitution
-        JSL.l ResolveLootIDLong
-	STA.w SpriteID, Y
-        TYX
-	JML.l PrepDynamicTile_loot_resolved
+    LDA.l CatfishItem_Player : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
+    LDA.l $9DE185 ; location randomizer writes catfish item to
+    JSL AttemptItemSubstitution
+    JSL ResolveLootIDLong
+    STA.w SpriteID, Y
+    TYX
+    JML PrepDynamicTile_loot_resolved
 ;--------------------------------------------------------------------------------
 DrawThrownItem:
         LDA.b OverworldIndex : CMP.b #$81 : BNE .catfish

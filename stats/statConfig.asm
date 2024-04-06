@@ -64,7 +64,7 @@ CreditsStats:
 %AddStat(FaerieRevivalCounter, 0, 0, 08, 3, !FAERIE_REVIVALS_X, !FAERIE_REVIVALS_Y)
 %AddStat(MenuFrames, 1, 8, 32, 4, !TOTAL_MENU_TIME_X, !TOTAL_MENU_TIME_Y)
 %AddStat(LagTime, 1, 0, 32, 4, !TOTAL_LAG_TIME_X, !TOTAL_LAG_TIME_Y)
-print "Colletion Rate config: ", pc
+print "Collection Rate config: ", pc
 %AddStat(TotalItemCounter, 0, 0, 16, 3, !COLLECTION_RATE_X, !COLLECTION_RATE_Y)
 %AddStat(NMIFrames, 1, 0, 32, 4, !TOTAL_TIME_X, !TOTAL_TIME_Y)
 

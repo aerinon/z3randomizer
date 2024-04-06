@@ -212,7 +212,7 @@ org $B0804F ; PC 0x18004F
 ByrnaInvulnerability:
 db $01 ; #$00 = Off - #$01 = On (default)
 ;--------------------------------------------------------------------------------
-org $B08050 ; PC 0x180050 - 0x18005D
+org $B08050 ; PC 0x180050 - 0x18005C
 CrystalPendantFlags_2:
     db $02 ; Ganons Tower - because 5D is not available right now - sewers doesn't get one
 	db $04 ; Hyrule Castle
@@ -239,11 +239,11 @@ org $B0805E ; PC 0x18005E - 0x18005F (Unused)
 ;--------------------------------------------------------------------------------
 org $B08060 ; PC 0x180060 - 0x18007E
 ProgrammableItemLogicJump_1:
-JSL.l $000000 : RTL
+JSL $000000 : RTL
 ProgrammableItemLogicJump_2:
-JSL.l $000000 : RTL
+JSL $000000 : RTL
 ProgrammableItemLogicJump_3:
-JSL.l $000000 : RTL
+JSL $000000 : RTL
 
 org $B08061 ; PC 0x180061
 ProgrammableItemLogicPointer_1:
@@ -347,7 +347,7 @@ org $B0808A ; PC 0x18008A
 BlockCastleDoorsInRain:
 db $00 ; #$00 - Normal, $01 - Block them (Used by Entrance Rando in Standard Mode)
 ;--------------------------------------------------------------------------------
-org $30808B ; PC 0x18008B
+org $B0808B ; PC 0x18008B
 AllowAgaDamageBeforeZeldaRescued:
 db #$00 ; #$00 - No damage, $01 - Damage (Used by Entrance Rando in Standard Mode)
 ;--------------------------------------------------------------------------------
@@ -468,29 +468,29 @@ ByrnaMagicUsage:
 db $04, #$02, #$01 ; normal, 1/2, 1/4 magic
 ;--------------------------------------------------------------------------------
 ;Dungeon Music
-;org $82D592 ; PC 0x15592
+;org EntranceData_song ; PC 0x15592
 ;11 - Pendant Dungeon
 ;16 - Crystal Dungeon
 
-org $82D592+$03
+org EntranceData_song+$03
 Music_Castle:
 db $10,$10,$10
-org $82D592+$24
+org EntranceData_song+$24
 Music_AgaTower:
 db $10
-org $82D592+$81
+org EntranceData_song+$81
 Music_Sewer:
 db $10
 
-org $82D592+$08
+org EntranceData_song+$08
 Music_Eastern:
 db $11
 
-org $82D592+$09
+org EntranceData_song+$09
 Music_Desert:
 db $11, $11, $11, $11
 
-org $82D592+$33
+org EntranceData_song+$33
 Music_Hera:
 db $11
 org $82907A ; 0x1107A - Bank02.asm:3089 (#$11)
@@ -500,45 +500,45 @@ org $828B8C ; 0x10B8C - Bank02.asm:2231 (#$11)
 Music_Hera3:
 db $11
 
-org $82D592+$26
+org EntranceData_song+$26
 Music_Darkness:
 db $16
 
-org $82D592+$25
+org EntranceData_song+$25
 Music_Swamp:
 db $16
 
-org $82D592+$28
+org EntranceData_song+$28
 Music_Skull:
 db $16, $16, $16, $16
 
-org $82D592+$76
+org EntranceData_song+$76
 Music_Skull_Drop:
 db $16, $16, $16, $16
 
-org $82D592+$34
+org EntranceData_song+$34
 Music_Thieves:
 db $16
 
-org $82D592+$2D
+org EntranceData_song+$2D
 Music_Ice:
 db $16
 
-org $82D592+$27
+org EntranceData_song+$27
 Music_Mire:
 db $16
 
-org $82D592+$35
+org EntranceData_song+$35
 Music_TRock:
 db $16
-org $82D592+$15
+org EntranceData_song+$15
 Music_TRock2:
 db $16
-org $82D592+$18
+org EntranceData_song+$18
 Music_TRock3:
 db $16, $16
 
-org $82D592+$37
+org EntranceData_song+$37
 Music_GTower:
 db $16
 
@@ -1107,7 +1107,7 @@ db $00
 ; $30835A (0x18035A) fixes the Prize On The Eyes glitch
 ; 0x00 - don't fix
 ; this should be turned on for Door Rando and Boss Shuffle
-org $30835A
+org $B0835A
 FixPrizeOnTheEyes:
 db $00
 ;--------------------------------------------------------------------------------
@@ -1246,199 +1246,6 @@ db $04
 ;PC 0x50563: $C5, $76 ; move tile and turn into chest orig: $3F, $14
 ;PC 0x50599: $38; lock door into room orig: $00
 ;PC 0xE9A5: $10, $00, $58 ; borrow unused Ice Palace dungeon secret to fill chest orig: $7E, $00, $24
-;--------------------------------------------------------------------------------
-;00:Fighter's Sword (1) and Fighter's Shield (1)
-;01:Master Sword (2)
-;02:Tempered Sword (3)
-;03:Golden Sword (4)
-;04:Fighter's Shield (1)
-;05:Red Shield (2)
-;06:Mirror Shield (3)
-;07:FireRod
-;08:IceRod
-;09:Hammer
-;0A:HookShot
-;0B:Bow
-;0C:Boomerang (Alternate = 10 Arrows)
-;0D:Powder
-;0E:Bee
-;0F:Bombos
-
-;10:Ether
-;11:Quake
-;12:Lamp (Alternate = 5 Rupees)
-;13:Shovel
-;14:Flute
-;15:Red Cane
-;16:Bottle
-;17:Heart Piece
-;18:Blue Cane
-;19:Cape
-;1A:Mirror
-;1B:Power Glove (1)
-;1C:Titan Mitts (2)
-;1D:Book
-;1E:Flippers
-;1F:Moon Pearl
-
-;20:Crystal
-;21:Net
-;22:Blue Mail (2)
-;23:Red Mail (3)
-;24:Small Key
-;25:Compass
-;26:Heart Piece Completion Heart
-;27:Bomb
-;28:3 Bombs
-;29:Mushroom
-;2A:Red Boomerang (Alternate = 300 Rupees)
-;2B:Red Potion (with bottle)
-;2C:Green Potion (with bottle)
-;2D:Blue Potion (with bottle)
-;2E:Red Potion (without bottle)
-;2F:Green Potion (without bottle)
-
-;30:Blue Potion (without bottle)
-;31:10 Bombs
-;32:Big Key
-;33:Map
-;34:1 Rupee
-;35:5 Rupees
-;36:20 Rupees
-;37:Pendant 1
-;38:Pendant 2
-;39:Pendant 3
-;3A:Bow And Arrows (Different from "Bow", thrown into Fairy Fountains)
-;3B:Bow And Silver Arrows
-;3C:Bee
-;3D:Fairy
-;3E:Boss Heart
-;3F:Sanctuary Heart
-
-;40:100 Rupees
-;41:50 Rupees
-;42:Heart
-;43:Arrow
-;44:10 Arrows
-;45:Magic
-;46:300 Rupees
-;47:20 Rupees
-;48:Gold Bee
-;49:Fighter's Sword (1) (without shield, thrown into Fairy Fountains)
-;4A:Flute
-;4B:Boots
-
-;4C:Max Bombs
-;4D:Max Arrows
-;4E:Half Magic
-;4F:Quarter Magic
-
-;50:Master Sword (No Special Handling)
-
-;51:+5 Bombs
-;52:+10 Bombs
-;53:+5 Arrows
-;54:+10 Arrows
-
-;55:Programmable Item 1
-;56:Programmable Item 2
-;57:Programmable Item 3
-
-;58:Upgrade-Only Silver Arrows
-
-;59:Rupoor
-;5A:Null Item
-
-;5B:Red Clock
-;5C:Blue Clock
-;5D:Green Clock
-
-;5E:Progressive Sword
-;5F:Progressive Shield
-;60:Progressive Armor
-;61:Progressive Lifting Glove
-
-;62:RNG Pool Item (Single)
-;63:RNG Pool Item (Multi)
-
-;64:Progressive Bow
-;65:Progressive Bow
-
-;6A:Goal Item (Single/Triforce)
-;6B:Goal Item (Multi/Power Star)
-
-;6D:Server Request Item
-;6E:Server Request Item (Dungeon Drop)
-
-;DO NOT PLACE FREE DUNGEON ITEMS WITHIN THEIR OWN DUNGEONS - USE THE NORMAL VARIANTS
-
-;70 - Map of Light World
-;71 - Map of Dark World
-;72 - Map of Ganon's Tower
-;73 - Map of Turtle Rock
-;74 - Map of Thieves' Town
-;75 - Map of Tower of Hera
-;76 - Map of Ice Palace
-;77 - Map of Skull Woods
-;78 - Map of Misery Mire
-;79 - Map of Dark Palace
-;7A - Map of Swamp Palace
-;7B - Map of Agahnim's Tower
-;7C - Map of Desert Palace
-;7D - Map of Eastern Palace
-;7E - Map of Hyrule Castle
-;7F - Map of Sewers
-
-;80 - Compass of Light World
-;81 - Compass of Dark World
-;82 - Compass of Ganon's Tower
-;83 - Compass of Turtle Rock
-;84 - Compass of Thieves' Town
-;85 - Compass of Tower of Hera
-;86 - Compass of Ice Palace
-;87 - Compass of Skull Woods
-;88 - Compass of Misery Mire
-;89 - Compass of Dark Palace
-;8A - Compass of Swamp Palace
-;8B - Compass of Agahnim's Tower
-;8C - Compass of Desert Palace
-;8D - Compass of Eastern Palace
-;8E - Compass of Hyrule Castle
-;8F - Compass of Sewers
-
-;90 - Skull Key
-;91 - Reserved
-;92 - Big Key of Ganon's Tower
-;93 - Big Key of Turtle Rock
-;94 - Big Key of Thieves' Town
-;95 - Big Key of Tower of Hera
-;96 - Big Key of Ice Palace
-;97 - Big Key of Skull Woods
-;98 - Big Key of Misery Mire
-;99 - Big Key of Dark Palace
-;9A - Big Key of Swamp Palace
-;9B - Big Key of Agahnim's Tower
-;9C - Big Key of Desert Palace
-;9D - Big Key of Eastern Palace
-;9E - Big Key of Hyrule Castle
-;9F - Big Key of Sewers
-
-;A0 - Small Key of Sewers
-;A1 - Small Key of Hyrule Castle
-;A2 - Small Key of Eastern Palace
-;A3 - Small Key of Desert Palace
-;A4 - Small Key of Agahnim's Tower
-;A5 - Small Key of Swamp Palace
-;A6 - Small Key of Dark Palace
-;A7 - Small Key of Misery Mire
-;A8 - Small Key of Skull Woods
-;A9 - Small Key of Ice Palace
-;AA - Small Key of Tower of Hera
-;AB - Small Key of Thieves' Town
-;AC - Small Key of Turtle Rock
-;AD - Small Key of Ganon's Tower
-;AE - Reserved
-;AF - Generic Small Key
 ;================================================================================
 ;;Residual Portal
 ;org $8283E0 ; PC 0x103E0 (Bank02.asm:816) (BNE)
@@ -2734,12 +2541,8 @@ db #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00,
 db #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00
 
 ;--------------------------------------------------------------------------------
-; 0x30EE80 - 30EFFE (unused)
+; 0x30EE80 - 30EFDF (unused)
 ;--------------------------------------------------------------------------------
-org $B0EFFF ; PC 0x186FFF
-BallNChainDungeon: ; Dungeon ID where ball n chain guard is located. Write
-db $02             ; $FF to count ball and chain item for collection stats.
-
 org $B0EFE0 ; PC 0x186FE0-0x186FEF
 CrystalPendantFlags_3:
     db $00 ; Sewers
@@ -2757,6 +2560,12 @@ CrystalPendantFlags_3:
 	db $07 ; Turtle Rock
 	db $00 ; Ganons Tower
 ; 00 - No Prize. 01 - 07 Crystal Number 08 - Green Pendant 09 - Blue Pendant, 0A - Red Pendant
+;--------------------------------------------------------------------------------
+; 0x30EFF0 - 30EFFE (unused)
+;--------------------------------------------------------------------------------
+org $B0EFFF ; PC 0x186FFF
+BallNChainDungeon: ; Dungeon ID where ball n chain guard is located. Write
+db $02             ; $FF to count ball and chain item for collection stats.
 
 ;--------------------------------------------------------------------------------
 ; 0x187000 - 18700F (unused)

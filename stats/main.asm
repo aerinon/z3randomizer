@@ -1,11 +1,5 @@
 lorom
 
-!ADD = "CLC : ADC"
-!SUB = "SEC : SBC"
-!BLT = "BCC"
-!BGE = "BCS"
-
-
 ; Custom addresses. Most are arbitrary. Feel free to make sure they're okay or moving them elsewhere within ZP
 CreditsPtr = $7C   ; 3 bytes
 Temp = $B3         ; 2 bytes
@@ -103,27 +97,27 @@ HexToDecStats:
 	PHA
 	PHA
 		LDA.w #$0000
-		STA.l $7F5003 : STA.l $7F5005 : STA.l $7F5006 ; clear digit storage
+		STA.l HexToDecDigit1 : STA.l HexToDecDigit3 : STA.l HexToDecDigit4 ; clear digit storage
 	PLA
 	-
 	CMP.w #10000 : !BLT +
-	PHA : SEP #$20 : LDA.l $7F5003 : INC : STA.l $7F5003 : REP #$20 : PLA
+	PHA : SEP #$20 : LDA.l HexToDecDigit1 : INC : STA.l HexToDecDigit1 : REP #$20 : PLA
 	!SUB.w #10000 : BRA -
 	+ -
 	CMP.w #1000 : !BLT +
-	PHA : SEP #$20 : LDA.l $7F5004 : INC : STA.l $7F5004 : REP #$20 : PLA
+	PHA : SEP #$20 : LDA.l HexToDecDigit2 : INC : STA.l HexToDecDigit2 : REP #$20 : PLA
 	!SUB.w #1000 : BRA -
 	+ -
 	CMP.w #100 : !BLT +
-	PHA : SEP #$20 : LDA.l $7F5005 : INC : STA.l $7F5005 : REP #$20 : PLA
+	PHA : SEP #$20 : LDA.l HexToDecDigit3 : INC : STA.l HexToDecDigit3 : REP #$20 : PLA
 	!SUB.w #100 : BRA -
 	+ -
 	CMP.w #10 : !BLT +
-	PHA : SEP #$20 : LDA.l $7F5006 : INC : STA.l $7F5006 : REP #$20 : PLA
+	PHA : SEP #$20 : LDA.l HexToDecDigit4 : INC : STA.l HexToDecDigit4 : REP #$20 : PLA
 	!SUB.w #10 : BRA -
 	+ -
 	CMP.w #1 : !BLT +
-	PHA : SEP #$20 : LDA.l $7F5007 : INC : STA.l $7F5007 : REP #$20 : PLA
+	PHA : SEP #$20 : LDA.l HexToDecDigit5 : INC : STA.l HexToDecDigit5 : REP #$20 : PLA
 	!SUB.w #1 : BRA -
 	+ 
 	PLA
@@ -141,11 +135,11 @@ LastHexDigit:
 	BNE +
 	; Upper half
 	PLA
-	ADC #$3D40
+	ADC.w #$3D40
 	RTS
 +	; Lower half
 	PLA
-	ADC #$3D50
+	ADC.w #$3D50
 	RTS
 
 FindLine:
@@ -153,7 +147,7 @@ FindLine:
 
 -	LDA.w CreditsStats,y
 	STZ.b StatsBottom
-	CMP #$FFFF
+	CMP.w #$FFFF
 	BEQ .noLine
 
 	XBA
@@ -295,7 +289,7 @@ RenderCreditsStatCounter:
 	PLX
 	STZ.b RemoveZero
 
-	LDA.l $7F5004
+	LDA.l HexToDecDigit2
 	AND.w #$00FF
 	CMP.b RemoveZero
 	BNE +
@@ -306,7 +300,7 @@ RenderCreditsStatCounter:
 	ADC.b Temp
 ++	%StripeTile()
 
-	LDA.l $7F5005
+	LDA.l HexToDecDigit3
 	AND.w #$00FF
 	CMP.b RemoveZero
 	BNE +
@@ -317,7 +311,7 @@ RenderCreditsStatCounter:
 	ADC.b Temp
 ++	%StripeTile()
 
-	LDA.l $7F5006
+	LDA.l HexToDecDigit4
 	AND.w #$00FF
 	CMP.b RemoveZero
 	BNE +
@@ -328,7 +322,7 @@ RenderCreditsStatCounter:
 	ADC.b Temp
 ++	%StripeTile()
 
-	LDA.l $7F5007
+	LDA.l HexToDecDigit5
 	AND.w #$00FF
 	CLC
 	ADC.b Temp
@@ -404,13 +398,13 @@ RenderCreditsStatCounter:
 	LDA.b Hours
 	JSL HexToDecStats
 
-	LDA.l $7F5006
+	LDA.l HexToDecDigit4
 	AND.w #$00FF
 	CLC
 	ADC.b Temp
 	%StripeTile()
 
-	LDA.l $7F5007
+	LDA.l HexToDecDigit5
 	AND.w #$00FF
 	CLC
 	ADC.b Temp
@@ -423,13 +417,13 @@ RenderCreditsStatCounter:
 
 	LDA.b Minutes
 	JSL HexToDecStats
-	LDA.l $7F5006
+	LDA.l HexToDecDigit4
 	AND.w #$00FF
 	CLC
 	ADC.b Temp
 	%StripeTile()
 
-	LDA.l $7F5007
+	LDA.l HexToDecDigit5
 	AND.w #$00FF
 	CLC
 	ADC.b Temp
@@ -442,13 +436,13 @@ RenderCreditsStatCounter:
 
 	LDA.b Seconds
 	JSL HexToDecStats
-	LDA.l $7F5006
+	LDA.l HexToDecDigit4
 	AND.w #$00FF
 	CLC
 	ADC.b Temp
 	%StripeTile()
 
-	LDA.l $7F5007
+	LDA.l HexToDecDigit5
 	AND.w #$00FF
 	CLC
 	ADC.b Temp
@@ -461,13 +455,13 @@ RenderCreditsStatCounter:
 
 	LDA.b ValueLow
 	JSL HexToDecStats
-	LDA.l $7F5006
+	LDA.l HexToDecDigit4
 	AND.w #$00FF
 	CLC
 	ADC.b Temp
 	%StripeTile()
 
-	LDA.l $7F5007
+	LDA.l HexToDecDigit5
 	AND.w #$00FF
 	CLC
 	ADC.b Temp
@@ -504,7 +498,7 @@ RenderLineNumber:
 	RTS
 
 LoadCreditsTiles:
-        JSL.l CopyFontToVRAM ; What we wrote over
+        JSL CopyFontToVRAM ; What we wrote over
 
         REP #$10
         LDA.b #$80 : STA.w VMAIN
@@ -516,20 +510,20 @@ LoadCreditsTiles:
         LDA.b #FileSelectNewGraphics>>16 : STA.w A1B0
         LDX.w #FileSelectNewGraphics : STX.w A1T0L
         LDX.w #$0C00 : STX.w DAS0L
-        LDA.b #$01 : STA.w MDMAEN
+        LDA.b #$01 : STA.w DMAENABLE
 
         ; Small characters A-Z
         LDX.w #$7F00 : STX.w VMADDL
         LDA.b #SmallCharacters>>16 : STA.w A1B0
         LDX.w #SmallCharacters : STX.w A1T0L
         LDX.w #$0200 : STX.w DAS0L
-        LDA.b #$01 : STA.w MDMAEN
+        LDA.b #$01 : STA.w DMAENABLE
 
         SEP #$10
 RTL
 
 LoadOverworldCreditsTiles:
-        JSL.l CopyFontToVRAM ; What we wrote over
+        JSL CopyFontToVRAM ; What we wrote over
         REP #$10
 
         ; Small characters A-Z
@@ -540,7 +534,7 @@ LoadOverworldCreditsTiles:
         LDX.w #SmallCharacters : STX.w A1T0L
         LDX.w #$0200 : STX.w DAS0L
         LDX.w #$7F00 : STX.w VMADDL
-        LDA.b #$01 : STA.w MDMAEN
+        LDA.b #$01 : STA.w DMAENABLE
 
         SEP #$10
 RTL
@@ -560,7 +554,8 @@ NearEnding:
 	REP #$10
 	JSL AltBufferTable_credits
 	JSR DrawEndingItems
-	JML.l $80EC03 ; PaletteFilter_InitTheEndSprite
+	JML PaletteFilter_TheEndSprite
+
 
 EndingItems:
 	; This function is not strictly needed, simply updating the tracker

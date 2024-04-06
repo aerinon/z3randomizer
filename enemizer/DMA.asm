@@ -17,56 +17,56 @@
 macro DMA_VRAM(VRAM_HIGH,VRAM_LOW,SRC_BANK,SRC_HIGH,SRC_LOW,LENGTH_HIGH,LENGTH_LOW)
     PHA
         ; --- preserve DMA registers ----------------------------------------------------
-        LDA !DMA0_REG           : PHA
-        LDA !DMA0_DEST_REG      : PHA
-        LDA !DMA0_SRC_LOW_REG   : PHA
-        LDA !DMA0_SRC_HIGH_REG  : PHA
-        LDA !DMA0_SRC_BANK_REG  : PHA
-        LDA !DMA0_SIZE_LOW_REG  : PHA
-        LDA !DMA0_SIZE_HIGH_REG : PHA
+        LDA.w !DMA0_REG           : PHA
+        LDA.w !DMA0_DEST_REG      : PHA
+        LDA.w !DMA0_SRC_LOW_REG   : PHA
+        LDA.w !DMA0_SRC_HIGH_REG  : PHA
+        LDA.w !DMA0_SRC_BANK_REG  : PHA
+        LDA.w !DMA0_SIZE_LOW_REG  : PHA
+        LDA.w !DMA0_SIZE_HIGH_REG : PHA
 		; -------------------------------------------------------------------------------
 
-		;LDA.b #$80 : STA !DISP_REG ; force vblank
-		LDA #$80   : STA !VMAIN_REG
+		;LDA.b #$80 : STA.w !DISP_REG ; force vblank
+		LDA.b #$80   : STA.w !VMAIN_REG
 
         ; write to vram at $<VRAM_HIGH><VRAM_LOW>
-		LDA <VRAM_LOW>  : STA !VRAM_LOW_REG  ; Set VRAM destination address low byte
-		LDA <VRAM_HIGH> : STA !VRAM_HIGH_REG ; Set VRAM destination address high byte
+		LDA.b <VRAM_LOW>  : STA.w !VRAM_LOW_REG  ; Set VRAM destination address low byte
+		LDA.b <VRAM_HIGH> : STA.w !VRAM_HIGH_REG ; Set VRAM destination address high byte
 		
         ; Set DMA0 to write a word at a time.
-		LDA #$01
-		STA !DMA0_REG
+		LDA.b #$01
+		STA.w !DMA0_REG
 
         ; Write to $2118 & $2119 - VRAM Data Write Registers (Low) & VRAM Data Write Registers (High)
         ; setting word write mode on DMA0_REG causes a write to $2118 and then $2119
         ; $21xx is assumed
-		LDA #$18
-		STA !DMA0_DEST_REG
+		LDA.b !VRAM_WRITE_REG
+		STA.w !DMA0_DEST_REG
 		
 		; Read from $<SRC_BANK>:<SRC_HIGH><SRC_LOW>.
 		LDA.b <SRC_LOW>
-		STA !DMA0_SRC_LOW_REG           ; set src address low byte
+		STA.w !DMA0_SRC_LOW_REG           ; set src address low byte
 		LDA.b <SRC_HIGH>
-		STA !DMA0_SRC_HIGH_REG          ; set src address high byte
+		STA.w !DMA0_SRC_HIGH_REG          ; set src address high byte
 		LDA.b <SRC_BANK>
-		STA !DMA0_SRC_BANK_REG          ; set src address bank byte
+		STA.w !DMA0_SRC_BANK_REG          ; set src address bank byte
 
 		; total bytes to copy: #$1000 bytes.
-		LDA <LENGTH_LOW>  : STA $4305   ; length low byte
-		LDA <LENGTH_HIGH> : STA $4306   ; length high byte
+		LDA.b <LENGTH_LOW>  : STA.w !DMA0_SIZE_LOW_REG   ; length low byte
+		LDA.b <LENGTH_HIGH> : STA.w !DMA0_SIZE_HIGH_REG   ; length high byte
 
         ; start DMA on channel 0
-		LDA #$01                        ; channel select bitmask
-		STA !DMA_ENABLE_REG
+		LDA.b #$01                        ; channel select bitmask
+		STA.w !DMA_ENABLE_REG
 		
 		; --- restore DMA registers -----------------------------------------------------
-        PLA : STA !DMA0_SIZE_HIGH_REG
-        PLA : STA !DMA0_SIZE_LOW_REG
-        PLA : STA !DMA0_SRC_BANK_REG
-        PLA : STA !DMA0_SRC_HIGH_REG
-        PLA : STA !DMA0_SRC_LOW_REG
-        PLA : STA !DMA0_DEST_REG
-        PLA : STA !DMA0_REG
+        PLA : STA.w !DMA0_SIZE_HIGH_REG
+        PLA : STA.w !DMA0_SIZE_LOW_REG
+        PLA : STA.w !DMA0_SRC_BANK_REG
+        PLA : STA.w !DMA0_SRC_HIGH_REG
+        PLA : STA.w !DMA0_SRC_LOW_REG
+        PLA : STA.w !DMA0_DEST_REG
+        PLA : STA.w !DMA0_REG
 		; -------------------------------------------------------------------------------
     PLA
 endmacro

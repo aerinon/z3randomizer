@@ -9,12 +9,12 @@ LockAgahnimDoors:
 		LDA.w #$0000 : RTL
 	+ : CMP.w #$0001 : BNE +
 		LDA.l ProgressIndicator : AND.w #$000F : CMP.w #$0002 : !BGE .unlock ; if we rescued zelda, skip
-			JSR.w LockAgahnimDoorsCore : RTL
+			JSR LockAgahnimDoorsCore : RTL
 	+ : CMP.w #$0002 : BNE +
-		JSR.w LockAgahnimDoorsCore : BEQ .unlock
+		JSR LockAgahnimDoorsCore : BEQ .unlock
 		PHX : PHY
 		SEP #$30
-		JSL.l CheckTowerOpen
+		JSL CheckTowerOpen
 		REP #$30
 		PLY : PLX
 		!BGE .crystalOrUnlock
@@ -29,7 +29,7 @@ LockAgahnimDoors:
 			LDA.w #$0001 : RTL ;Keep the door locked
 		++
 		SEP #$30
-		JSL $899B6F ;Add tower break seal
+		JSL AncillaAdd_GTCutscene ;Add tower break seal
 		REP #$30
 		LDA.w #$0001 ;Prevent door from opening that frame otherwise it glitchy
 		RTL
@@ -65,14 +65,14 @@ RTS
 SmithDoorCheck:
 	LDA.l SmithTravelsFreely : AND.w #$00FF : BEQ .orig
 		;If SmithTravelsFreely is set Frog/Smith can enter multi-entrance overworld doors
-		JML.l Overworld_Entrance_BRANCH_RHO
+		JML Overworld_Entrance_BRANCH_RHO
 
 	.orig ; The rest is equivlent to what we overwrote
 	CPX.w #$0076 : !BGE +
-		JML.l Overworld_Entrance_BRANCH_LAMBDA
+		JML Overworld_Entrance_BRANCH_LAMBDA
 	+
 
-JML.l Overworld_Entrance_BRANCH_RHO
+JML Overworld_Entrance_BRANCH_RHO
 ;--------------------------------------------------------------------------------
 AllowStartFromSingleEntranceCave:
 ; 16 Bit A, 16 bit XY
@@ -80,15 +80,14 @@ AllowStartFromSingleEntranceCave:
 	LDA.l StartingEntrance : AND.w #$00FF ; What we wrote over
 	PHA
 		TAX
-		LDA.l StartingAreaExitOffset, X
-                AND.w #$00FF
+		LDA.l StartingAreaExitOffset, X : AND.w #$00FF
 
 		BNE +
 			JMP .done
 		+
 		DEC
 		STA.b Scrap00
-		ASL #2 : !ADD Scrap00 : ASL #2 ; mult by 20
+		ASL #2 : !ADD.l Scrap00 : ASL #2 ; mult by 20
 		TAX
 
 		LDA.w #$0016 : STA.l EN_MAINDESQ ; Cache the main screen designation
@@ -126,7 +125,7 @@ AllowStartFromSingleEntranceCave:
 		LDA.l StartingEntrance : TAX
 		LDA.l StartingAreaOverworldDoor, X : STA.l PreviousOverworldDoor ;Load overworld door
 		REP #$20 ; reset 16-bit accumulator
-                JSL.l CacheDoorFrameData
+		JSL CacheDoorFrameData
 
 		.done
 	PLA
@@ -138,15 +137,15 @@ AllowStartFromExit:
 	LDA.l ShouldStartatExit, X : BNE .doStart
 
 	LDA.l StartingEntrance ; what we wrote over
-JML.l AllowStartFromExitReturn
+JML AllowStartFromExitReturn
 
 	.doStart
 
-	LDA.l $828481, X ;Module_LocationMenu_starting_points
+	LDA.l Module1B_SpawnSelect_spawns, X
 	ASL : TAX
 
-	LDA.l $82D8D2, X : STA.b RoomIndex
-	LDA.l $82D8D3, X : STA.b RoomIndex+1
+	LDA.l SpawnPointData_room_id, X : STA.b RoomIndex
+	LDA.l SpawnPointData_room_id+1, X : STA.b RoomIndex+1
 
 	; Go to pre-overworld mode
 	LDA.b #$08 : STA.b GameMode
@@ -158,7 +157,7 @@ JML.l AllowStartFromExitReturn
         INC.w UpdateHUDFlag
 
 	JSL Equipment_SearchForEquippedItemLong
-	JSL HUD_RebuildLong2
+	JSL HUD_RebuildIndoor_Palace
 	JSL Equipment_UpdateEquippedItemLong
 RTL
 
@@ -166,9 +165,9 @@ RTL
 CheckHole:
 	LDX.w #$0024
 	.nextHoleClassic
-		LDA.b Scrap00   : CMP.l $9BB800, X
+		LDA.b Scrap00   : CMP.l Overworld_GetPitDestination_map16, X
 		BNE .wrongMap16Classic
-		LDA.b OverworldIndex : CMP.l $9BB826, X
+		LDA.b OverworldIndex : CMP.l Overworld_GetPitDestination_screen, X
 		BEQ .matchedHoleClassic
 	.wrongMap16Classic
 		DEX #2 : BPL .nextHoleClassic
@@ -198,11 +197,11 @@ PreventEnterOnBonk:
 	LDA.b OverworldIndex : AND.w #$0040 : CMP.b WorldCache : BEQ .done ; Are we bonking, or doing the superbunny glitch?
 
 		; If in inverted, are in mirror mode, and are bonking then do not enter
-		JML.l PreventEnterOnBonk_BRANCH_IX
+		JML PreventEnterOnBonk_BRANCH_IX
 
 	.done
 	LDX.w #$0102 ; rest of what we wrote over
-JML.l PreventEnterOnBonk_return
+JML PreventEnterOnBonk_return
 ;--------------------------------------------------------------------------------
 TurtleRockEntranceFix:
 	LDA.l TurtleRockAutoOpenFix : BEQ .done

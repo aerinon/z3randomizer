@@ -1,6 +1,6 @@
 GoalItemGanonCheck:
 	LDA.w SpriteTypeTable, X : CMP.b #$D6 : BNE .success ; skip if not ganon
-		JSL.l CheckGanonVulnerability
+		JSL CheckGanonVulnerability
 		BCS .success
 
 		.fail
@@ -128,30 +128,30 @@ GTCutscene_ConditionalAnimateCrystals:
 	PLX : BCC .skip_crystal
 
 .draw_crystal
-	LDA.b $11 : BEQ + : JML.l GTCutscene_AnimateCrystals_NoRotate ; what we wrote over
-	+ JML.l GTCutscene_AnimateCrystals_NextCrystal+4
+	LDA.b GameSubMode : BEQ + : JML GTCutscene_AnimateCrystals_NoRotate ; what we wrote over
+	+ JML GTCutscene_AnimateCrystals_NextCrystal+4
 
 .skip_crystal
-	JML.l GTCutscene_DrawSingleCrystal-3
+	JML GTCutscene_DrawSingleCrystal-3
 ;--------------------------------------------------------------------------------
 GTCutscene_ConditionalDrawSingleCrystal:
-	LDA.w $06FA : BEQ .draw_crystal : STZ.w $06FA
+	LDA.w RandoOverworldTargetEdge : BEQ .draw_crystal : STZ.w RandoOverworldTargetEdge
 	JSR GTCutscene_NumberOfCrystals : TAX
 	LDA.l GTCutscene_CrystalMasks,X : AND.b #$80 : BEQ .skip_crystal
 .draw_crystal
-	LDX.w $0FA0 : PHY ; what we wrote over
-	JML.l GTCutscene_DrawSingleCrystal+4
+	LDX.w CurrentSpriteSlot : PHY ; what we wrote over
+	JML GTCutscene_DrawSingleCrystal+4
 .skip_crystal
-	JML.l GTCutscene_DrawSingleCrystal_SkipCrystal
+	JML GTCutscene_DrawSingleCrystal_SkipCrystal
 ;--------------------------------------------------------------------------------
 GTCutscene_AnimateCrystals_Prep:
-	BEQ + : JSL.l GTCutscene_SparkleALot : + ; thing we wrote over
+	BEQ + : JSL GTCutscene_SparkleALot : + ; thing we wrote over
 	JSR GTCutscene_NumberOfCrystals : BNE +
-		JML.l GTCutscene_DrawSingleCrystal_SkipSparkle
+		JML GTCutscene_DrawSingleCrystal_SkipSparkle
 	+ CMP.b #$01 : BNE +
-		JML.l GTCutscene_DrawSingleCrystal
-	+ INC.w $06FA ; some free ram OWR also uses
-	JML.l GTCutscene_AnimateCrystals_NextCrystal-2
+		JML GTCutscene_DrawSingleCrystal
+	+ INC.w RandoOverworldTargetEdge ; some free ram OWR also uses
+	JML GTCutscene_AnimateCrystals_NextCrystal-2
 ;--------------------------------------------------------------------------------
 GTCutscene_ActivateSparkle_SelectCrystal:
 	JSR GTCutscene_NumberOfCrystals : BNE +
@@ -189,7 +189,7 @@ RTL
 ;--------------------------------------------------------------------------------
 CheckTowerOpen:
         LDA.l GanonsTowerOpenMode : ASL : TAX
-        JSR.w (.tower_open_modes,X)
+        JSR (.tower_open_modes,X)
 RTL
         .tower_open_modes
         dw .vanilla
@@ -279,7 +279,7 @@ CheckPedestalPull:
 ; Out: c - Successful ped pull if set, do nothing if unset.
         PHX
         LDA.l PedCheckMode : ASL : TAX
-        JSR.w (.pedestal_modes,X)
+        JSR (.pedestal_modes,X)
         PLX
 RTL
 

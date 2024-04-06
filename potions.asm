@@ -14,7 +14,7 @@ RefillHealth:
 	LDA.l PotionHealthRefill : CMP.b #$A0 : !BGE .done
 		LDA.l BusyHealth : BNE ++
 			LDA.l PotionHealthRefill ; load refill amount
-			!ADD CurrentHealth ; add to current health
+			!ADD.l CurrentHealth ; add to current health
 			CMP.l MaximumHealth : !BLT +++ : LDA.l MaximumHealth : +++
 			STA.l BusyHealth
 		++
@@ -60,7 +60,7 @@ RefillMagic:
 	LDA.l PotionMagicRefill : CMP.b #$80 : !BGE .done
 		LDA.l BusyMagic : BNE ++
 			LDA.l PotionMagicRefill ; load refill amount
-			!ADD CurrentMagic ; add to current magic
+			!ADD.l CurrentMagic ; add to current magic
 			CMP.b #$80 : !BLT +++ : LDA.b #$80 : +++
 			STA.l BusyMagic
 		++

@@ -66,8 +66,8 @@ org $00FFEA : dw NMIBounce
 org $00FFEE : dw IRQBounce
 
 org $8098AB
-NMIBounce: JML.l $8080C9
-IRQBounce: JML.l $8082D8
+NMIBounce: JML Interrupt_NMI
+IRQBounce: JML Interrupt_IRQ
 warnpc $8098C0
 
 ;================================================================================
@@ -221,7 +221,7 @@ LDA.w #$2000 ; Load file select screen graphics to VRAM word addres 0x2000 inste
 ;--------------------------------------------------------------------------------
 org $80E568 : LDX.w #$0EFF ; Load full decompressed character set into VRAM
 ;--------------------------------------------------------------------------------
-org $80E581 : JSL.l LoadFileSelectVanillaItems : BRA + : NOP #13 : +
+org $80E581 : JSL LoadFileSelectVanillaItems : BRA + : NOP #13 : +
 ;--------------------------------------------------------------------------------
 org $80833A ; <- 0033A - Bank00.asm : 481 (LDA.w #$007F)
 LDA.w #$0180 ; change which character is used as the blank character for the select screen
@@ -245,7 +245,7 @@ db $3D
 org $8CD6BD ; <- Y position table for Death Counts
 db $51
 ;--------------------------------------------------------------------------------
-org $8CD55F : JSL.l CheckHeartPaletteFileSelect : NOP #2
+org $8CD55F : JSL CheckHeartPaletteFileSelect : NOP #2
 
 ;================================================================================
 ; Name Entry Screen
@@ -447,7 +447,7 @@ AllowStartFromExitReturn:
 org $9BC2A7 ; <- DC2A7 - Bank1B.asm : 1143 (Overworld_CreatePyramidHole:)
 JSL Overworld_CreatePyramidHoleModified : RTL
 C9DE_LONG:
-JSR.w $1BC9DE : RTL ; surprisingly same address as US
+JSR Overworld_AlterTileHardcore : RTL ; surprisingly same address as US
 ;--------------------------------------------------------------------------------
 org $87FF5F ; <- 3ff5f - Bank0E.asm : 5252 (LDA.w #$0E3F : STA $23BC)
 JSL Draw_PyramidOverlay : RTS
@@ -469,7 +469,7 @@ org $84E7AE ; <- bank0E.asm : 4230 (LDA $7EF287 : AND.w #$0020)
 JSL TurtleRockPegSolved
 
 org $84E7B9 ; <- bank0E.asm : 4237 (LDX $04C8)
-JMP.w TurtleRockTrollPegs
+JMP TurtleRockTrollPegs
 TurtleRockPegCheck:
 
 org $84E7C9
@@ -488,11 +488,11 @@ JSL GetRandomInt
 LDA.l PegProbability : BEQ .vanilla : CMP.l $7E0FA1
 REP #$20 : !BGE .succeed
 .fail
-JMP.w TurtleRockPegFail
+JMP TurtleRockPegFail
 .succeed
-JMP.w TurtleRockPegSuccess
+JMP TurtleRockPegSuccess
 .vanilla
-REP #$20 : JMP.w TurtleRockPegCheck
+REP #$20 : JMP TurtleRockPegCheck
 ;--------------------------------------------------------------------------------
 org $9BBD05 ; <- bank1B.asm : 261 (TYA : STA $00) ; hook starts at the STA
 JML PreventEnterOnBonk : NOP
@@ -504,23 +504,21 @@ PreventEnterOnBonk_BRANCH_IX:
 ;================================================================================
 ; Crystals Mode
 ;--------------------------------------------------------------------------------
-org $899B6D
-AncillaAdd_GTCutscene_Exit:
 org $899B7F ; <- ancilla_init.asm : 4136 (LDA $7EF37A : AND.b #$7F : CMP.b #$7F)
-JSL CheckTowerOpen : BCC AncillaAdd_GTCutscene_Exit
+JSL CheckTowerOpen : BCC AncillaAdd_GTCutscene-2
 ;--------------------------------------------------------------------------------
 org $88CE0C ; <- 44E0C - ancilla_break_tower_seal.asm : 168 (BEQ #$03 : JSR GTCutscene_SparkleALot : LDX.b #$06)
-JML.l GTCutscene_AnimateCrystals_Prep : NOP
+JML GTCutscene_AnimateCrystals_Prep : NOP
 LDX.b #$05
 GTCutscene_AnimateCrystals_NextCrystal:
-JML.l GTCutscene_ConditionalAnimateCrystals
+JML GTCutscene_ConditionalAnimateCrystals
 ;--------------------------------------------------------------------------------
 org $88CE93
 GTCutscene_DrawSingleCrystal:
-JML.l GTCutscene_ConditionalDrawSingleCrystal
+JML GTCutscene_ConditionalDrawSingleCrystal
 ;--------------------------------------------------------------------------------
 org $88CF19 ; <- 44F19 - ancilla_break_tower_seal.asm : 336 (TXA : AND.b #$07 : TAX)
-JSL.l GTCutscene_ActivateSparkle_SelectCrystal
+JSL GTCutscene_ActivateSparkle_SelectCrystal
 ;--------------------------------------------------------------------------------
 org $88CFC9 ; <- 44FC9 - ancilla_break_tower_seal.asm : 414 (RTS)
 RTL
@@ -561,7 +559,7 @@ org $86F2EA ; <- 372EA - Bank06.asm : 5791 (LDA $0E20, X : CMP.b #$D6 : BCS .no_
 JSL CheckGanonHammerDamage : NOP
 ;--------------------------------------------------------------------------------
 org $858922
-JSL.l CheckPedestalPull : BCC MasterSword_InPedestal_exit
+JSL CheckPedestalPull : BCC MasterSword_InPedestal_exit
 
 ;================================================================================
 ; Stat Hooks
@@ -826,11 +824,6 @@ db $B1, $C6, $F9, $C9, $C6, $F9 ; data insert - 2 chests, fat fairy room
 org $81E97E
 dw $0116 : db $08
 dw $0116 : db $25
-
-;--------------------------------------------------------------------------------
-PyramidFairy_BRANCH_IOTA = $86C936
-PyramidFairy_BRANCH_GAMMA = $86C948
-
 ;--------------------------------------------------------------------------------
 org $9EE16E ; <- F616E - sprite_bomb_shop_entity.asm : 73
 NOP #8 ; fix bomb shop dialog for dwarfless big bomb
@@ -934,7 +927,7 @@ org $898769 ; 48769 - ancilla_init.asm:1005 (LDA .item_graphics_indices, Y)
 LDA.w ItemReceipts_graphics, Y
 
 org $898811
-JSL.l SetItemRiseTimer
+JSL SetItemRiseTimer
 
 org $89884D ; 4884D - ancilla_init.asm:1137 (LDA $836C, Y)
 LDA.w ItemReceipts_offset_y, Y
@@ -953,7 +946,7 @@ org $88C6C8 ; 446C8 - ancilla_receive_item.asm:538 (LDA AddReceiveItem.propertie
 JSL CheckReceivedItemPropertiesBeforeLoad
 
 org $88C6DE ; 446DE - ancilla_receive_item.asm:550 (LDA .wide_item_flag, X)
-JSL.l ItemReceiptWidthCheck
+JSL ItemReceiptWidthCheck
 
 org $88C6F9 ; 446F9 - ancilla_receive_item.asm:570 (LDA AddReceiveItem.properties, X)
 JSL CheckReceivedItemPropertiesBeforeLoad
@@ -1022,29 +1015,29 @@ Overworld_Entrance_BRANCH_EPSILON: ; go here to lock doors
 ;--------------------------------------------------------------------------------
 ; Dungeon Drops
 ;--------------------------------------------------------------------------------
-org $81C50D : JSL.l CheckDungeonWorld
-org $81C517 : JSL.l CheckDungeonCompletion
-org $81C523 : JSL.l CheckDungeonCompletion
-org $81C710 : JSL.l CheckSpawnPrize
+org $81C50D : JSL CheckDungeonWorld
+org $81C517 : JSL CheckDungeonCompletion
+org $81C523 : JSL CheckDungeonCompletion
+org $81C710 : JSL CheckSpawnPrize
 BCS RoomTag_GetHeartForPrize_spawn_prize : BRA RoomTag_GetHeartForPrize_delete_tag
-org $81C742 : JSL.l SpawnDungeonPrize
-org $8799EA : JML.l SetItemPose
-org $88C415 : JSL.l PendantMusicCheck
+org $81C742 : JSL SpawnDungeonPrize
+org $8799EA : JML SetItemPose
+org $88C415 : JSL PendantMusicCheck
 BCS Ancilla22_ItemReceipt_is_pendant : BRA Ancilla22_ItemReceipt_wait_for_music
-;org $88C452 : JSL.l MaybeKeepLootID : NOP #2 DR overwrote hook see RetrieveBunnyState
-org $88C61D : JSL.l AnimatePrizeCutscene : NOP
+;org $88C452 : JSL MaybeKeepLootID : NOP #2 DR overwrote hook see RetrieveBunnyState
+org $88C61D : JSL AnimatePrizeCutscene : NOP
 org $88C622 : BCC ItemReceipt_Animate_continue
-org $88C6BA : JSL.l CheckPoseItemCoordinates
-org $88CAD6 : JSL.l HandleDropSFX : NOP #2
+org $88C6BA : JSL CheckPoseItemCoordinates
+org $88CAD6 : JSL HandleDropSFX : NOP #2
 org $88CADC : BCC Ancilla29_MilestoneItemReceipt_skip_crystal_sfx
-org $88CAE9 : JSL.l PrepPrizeTile
-org $88CB23 : JSL.l PrizeDropSparkle : BCC Ancilla29_MilestoneItemReceipt_no_sparkle : NOP #2
-org $88CB97 : JSL.l PrepPrizeOAMCoordinates : BRA + : NOP #$12 : +
-org $88CBFF : JSL.l PrepPrizeShadow
-org $88CC6C : JSL.l HandleCrystalsField
-org $88CCA6 : JSL.l PrepPrizeOAMCoordinates : NOP
-org $8985FA : JSL.l SetCutsceneFlag : NOP #3 : BCC AncillaAdd_ItemReceipt_not_crystal
-org $8988B2 : JSL.l SetPrizeCoords : NOP
+org $88CAE9 : JSL PrepPrizeTile
+org $88CB23 : JSL PrizeDropSparkle : BCC Ancilla29_MilestoneItemReceipt_no_sparkle : NOP #2
+org $88CB97 : JSL PrepPrizeOAMCoordinates : BRA + : NOP #$12 : +
+org $88CBFF : JSL PrepPrizeShadow
+org $88CC6C : JSL HandleCrystalsField
+org $88CCA6 : JSL PrepPrizeOAMCoordinates : NOP
+org $8985FA : JSL SetCutsceneFlag : NOP #3 : BCC AddReceivedItem_notCrystal
+org $8988B2 : JSL SetPrizeCoords : NOP
 
 
 ;================================================================================
@@ -1114,9 +1107,9 @@ JSL ItemCheck_Library
 org $8DDF38 ; <- 6DF38 - equipment.asm : 480
 JSL ProcessMenuButtons
 BCC _equipment_497
-JMP.w _equipment_544
+JMP _equipment_544
 ResetEquipment:
-JSR.w RestoreNormalMenu ; (short)
+JSR RestoreNormalMenu ; (short)
 RTL
 NOP #3
 
@@ -1127,9 +1120,9 @@ org $8DDF88 ; <- 6DF88 - equipment.asm : 544
 _equipment_544:
 ;--------------------------------------------------------------------------------
 org $8DEB98 ; <- 6EB98 - equipment.asm : 1803
-LDA.w #$3C60 : STA $FFBE, Y
-ORA.w #$8000 : STA $007E, Y
-ORA.w #$4000 : STA $0084, Y
+LDA.w #$3C60 : STA.w $FFBE, Y
+ORA.w #$8000 : STA.w $007E, Y
+ORA.w #$4000 : STA.w $0084, Y
 JSL AddYMarker : NOP #2
 ;--------------------------------------------------------------------------------
 org $8DF789+6 ; <- 6F789+6 (not in disassembly) - red bottle hud tile, lower right
@@ -1171,21 +1164,21 @@ JSL CheckCloseItemMenu
 org $8DEE70 ; <- 6EE70 - equipment.asm : 2137
 JSL PrepItemScreenBigKey : NOP
 ;--------------------------------------------------------------------------------
-org $0DDEA5 ; LDA.b Joy1A_New : BEQ .wait_for_button
-JSL.l HandleEmptyMenu : RTS
-org $0DEB3C ; LDA.w ItemCursor : AND.w #$00FF
-JML.l MaybeDrawEquippedItem : NOP #2
-org $0DE363 ; LDA.b #$04 : STA.w SubModuleInterface
-JSL.l RestoreMenu_SetSubModule : NOP
+org $8DDEA5 ; LDA.b Joy1A_New : BEQ .wait_for_button
+JSL HandleEmptyMenu : RTS
+org $8DEB3C ; LDA.w ItemCursor : AND.w #$00FF
+JML MaybeDrawEquippedItem : NOP #2
+org $8DE363 ; LDA.b #$04 : STA.w SubModuleInterface
+JSL RestoreMenu_SetSubModule : NOP
 ;--------------------------------------------------------------------------------
 org $88D395 ; <- 45395 - ancilla_bird_travel_intro.asm : 253
-JSL.l UpgradeFlute : NOP #2
+JSL UpgradeFlute : NOP #2
 ;--------------------------------------------------------------------------------
 org $87A408 ; LDA.l $7EF34C
-JSL.l FluteCallForDuck
+JSL FluteCallForDuck
 ;--------------------------------------------------------------------------------
 org $85E4D7 ; <- 2E4D7 - sprite_witch.asm : 213
-JSL.l RemoveMushroom : NOP #2
+JSL RemoveMushroom : NOP #2
 ;--------------------------------------------------------------------------------
 org $85F55F ; <- 2F55F - sprite_potion_shop.asm : 59
 JSL LoadPowder
@@ -1206,33 +1199,20 @@ JSL DrawMushroom
 org $85EE97 ; <- 2EE97 - sprite_mushroom.asm : 81
 NOP #14
 ;--------------------------------------------------------------------------------
-org $86C09C ; <- - bank06.asm : 1885 (JSL SpritePrep_PotionShopLong)
+org $86C09C ; <- - bank06.asm : 1885 (JSL SpritePrep_MagicShopAssistant)
 JSL SpritePrep_ShopKeeper_PotionShop
-
-org $85F521
-SpritePrep_PotionShopLong:
-
-org $85F539
-SpawnMagicPowder:
 ;--------------------------------------------------------------------------------
 org $85F568 ; <- 2F568 - sprite_potion_shop.asm
-LDA #$b0 : STA $0D00, Y : LDA #$90 : STA $0D10, Y ; manually set position of powder item
-LDA #$21 : STA $0D20, Y : LDA #$12 : STA $0D30, Y
-JMP $F61D
+LDA.b #$B0 : STA.w SpritePosYLow, Y : LDA.b #$90 : STA.w SpritePosXLow, Y ; manually set position of powder item
+LDA.b #$21 : STA.w SpritePosYHigh, Y : LDA.b #$12 : STA.w SpritePosXHigh, Y
+JMP MagicShopAssistant_SpawnObject
 ;--------------------------------------------------------------------------------
 org $85F633 ; <- 2F633 - sprite_potion_shop.asm
 JSL Sprite_ShopKeeperPotion : RTS : NOP ;; TODO: i don't remember prices being set on top of the player
 PotionShopkeeperJumpTable:
-
-org $85F893 ; <- witch behavior here
-Sprite_WitchAssistant:
-
-org $85F644 ; <- powder behavior here
-Sprite_MagicPowderItem:
-
 ;--------------------------------------------------------------------------------
 org $85EB1D ; <- 2EB1D - sprite_bottle_vendor.asm : 158
-JSL.l Multiworld_BottleVendor_GiveBottle
+JSL Multiworld_BottleVendor_GiveBottle
 ;--------------------------------------------------------------------------------
 org $87A36F ; <- 3A36F - Bank07.asm : 5679
 NOP #5
@@ -1435,7 +1415,7 @@ JSL RNG_Enemy_Drops
 org $8DFDCB
 JSL UpdateHearts
 RTS
-org $8DF191 : JSL.l ColorAnimatedHearts : BRA + : NOP #7 : +
+org $8DF191 : JSL ColorAnimatedHearts : BRA + : NOP #7 : +
 
 org $8DFC4C ; <- 6FC4C - headsup_display.asm : 836 (LDA $7EF36E : AND.w #$00FF : ADD.w #$0007 : AND.w #$FFF8 : TAX)
 JML OnDrawHud : NOP #197 ; why? it's not hurting anyone lol
@@ -1462,30 +1442,30 @@ MVN $A17E
 org $8DFB1F : JSL CheckHUDSilverArrows
 org $8DFB29 : BRA UpdateHUDBuffer_update_item_check_arrows
 ;--------------------------------------------------------------------------------
-org $8DF1AB : JSR.w RebuildHUD_update
-org $8DDFC8 : JSR.w RebuildHUD_update
-org $8DDB85 : JSR.w RefreshIcon_UpdateHUD : BRA + : NOP : +
+org $8DF1AB : JSR RebuildHUD_update
+org $8DDFC8 : JSR RebuildHUD_update
+org $8DDB85 : JSR RefreshIcon_UpdateHUD : BRA + : NOP : +
 ;--------------------------------------------------------------------------------
-org $87A205 : JSL.l RebuildHUD_update_long
-org $87A1A4 : JSL.l RebuildHUD_update_long
-org $87A1CF : JSL.l RebuildHUD_update_long
-org $87A21D : JSL.l RebuildHUD_update_long
-org $87A235 : JSL.l RebuildHUD_update_long
-org $8AEF62 : JSL.l RebuildHUD_update_long
+org $87A205 : JSL RebuildHUD_update_long
+org $87A1A4 : JSL RebuildHUD_update_long
+org $87A1CF : JSL RebuildHUD_update_long
+org $87A21D : JSL RebuildHUD_update_long
+org $87A235 : JSL RebuildHUD_update_long
+org $8AEF62 : JSL RebuildHUD_update_long
 ;--------------------------------------------------------------------------------
 org $8DFFE1
 RebuildHUD_update_long:
-JSR.w RebuildHUD_update : RTL
+JSR RebuildHUD_update : RTL
 
 RefreshIcon_UpdateHUD:
 INC.w UpdateHUDFlag
-JSR.w RebuildHUD
-JSR.w UpdateEquippedItem
+JSR RebuildHUD
+JSR UpdateEquippedItem
 RTS
 warnpc $8E8000
 ;--------------------------------------------------------------------------------
 org $8DEDE8
-JSL.l DrawHeartPiecesMenu : BRA DrawEquipment_in_a_dungeon
+JSL DrawHeartPiecesMenu : BRA DrawEquipment_in_a_dungeon
 ;--------------------------------------------------------------------------------
 
 ;================================================================================
@@ -1655,13 +1635,10 @@ JSL HUDRebuildIndoorHole
 ;================================================================================
 ; Skull Woods back entrance fire fix
 ;--------------------------------------------------------------------------------
-org $099C42 ; ancilla_init.asm:4264 - (LDA $8A : AND.b #$40 : BEQ AddDoorDebris.spawn_failed)
-JML.l Multiworld_ConsumingFire_TransmuteToSkullWoodsFire
+org $899C42 ; ancilla_init.asm:4264 - (LDA $8A : AND.b #$40 : BEQ AddDoorDebris.spawn_failed)
+JML Multiworld_ConsumingFire_TransmuteToSkullWoodsFire
 NOP #2
 ConsumingFire_TransmuteToSkullWoodsFire_continue:
-
-org $099C39
-AddDoorDebris_spawn_failed:
 
 ;================================================================================
 ; Pendant / Crystal Fixes
@@ -1894,7 +1871,7 @@ Ancilla_ReceiveItem_optimus:
 JML PostItemAnimation : NOP #2
 
 org $88C548 ; <- 44548 - ancilla_recieve_item.asm:297 (CMP.b #$28 : BNE .dontGiveRupees)
-JML.l Multiworld_Ancilla_ReceiveItem_stillInMotion
+JML Multiworld_Ancilla_ReceiveItem_stillInMotion
 Ancilla_ReceiveItem_stillInMotion_moveon:
 
 org $88C560 ; <- 44548 - ancilla_recieve_item.asm:307
@@ -1913,7 +1890,7 @@ org $868F16 ; <- 30F16
 JSL ItemCheck_ZoraKing
 ;--------------------------------------------------------------------------------
 org $859ACA ; <- 29ACA
-JSL $9DE1AA ; Sprite_SpawnFlippersItem
+JSL Zora_RegurgitateFlippers
 ;--------------------------------------------------------------------------------
 org $9DE1E4 ; <- EE1E4 - sprite_great_catfish.asm : 489
 JSL LoadZoraKingItemGFX : NOP #2
@@ -1937,7 +1914,7 @@ org $8690BD ; <- 310BD - SpritePrep_FluteBoy : 2202
 JSL ItemCheck_TreeKid2
 
 org $86AF9B ; <- 32F9B - FluteBoy_Chillin : 73 : LDA $7EF34C : CMP.b #$02 : BCS .player_has_flute
-LDA HasGroveItem : AND.b #$01
+LDA.l HasGroveItem : AND.b #$01
 db $D0 ; BNE
 
 org $86B062 ; <- 33062 - FluteAardvark_InitialStateFromFluteState : 225 : LDA $7EF34C : AND.b #$03 : !BGE #$05
@@ -2070,7 +2047,7 @@ dw FakeFlipperProtection
 
 org $82FFC7
 FakeFlipperProtection:
-	JSR.w $029485
+	JSR RecoverPositionAfterDrowning
 	JSL protectff
 	RTS
 ;--------------------------------------------------------------------------------
@@ -2130,7 +2107,7 @@ JSL BeepLogic : NOP #6
 ; Item Downgrade Fix
 ;--------------------------------------------------------------------------------
 org $89865E ; <- 4865E
-JSL $9BEE1B ; fix something i wrote over i shouldn't have
+JSL Palettes_Load_LinkGloves ; fix something i wrote over i shouldn't have
 ;--------------------------------------------------------------------------------
 org $898638 ; <- 48638 - ancilla_init.asm:737 - LDA .item_values, Y : BMI .dontWrite (BMI)
 JSL ItemDowngradeFix
@@ -2146,7 +2123,7 @@ org $9AFC55 ; <- D7C55 - sprite_movable_mantle.asm:34 (LDA $7EF34A : BEQ .return
 NOP #6 ; remove check
 ;--------------------------------------------------------------------------------
 org $868841 ; <- 30841 - sprite_prep.asm:269 (LDA $0D00, X : ADD.b #$03 : STA $0D00, X)
-JSL.l Mantle_CorrectPosition : NOP #2
+JSL Mantle_CorrectPosition : NOP #2
 ;--------------------------------------------------------------------------------
 org $8297FD ; <- bank02 : Module07_19_MirrorFade (STZ.b $11 : STZ.b $14)
 JSL MirrorScrollSpawnZelda
@@ -2312,7 +2289,7 @@ Overworld_Entrance_BRANCH_RHO: ; branch here to continue into door
 ;================================================================================
 ; Paradox Cave Shopkeeper Fixes
 ;--------------------------------------------------------------------------------
-org $808C19 ; Bank00.asm 1633 (LDA.b #$01 : STA MDMAEN)
+org $808C19 ; Bank00.asm 1633 (LDA.b #$01 : STA DMAENABLE)
 JSL ParadoxCaveGfxFix : NOP
 ;================================================================================
 
@@ -2347,7 +2324,7 @@ JSL LoadActualGearPalettesWithGloves : RTL
 ;--------------------------------------------------------------------------------
 ; Bunny Palette/Overworld Map Bugfix
 ;--------------------------------------------------------------------------------
-org $82FDF0 ; <- 017df0 - bank0E (LDA [$00] : STA $7EC300, X : STA $7EC500, X)
+org $82FDF0 ; <- 017df0 - bank0E (LDA [Scrap00] : STA $7EC300, X : STA $7EC500, X)
 JSL LoadGearPalette_safe_for_bunny : RTS
 ;================================================================================
 
@@ -2458,18 +2435,18 @@ dw  37, 11 : db $FB, $40, $00, $00
 ;--------------------------------------------------------------------------------
 org $87839E ; bunny BAGE check
 BunnyRead:
-	JSR.w $07B5A9 ; check A button
+	JSR Link_CheckNewAPress
 	BCC .noA
-	JSR.w CheckIfReading
+	JSR CheckIfReading
 	BNE .noread
-	JSR.w $07B4DB
+	JSR Link_PerformRead
 	NOP
 .noread
 .noA
 
 org $87FFF4
 CheckIfReading:
-	JSR.w $07D36C ; check action
+	JSR Link_HandleLiftables
 	LDA.b #$80 : TRB.b $3B
 	CPX.b #$04
 	RTS
@@ -2502,13 +2479,13 @@ org $8EE828 : JSL PreparePointer : LDA.b [CreditsPtr],Y : NOP
 org $8EE83F : LDA.b [CreditsPtr],Y : NOP
 org $8EE853
 LDA.b [CreditsPtr],Y : NOP : AND.w #$00FF : ASL A : JSL CheckFontTable
-org $8EE86D : JSL RenderCreditsStatCounter : JMP.w AfterDeathCounterOutput
+org $8EE86D : JSL RenderCreditsStatCounter : JMP AfterDeathCounterOutput
 org $82857D : JSL LoadOverworldCreditsTiles
 ;================================================================================
 ; Fast credits
 org $8EC2B1 : JSL FlagFastCredits
 org $82A096 : JSL DumbFlagForMSU
-org $8EC3AF : JSL FastCreditsScrollOW : JMP.w $0EC3C7
+org $8EC3AF : JSL FastCreditsScrollOW : JMP Credits_ScrollScene_Overworld_no_scroll
 org $8EC41F : JSL FastCreditsCutsceneUnderworldY
 org $8EC42C : JSL FastCreditsCutsceneUnderworldX
 org $8EC488 : JSL FastCreditsCutsceneTimer
@@ -2573,8 +2550,8 @@ org $8EF285 : JSL RenderCharSetColorExtended_close : NOP
 ;================================================================================
 ; VRAM
 ;--------------------------------------------------------------------------------
-org $008BE5 ; hijack stripes
-JSL.l TransferVRAMStripes
+org $808BE5 ; hijack stripes
+JSL TransferVRAMStripes
 
 ;===================================================================================================
 ; Fix fairy palette on file select
@@ -2617,14 +2594,14 @@ org $899BBE : JSL TransferItemReceiptToBuffer_using_GraphicsID
 ;===================================================================================================
 org $1D8E75 : RTS
 
-org $1DB5D8 : JML.l $9DB5DF
-org $1DB605 : JML.l $9DB60C
-org $1DBBF1 : JML.l $9DBBF8
-org $1DBC19 : JML.l $9DBC20
+org $1DB5D8 : JML $9DB5DF
+org $1DB605 : JML $9DB60C
+org $1DBBF1 : JML $9DBBF8
+org $1DBC19 : JML $9DBC20
 org $1DC072 : JMP.w $9DC079
 org $1DC0A5 : JMP.w $9DC0AC
-org $1DED3B : JML.l $9DED42
-org $1DED7A : JML.l $9DED81
+org $1DED3B : JML $9DED42
+org $1DED7A : JML $9DED81
 
 org $05B55E : JMP ++ : ++
 org $05B580 : JMP ++ : ++

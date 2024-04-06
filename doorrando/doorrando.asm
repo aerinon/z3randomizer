@@ -1,9 +1,3 @@
-!add = "clc : adc"
-!addl = "clc : adc.l"
-!sub = "sec : sbc"
-!bge = "bcs"
-!blt = "bcc"
-
 ; Free RAM notes
 ; Normal doors use $AB-AC for scrolling indicator
 ; Normal doors use $FE to store the trap door indicator

@@ -81,7 +81,7 @@ GetItemDamageValue:
 	CPX.b #$3d : BEQ .hookshot
 
 	.normal
-	LDA.l $8DB8F1,x ;what we wrote over
+	LDA.l DamageSubclassValue,x ;what we wrote over
 RTL
 	.boomerang
 		LDA.l StunItemAction : AND.b #$01 : BNE .normal
@@ -100,7 +100,7 @@ SearchAncilla:
 	LDX.b #$00
 	.loop
 	LDA.w AncillaID, X 
-	INX : CPX #$0A : BEQ .notFound
+	INX : CPX.b #$0A : BEQ .notFound
 	CMP.b Scrap05 : BNE .loop
 		LDA.b #$01
 		BRA .return

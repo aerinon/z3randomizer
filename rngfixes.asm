@@ -11,22 +11,22 @@ RigDigRNG:
 RTL
 ;--------------------------------------------------------------------------------
 RigChestRNG:
-	JSL.l DecrementChestCounter
+	JSL DecrementChestCounter
 	LDA.w $04C4 : CMP.l ChestGameRNG : BEQ .forceHeart
 	.normalItem
 	JSL GetRandomInt
 	AND.b #$07 ; restrict values to 0-7
 	CMP.b #$07 : BEQ .notHeart
-	JSL.l DecrementItemCounter
+	JSL DecrementItemCounter
 RTL
 	.forceHeart
 	LDA.b #$33 : STA.b ScrapBufferBD+$0B ; assure the correct state if player talked to shopkeeper
 	LDA.w RoomItemsTaken : AND.b #$40 : BNE .notHeart
-	LDA ChestGameItem_Player : STA !MULTIWORLD_ITEM_PLAYER_ID
+	LDA.l ChestGameItem_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID
 	LDA.b #$07 ; give prize item
 RTL
 	.notHeart
-	JSL.l DecrementItemCounter
+	JSL DecrementItemCounter
 	
 	JSL GetRandomInt ; spam RNG until we stop getting the prize item
 	AND.b #$07 ; restrict values to 0-7
@@ -37,7 +37,7 @@ RTL
 ;--------------------------------------------------------------------------------
 FixChestCounterForChestGame:
 	JSL DecrementItemCounter
-	JML $8DBA71
+	JML GetRandomInt
 ;--------------------------------------------------------------------------------
 RNG_Lanmolas1:
 	LDA.b #$00 : BRA _rng_done
@@ -46,7 +46,7 @@ RNG_Moldorm1:
 RNG_Agahnim1:
 	LDA.b RoomIndex : CMP.b #$20 : BNE RNG_Agahnim2 ; Agah 1 and 2 use the same code, check which agah we're fighting and branch
 	LDA.b #$02
-	JSL.l GetStaticRNG : PHA
+	JSL GetStaticRNG : PHA
 	LDA.l GanonAgahRNG : BEQ + ; check if blue balls are disabled
 		PLA
 		ORA.b #$01 ; guarantee no blue ball
@@ -73,7 +73,7 @@ RNG_Moldorm2:;x
 	LDA.b #$0A : BRA _rng_done
 RNG_Agahnim2:
 	LDA.b #$0B
-	JSL.l GetStaticRNG : PHA
+	JSL GetStaticRNG : PHA
 	LDA.l GanonAgahRNG : BEQ + ; check if blue balls are disabled
 		PLA
 		ORA.b #$01 ; guarantee no blue ball
@@ -87,7 +87,7 @@ RNG_Ganon:
 	LDA.b #$0D : BRA _rng_done
 RNG_Ganon_Extra_Warp:
 	LDA.b #$0E
-	JSL.l GetStaticRNG : PHA
+	JSL GetStaticRNG : PHA
 	LDA.l GanonAgahRNG : BEQ + ; check if warps are disabled
 		PLA
 		AND.b #$FE ; set least significant bit to 0 to prevent teleport
@@ -101,7 +101,7 @@ RNG_Enemy_Drops:
         +
                 LDA.b #$0F
         _rng_done:
-        JSL.l GetStaticRNG
+        JSL GetStaticRNG
 RTL
 ;--------------------------------------------------------------------------------
 ; In: A = RNG Index

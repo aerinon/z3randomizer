@@ -12,9 +12,9 @@ ProcessMenuButtons:
 	.sel_unheld
 		LDA.l HudFlag : AND.b #$60 : BEQ +
 		LDA.b #$00 : STA.l HudFlag
-                JSL.l MaybePlaySelectSFX
+                JSL MaybePlaySelectSFX
 		+
-		JSL.l ResetEquipment
+		JSL ResetEquipment
 	+
 	.sel_held
 	CLC ; no buttons
@@ -27,8 +27,8 @@ RTL
 	LDA.b #$60
         .store_flag
         STA.l HudFlag
-        JSL.l MaybePlaySelectSFX
-	JSL.l ResetEquipment
+        JSL MaybePlaySelectSFX
+	JSL ResetEquipment
 RTL
 	.y_pressed ; Note: used as entry point by quickswap code. Must preserve X. 
 	LDA.b #$10 : STA.w MenuBlink
@@ -49,10 +49,10 @@ RTL
 		PLX
 		LDA.l SilverArrowsUseRestriction : BEQ ++
 		LDA.b RoomIndex : ORA.b RoomIndex+1 : BEQ ++ ; not in ganon's room in restricted mode
-				LDA.l BowEquipment : CMP.b #$03 : !BLT .errorJump : !SUB #$02 : STA.l BowEquipment
+				LDA.l BowEquipment : CMP.b #$03 : !BLT .errorJump : !SUB.b #$02 : STA.l BowEquipment
 				BRA .errorJump2
 		++
-		LDA.l BowEquipment : !SUB #$01 : EOR.b #$02 : !ADD #$01 : STA.l BowEquipment ; swap bows
+		LDA.l BowEquipment : !SUB.b #$01 : EOR.b #$02 : !ADD.b #$01 : STA.l BowEquipment ; swap bows
 		LDA.b #$20 : STA.w SFX3 ; menu select sound
 		JMP .captured
 	+ BRA +
@@ -85,7 +85,7 @@ RTL
 		LDA.b #$20 : STA.w SFX3 ; menu select sound
 		BRA .captured
 	+
-	CMP.b #$10 : BNE .error : JSL.l ProcessBottleMenu : BRA .captured : +
+	CMP.b #$10 : BNE .error : JSL ProcessBottleMenu : BRA .captured : +
 	CLC
 RTL
 	.midShovel
@@ -153,14 +153,14 @@ AddInventory:
                 TYA : AND.w #$00FF : ASL : TAX
                 SEP #$20
                 LDA.w InventoryTable_properties,X : BIT.b #$01 : BEQ .done
-                JSR.w ShopCheck : BCS .done
+                JSR ShopCheck : BCS .done
                 .countDungeonChecks
-                JSR.w DungeonIncrement : BCS .done
+                JSR DungeonIncrement : BCS .done
                 		LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BNE .totalCount
-                        JSR.w IncrementByOne
-                        JSR.w StampItem
+                        JSR IncrementByOne
+                        JSR StampItem
                         SEP #$20
-                        JSR.w IncrementYAItems
+                        JSR IncrementYAItems
                         		.totalCount
                         		LDA.l !MULTIWORLD_RECEIVING_ITEM : BNE .done
                                 REP #$30
@@ -197,11 +197,11 @@ ShopCheck:
                 CMP.w #284 : BEQ .nocount ; bomb shop
                 CMP.w #265 : BEQ .nocount ; potion shop - powder is flagged as "ShopEnableCount" in CollectPowder
                 ; these room contain pots so you must check the quadrant as well for pottery lottery
-                CMP.w #287 : BNE + : LDA.b $A9 : CMP.w #$0201 : BEQ .nocount ; kakariko shop
+                CMP.w #287 : BNE + : LDA.b LinkQuadrantH : CMP.w #$0201 : BEQ .nocount ; kakariko shop
                 	LDA.b RoomIndex
-                + CMP.w #255 : BNE + : LDA.b $A9 : BEQ .nocount ; light world death mountain shop
+                + CMP.w #255 : BNE + : LDA.b LinkQuadrantH : BEQ .nocount ; light world death mountain shop
                 	LDA.b RoomIndex
-                + CMP.w #276 : BNE + : LDA.b $A9 : CMP.w #$0200 : BEQ .nocount ; waterfall fairy
+                + CMP.w #276 : BNE + : LDA.b LinkQuadrantH : CMP.w #$0200 : BEQ .nocount ; waterfall fairy
                 	LDA.b RoomIndex
                 + CMP.w #277 : BEQ .nocount ; upgrade fairy (shop)
                 CMP.w #278 : BEQ .nocount ; pyramid fairy
@@ -220,7 +220,7 @@ DungeonIncrement:
    REP #$10
    PHX
    LDA.w InventoryTable_properties,X : BIT.b #$40 : BEQ +
-   		JSL.l CountChestKeyLong
+   		JSL CountChestKeyLong
    +
    LDA.l !MULTIWORLD_RECEIVING_ITEM : BNE .done
 	SEP #$10
@@ -269,7 +269,7 @@ IncrementYAItems:
         BIT.b #$20 : BNE .bow_check
         BIT.b #$04 : BEQ .not_y
                 .y_item
-                LDA.l YAItemCounter : !ADD #$08 : STA.l YAItemCounter
+                LDA.l YAItemCounter : !ADD.b #$08 : STA.l YAItemCounter
                 BRA .done
         .not_y
         BIT.b #$08 : BEQ .done
@@ -310,7 +310,7 @@ IncrementBossSword:
                 BRA .none
         +
         ASL : TAX
-        JMP.w (.vectors,X)
+        JMP (.vectors,X)
 
         .vectors
         dw .none
@@ -359,7 +359,7 @@ IncrementFinalSword:
                         BRA IncrementBossSword_none
                 +
                 ASL : TAX
-                JMP.w (IncrementBossSword_vectors,X)
+                JMP (IncrementBossSword_vectors,X)
         .done
         SEP #$20
         PLX
@@ -373,9 +373,9 @@ Link_ReceiveItem_HUDRefresh:
 		LDA.b #$01 : STA.l BombsEquipment ; increase actual bomb count
 	+
 
-	JSL.l HUD_RefreshIconLong ; thing we wrote over
+	JSL HUD_RefreshIconLong ; thing we wrote over
         INC.w UpdateHUDFlag
-	JSL.l PostItemGet
+	JSL PostItemGet
 RTL
 ;--------------------------------------------------------------------------------
 
@@ -388,7 +388,7 @@ HandleBombAbsorbtion:
 	LDA.l BombCapacity : BEQ + ; skip if we can't have bombs
 		LDA.b #$04 : STA.w ItemCursor ; set selected item to bombs
 		LDA.b #$01 : STA.w CurrentYItem ; set selected item to bombs
-		JSL.l HUD_RebuildLong
+		JSL HUD_RebuildLong
                 INC.w UpdateHUDFlag
 	+
 RTL
@@ -463,6 +463,8 @@ UpgradeFlute:
 	LDA.b #$03 : STA.l FluteEquipment ; upgrade primary inventory
 RTL
 ;--------------------------------------------------------------------------------
+
+;--------------------------------------------------------------------------------
 ; FluteCallForDuck:
 ;--------------------------------------------------------------------------------
 ; sets A to #$02 to ignore summoning the duck
@@ -533,9 +535,9 @@ RTL
 ClearOWKeys:
 	PHA
 
-	JSL.l TurtleRockEntranceFix
-	JSL.l FakeWorldFix
-	JSL.l FixBunnyOnExitToLightWorld
+	JSL TurtleRockEntranceFix
+	JSL FakeWorldFix
+	JSL FixBunnyOnExitToLightWorld
 	LDA.l GenericKeys : BEQ +
 		PLA : LDA.l CurrentGenericKeys : STA.l CurrentSmallKeys
 		RTL
@@ -558,17 +560,17 @@ RTL
 ; LoadPowder:
 ;--------------------------------------------------------------------------------
 LoadPowder:
-        PHX
-	JSL.l Sprite_SpawnDynamically ; thing we wrote over
-	LDA.l WitchItem_Player : STA !MULTIWORLD_SPRITEITEM_PLAYER_ID
+	PHX
+	JSL Sprite_SpawnDynamically ; thing we wrote over
+	LDA.l WitchItem_Player : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
 	%GetPossiblyEncryptedItem(WitchItem, SpriteItemValues)
-        JSL.l AttemptItemSubstitution
-        JSL.l ResolveLootIDLong
+	JSL AttemptItemSubstitution
+	JSL ResolveLootIDLong
 	STA.w SpriteID, Y
 	STA.l PowderFlag
-        TYX
-	JSL.l PrepDynamicTile_loot_resolved
-        PLX
+	TYX
+	JSL PrepDynamicTile_loot_resolved
+	PLX
 RTL
 ;--------------------------------------------------------------------------------
 
@@ -591,16 +593,16 @@ RTL
 DrawPowder:
 	LDA.w ItemReceiptPose : BNE .defer ; defer if link is buying a potion
 	LDA.l RedrawFlag : BEQ +
-		LDA.l WitchItem_Player : STA !MULTIWORLD_SPRITEITEM_PLAYER_ID
-		LDA $0DA0, X ; Retrieve stored item type
-		JSL.l PrepDynamicTile_loot_resolved
+		LDA.l WitchItem_Player : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
+		LDA.w $0DA0, X ; Retrieve stored item type
+		JSL PrepDynamicTile_loot_resolved
 		LDA.b #$00 : STA.l RedrawFlag ; reset redraw flag
 		BRA .defer
 	+
 	; this fights with the shopkeep code, so had to move the powder draw there when potion shop is custom
 	LDA.l ShopType : CMP.b #$FF : BNE .defer
 		LDA.w SpriteID, X ; Retrieve stored item type
-		JSL.l DrawDynamicTile
+		JSL DrawDynamicTile
 	.defer
 RTL
 ;--------------------------------------------------------------------------------
@@ -618,12 +620,12 @@ LoadMushroom:
 	LDA.b LinkState : CMP.b #$14 : BEQ .skip ; skip if we're mid-mirror
 
 	LDA.b #$00 : STA.l RedrawFlag
-	LDA.l MushroomItem_Player : STA !MULTIWORLD_SPRITEITEM_PLAYER_ID
+	LDA.l MushroomItem_Player : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
 	%GetPossiblyEncryptedItem(MushroomItem, SpriteItemValues)
-        JSL.l AttemptItemSubstitution
-        JSR.w ResolveLootID
+	JSL AttemptItemSubstitution
+	JSR ResolveLootID
 	STA.w SpriteID,X
-	JSL.l PrepDynamicTile
+	JSL PrepDynamicTile
 
 	.skip
 	PLA
@@ -636,12 +638,12 @@ RTL
 DrawMushroom:
 	PHA : PHY
 		LDA.l RedrawFlag : BEQ .skipInit ; skip init if already ready
-		JSL.l LoadMushroom_justGFX
+		JSL LoadMushroom_justGFX
 		BRA .done ; don't draw on the init frame
 
 		.skipInit
 		LDA.w SpriteID, X ; Retrieve stored item type
-		JSL.l DrawDynamicTile
+		JSL DrawDynamicTile
 
 		.done
 	PLY : PLA
@@ -657,13 +659,13 @@ CollectPowder:
 	; if for any reason the item value is 0 reload it, just in case
 	  %GetPossiblyEncryptedItem(WitchItem, SpriteItemValues) : TAY
   + PHA
-    LDA WitchItem_Player : STA !MULTIWORLD_ITEM_PLAYER_ID
+    LDA.l WitchItem_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID
     LDA.b #$01 : STA.l ShopEnableCount
   PLA
   STZ.w ItemReceiptMethod ; item from NPC
-  JSL.l Link_ReceiveItem
+  JSL Link_ReceiveItem
   PHA : LDA.b #$00 : STA.l ShopEnableCount : STA.l PowderFlag : PLA
-  JSL.l ItemSet_Powder
+  JSL ItemSet_Powder
 RTL
 ;--------------------------------------------------------------------------------
 
@@ -810,18 +812,18 @@ RTL
 ; A = item id being collected
 ItemGetAlternateSFX:
 PEA.w $C567 ; SNES to RTS to in bank 08
-LDA.w $0C5E,X : CMP.b #$4A : BNE +
+LDA.w AncillaGet,X : CMP.b #$4A : BNE +
 	; collecting pre-activated flute
-	LDA.b #$13 : JML $088007
+	LDA.b #$13 : JML Ancilla_SFX2_Near
 + ; normal itemget sfx
-LDA.b #$0F : JML $08800E ; what we wrote over
+LDA.b #$0F : JML Ancilla_SFX3_Near ; what we wrote over
 
 ; A = item id being collected
 ItemGetOverworldAlternateSFX:
 CMP.b #$4A : BNE +
-	JSL Sound_SetSfxPanWithPlayerCoords : ORA.b #$13 : STA.w $012E
+	JSL Sound_SetSfxPanWithPlayerCoords : ORA.b #$13 : STA.w SFX2
 	RTL
 + ; normal itemget sfx
-JSL Sound_SetSfxPanWithPlayerCoords : ORA.b #$0F : STA.w $012F ; what we wrote over
+JSL Sound_SetSfxPanWithPlayerCoords : ORA.b #$0F : STA.w SFX3 ; what we wrote over
 RTL
 ;--------------------------------------------------------------------------------

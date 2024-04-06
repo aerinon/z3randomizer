@@ -11,7 +11,7 @@ GetAgahnimPalette:
 		RTL
 ;--------------------------------------------------------------------------------
 GetAgahnimDeath:
-	STA.w $0BA0, X ; thing we wrote over
+	STA.w SpriteAncillaInteract, X ; thing we wrote over
 	LDA.b RoomIndex ; get room id
 	CMP.b #13 : BNE + ; Agahnim 2 room
 		LDA.l Bugfix_SetWorldOnAgahnimDeath : BEQ ++
@@ -51,10 +51,10 @@ GetAgahnimSlot:
 	LDA.b RoomIndex ; get room id
 	CMP.b #13 : BNE + ; Agahnim 2 room
 		LDA.b #$01 ; Use Agahnim 2
-		JML.l GetAgahnimSlotReturn
+		JML GetAgahnimSlotReturn
 	+ ; Elsewhere
 		LDA.b #$00 ; Use Agahnim 1
-		JML.l GetAgahnimSlotReturn
+		JML GetAgahnimSlotReturn
 ;--------------------------------------------------------------------------------
 GetAgahnimLightning:
 	INC.w SpriteAux, X ; thing we wrote over

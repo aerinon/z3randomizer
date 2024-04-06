@@ -13,24 +13,24 @@ CheckIfDoorsOpen: {
     jsr TrapDoorFixer ; see normal.asm
     ; note we are 16bit mode right now
     lda.l DRMode : beq +
-        lda $040c : cmp #$00ff : bne .gtg
-    + lda $a0 : dec : tax : and #$000f ; hijacked code
+        lda.w DungeonID : cmp.w #$00ff : bne .gtg
+    + lda.b RoomIndex : dec : tax : and.w #$000f ; hijacked code
     sec : rtl ; set carry to indicate normal behavior
 
     .gtg
     phb : phk : plb
-    stx $00 : ldy #$0000
+    stx.b Scrap00 : ldy.w #$0000
     .nextDoor
-    lda $a0 : asl : tax
+    lda.b RoomIndex : asl : tax
     lda.w KeyDoorOffset, x : beq .skipDoor
-    asl : sty $05 : !add $05 : tax
+    asl : sty.b Scrap05 : !ADD.b Scrap05 : tax
     lda.w PairedDoorTable, x : beq .skipDoor
-    sta $02 : and #$00ff : asl a : tax
-    lda $02 : and #$ff00 : sta $03
-    lda RoomDataWRAM.l, X : and #$f000 : and $03 : beq .skipDoor
-    tyx : lda $068c : ora $0098c0,x  : sta $068c
+    sta.b Scrap02 : and.w #$00ff : asl a : tax
+    lda.b Scrap02 : and.w #$ff00 : sta.b Scrap03
+    lda.l RoomDataWRAM.l, X : and.w #$f000 : and.b Scrap03 : beq .skipDoor
+    tyx : lda.w $068c : ora.l DungeonMask,x  : sta.w $068c
     .skipDoor
-    iny #2 : cpy $00 : bne .nextDoor
+    iny #2 : cpy.b Scrap00 : bne .nextDoor
     plb : clc : rtl
 }
 

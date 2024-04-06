@@ -19,14 +19,14 @@ InvertDPad:
 
 	LDA.b #$80 : STA.w WRIO ; reset this so latch can read it, otherwise RNG breaks
 
-	JML.l InvertDPadReturn
+	JML InvertDPadReturn
 
 .crowd_control
 	LDA.l ControllerInverter : BNE +
 
 	LDA.w JOY1L : STA.b Scrap00
 	LDA.w JOY1H : STA.b Scrap01
-	JML.l InvertDPadReturn
+	JML InvertDPadReturn
 
 +	DEC : BEQ .dpadOnly
 	DEC : BEQ .buttonsOnly
@@ -40,7 +40,7 @@ InvertDPad:
 		BIT.w #$8400 : BEQ + : EOR.w #$8400 : + ; swap B/down
 	STA.b Scrap00
 	SEP #$20 ; set 8-bit accumulator
-JML.l InvertDPadReturn
+JML InvertDPadReturn
 	.invertBoth
 	REP #$20 ; set 16-bit accumulator
 	LDA.w JOY1L
@@ -50,7 +50,7 @@ JML.l InvertDPadReturn
 		BIT.w #$0300 : BEQ + : EOR.w #$0300 : + ; swap left/right
 	STA.b Scrap00
 	SEP #$20 ; set 8-bit accumulator
-JML.l InvertDPadReturn
+JML InvertDPadReturn
 	.buttonsOnly
 	REP #$20 ; set 16-bit accumulator
 	LDA.w JOY1L
@@ -58,14 +58,14 @@ JML.l InvertDPadReturn
 		BIT.w #$4080 : BEQ + : EOR.w #$4080 : + ; swap Y/A
 	STA.b Scrap00
 	SEP #$20 ; set 8-bit accumulator
-JML.l InvertDPadReturn
+JML InvertDPadReturn
 	.dpadOnly
 	LDA.w JOY1L : STA.b Scrap00
 	LDA.w JOY1H 
 		BIT.b #$0C : BEQ + : EOR.b #$0C : + ; swap up/down
 		BIT.b #$03 : BEQ + : EOR.b #$03 : + ; swap left/right
 	STA.b Scrap01
-JML.l InvertDPadReturn
+JML InvertDPadReturn
 
 .onemind_controller_offset
 	db 0 ; player 0 - JOY1L - joy1d1
@@ -74,8 +74,6 @@ JML.l InvertDPadReturn
 	db 6 ; player 3 - JOY4L - joy2d2
 	db 2 ; player 4 - JOY2L - joy2d1
 	db 6 ; player 5 - JOY4L - joy2d2
-
-
 
 ;--------------------------------------------------------------------------------
 
@@ -119,5 +117,5 @@ HandleOneMindController:
 .no_onemind
 	STZ.b NMIDoneFlag
 
-	JML $808034 ; reset frame loop
+	JML MainGameLoop ; reset frame loop
 

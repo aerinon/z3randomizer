@@ -78,7 +78,7 @@ DMAAlphabetTilemap:
         LDA.b #BigRAM>>16 : STA.w A1B0
         LDX.w #BigRAM : STX.w A1T0L
         LDX.w #$0080 : STX.w DAS0L
-        LDA.b #$01 : STA.w MDMAEN
+        LDA.b #$01 : STA.w DMAENABLE
         SEP #$10
         PLX : PLA
 RTS

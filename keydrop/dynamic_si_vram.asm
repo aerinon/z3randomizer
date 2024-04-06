@@ -57,8 +57,8 @@ FreeUWGraphics:
 
 DrawPotItem:
 	PHX
-	JSL.l AttemptItemSubstitution
-	JSL.l ResolveLootIDLong
+	JSL AttemptItemSubstitution
+	JSL ResolveLootIDLong
 	TAX
 	LDA.l BeeTrapDisguise : BEQ +
 		TAX
@@ -66,18 +66,18 @@ DrawPotItem:
 
 	.full
 	PLX
-	LDA.b #$01 : STA $06
-	LDA #$0C : JSL.l OAM_AllocateFromRegionC
-	LDA #$02 : PHA
+	LDA.b #$01 : STA.b Scrap06
+	LDA.b #$0C : JSL OAM_AllocateFromRegionC
+	LDA.b #$02 : PHA
 		REP #$20
 		LDA.w #DynamicOAMTile_full
 	BRA .draw
 
 	.narrow
 	PLX
-	LDA.b #$02 : STA $06
-	LDA #$10 : JSL.l OAM_AllocateFromRegionC
-	LDA #$03 : PHA
+	LDA.b #$02 : STA.b Scrap06
+	LDA.b #$10 : JSL OAM_AllocateFromRegionC
+	LDA.b #$03 : PHA
 		 REP #$20
 		 LDA.w #DynamicOAMTile_thin
     .draw

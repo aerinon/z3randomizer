@@ -27,7 +27,7 @@ DontUseZSNES:
 
 	LDA.b #$00
 	STA.l NMITIMEN ; disable NMI and IRQ
-	STA.l HDMAEN ; disable HDMA
+	STA.l HDMAENABLE ; disable HDMA
 
 	ROR ; A = 0x80 from carry
 	STA.l INIDISP
@@ -48,7 +48,7 @@ DontUseZSNES:
 	STA.l DAS0L
 
 	LDA.w #$0001
-	STA.l MDMAEN
+	STA.l DMAENABLE
 
 	JSR ConfigurePPUForFailureReport
 	JSR ConfigureBSODVWF
@@ -93,7 +93,7 @@ Crashed:
 
 	LDA.b #$00
 	STA.l NMITIMEN ; disable NMI and IRQ
-	STA.l HDMAEN ; disable HDMA
+	STA.l HDMAENABLE ; disable HDMA
 
 	ROR ; A = 0x80 from carry
 	STA.l INIDISP
@@ -114,7 +114,7 @@ Crashed:
 	STA.l DAS0L
 
 	LDA.w #$0001
-	STA.l MDMAEN
+	STA.l DMAENABLE
 
 ;===================================================================================================
 
@@ -312,7 +312,7 @@ DrawVWFMessage:
 	STZ.w A1B0
 
 	LDA.b #$01
-	STA.w MDMAEN
+	STA.w DMAENABLE
 
 	REP #$20
 
@@ -376,7 +376,7 @@ DrawFailureVWFChar:
 	LDY.w #$0000
 
 .next_row
-	LDA.b ($08),Y
+	LDA.b (Scrap08),Y
 	AND.w #$00FF
 	XBA
 	LDX.w VWFS
@@ -427,7 +427,7 @@ LoadBSODHexFont:
 	STA.w A1B0
 
 	LDA.b #$01
-	STA.w MDMAEN
+	STA.w DMAENABLE
 
 	REP #$30
 
@@ -467,7 +467,7 @@ ConfigureBSODVWF:
 	PEA.w $0001
 
 	LDA.w #15
-	STA.w $28
+	STA.w LinkRecoilX
 
 	LDA.w #$0042>>1
 	BRA .start
@@ -475,13 +475,13 @@ ConfigureBSODVWF:
 .next_row
 	PHA
 
-	LDA.w $20
+	LDA.w LinkPosY
 	CLC
-	LDA.w $20
+	LDA.w LinkPosY
 	ADC.w #32
 
 .start
-	STA.w $20
+	STA.w LinkPosY
 	STA.b VMADDL
 
 	PLA
@@ -494,7 +494,7 @@ ConfigureBSODVWF:
 	DEY
 	BNE .next_char
 
-	DEC.w $28
+	DEC.w LinkRecoilX
 	BNE .next_row
 
 	LDA.w #$0000

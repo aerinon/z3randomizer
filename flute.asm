@@ -6,7 +6,7 @@ SpawnHauntedGroveItem:
 	LDA.b IndoorsFlag : BEQ + : RTL : + ; Skip if indoors
 
 	; todo - how does this work now?
-	LDA.l HauntedGroveItem_Player : STA !MULTIWORLD_SPRITEITEM_PLAYER_ID
+	LDA.l HauntedGroveItem_Player : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
 
 	LDA.b #$EB
 	STA.l MiniGameTime
@@ -54,10 +54,10 @@ RTL
 FluteBoy:
 	LDA.b GameMode : CMP.b #$1A : BEQ +
 		LDA.b #$01 : STA.w $0FDD
-		JML.l FluteBoy_Abort
+		JML FluteBoy_Abort
 	+
 	LDA.w SpriteActivity, X : CMP.b #$03 ; thing we wrote over
-JML.l FluteBoy_Continue
+JML FluteBoy_Continue
 ;--------------------------------------------------------------------------------
 FreeDuckCheck:
 	LDA.l InvertedMode : BEQ .done

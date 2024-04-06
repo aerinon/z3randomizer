@@ -19,7 +19,7 @@ SwapSpriteIfNecessary:
 		LDA.l SpriteSwapper : BEQ + : CLC : ADC.b #!BANK_BASE : CMP.b PlayerSpriteBank : BEQ +
 			STA.b PlayerSpriteBank
 			STZ.w SkipOAM ; Set Normal Sprite NMI
-			JSL.l SpriteSwap_Palette_ArmorAndGloves_part_two
+			JSL SpriteSwap_Palette_ArmorAndGloves_part_two
 		+
 	PLP
 RTL
@@ -31,14 +31,14 @@ SpriteSwap_Palette_ArmorAndGloves:
 		LDA.b #$10 : STA.b PlayerSpriteBank ; Load Original Sprite Location
 		REP #$21
 		LDA.l ArmorEquipment
-		JSL $9BEDFF ; Read Original Palette Code
+		JSL Palette_ArmorAndGloves+6 ; Read Original Palette Code
 	RTL
 	.part_two
 	SEP #$30
 	LDA.l SpriteSwapper : BNE .continue
 		REP #$30
 		LDA.l GloveEquipment 
-		JSL $9BEE21 ; Read Original Palette Code
+		JSL Palettes_Load_LinkGloves+6 ; Read Original Palette Code
 	RTL
 
 	.continue
@@ -51,7 +51,7 @@ SpriteSwap_Palette_ArmorAndGloves:
 	; Check what Link's armor value is.
 	LDA.l ArmorEquipment : AND.w #$00FF : TAX
 
-	LDA.l $9BEC06, X : AND.w #$00FF : ASL A : ADC.w #$F000 : STA.b Scrap00
+	LDA.l LinkMailPalettesOffsets, X : AND.w #$00FF : ASL A : ADC.w #$F000 : STA.b Scrap00
 	; replace D308 by 7000 and search
 	REP #$10 ; set 16-bit index registers
 

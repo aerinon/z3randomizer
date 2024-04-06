@@ -3,17 +3,17 @@
 ;--------------------------------------------------------------------------------
 SpawnDungeonPrize:
         PHX : PHB
-        JSL.l AttemptItemSubstitution
-        JSL.l ResolveLootIDLong
+        JSL AttemptItemSubstitution
+        JSL ResolveLootIDLong
         STA.w ItemReceiptID
         TAX
         LDA.b #$29 : LDY.b #$06
 
-        JSL.l AddAncillaLong
+        JSL AddAncillaLong
         BCS .failed_spawn
                 LDA.w ItemReceiptID
                 STA.w AncillaGet,X : STA.w SpriteID,X
-                JSR.w AddDungeonPrizeAncilla
+                JSR AddDungeonPrizeAncilla
         .failed_spawn
         PLB : PLX
 RTL
@@ -22,21 +22,21 @@ AddDungeonPrizeAncilla:
         LDY.w ItemReceiptID
         STZ.w AncillaVelocityY,X
         STZ.w AncillaVelocityX,X
-        STZ.w AncillaGeneral,X
-        STZ.w $0385,X
-        STZ.w $0C54,X
+        STZ.w AncillaGeneralF,X
+        STZ.w AncillaGeneralA,X
+        STZ.w AncillaGeneralN,X
 
         LDA.b #$D0 : STA.w AncillaVelocityZ,X
         LDA.b #$80 : STA.w AncillaZCoord,X
         LDA.b #$09 : STA.w AncillaTimer,X
-        LDA.b #$00 : STA.w $0394,X
+        LDA.b #$00 : STA.w AncillaGeneralD,X
         LDA.w AncillaGet,X : STA.w ItemReceiptID
         LDA.w DungeonID : CMP.b #$14 : BNE .not_hera
-                LDA.b LinkAbsoluteY+1 : AND.b #$FE
+                LDA.b LinkPosY+1 : AND.b #$FE
                 INC A
                 STA.b Scrap01
                 STZ.b Scrap00
-                LDA.b LinkAbsoluteX+1 : AND.b #$FE
+                LDA.b LinkPosX+1 : AND.b #$FE
                 INC A
                 STA.b Scrap03
                 STZ.b Scrap02
@@ -62,10 +62,10 @@ RTS
 PrepPrizeTile:
         PHA : PHX : PHY
         LDA.w AncillaGet, X
-        JSL.l AttemptItemSubstitution
-        JSL.l ResolveLootIDLong
+        JSL AttemptItemSubstitution
+        JSL ResolveLootIDLong
         STA.w SpriteID,X
-        JSL.l TransferItemReceiptToBuffer_using_ReceiptID
+        JSL TransferItemReceiptToBuffer_using_ReceiptID
         PLY : PLX : PLA
 RTL
 
@@ -75,12 +75,12 @@ SetItemPose:
         LDA.w RoomItemsTaken : BIT.b #$80 : BNE +
                 .one_handed
                 PLA
-                JML $8799F2
+                JML Link_ReceiveItem_not_cool_pose
         +
-        JSR.w CrystalOrPendantBehavior : BCC .one_handed
+        JSR CrystalOrPendantBehavior : BCC .one_handed
         .two_handed
         PLA
-JML $8799EE ; cool pose
+JML Link_ReceiveItem_cool_pose
 
 SetPrizeCoords:
         PHX : PHY
@@ -91,7 +91,7 @@ SetPrizeCoords:
                 LDY.w AncillaGet,X
                 RTL
         +
-        JSR.w CrystalOrPendantBehavior : BCC .regular_coords
+        JSR CrystalOrPendantBehavior : BCC .regular_coords
         PLY : PLX
         LDY.b #$20 ; Treat as crystal
 RTL
@@ -101,7 +101,7 @@ SetCutsceneFlag:
         PHX
         LDY.b #$01 ; wrote over
         LDA.w DungeonID : BMI .no_cutscene
-        LDA.w RoomItemsTaken : BIT #$80 : BNE .dungeon_prize
+        LDA.w RoomItemsTaken : BIT.b #$80 : BNE .dungeon_prize
                 .no_cutscene
                 SEP #$30
                 PLX
@@ -109,7 +109,7 @@ SetCutsceneFlag:
                 RTL
         .dungeon_prize
         LDA.w ItemReceiptMethod : CMP.b #$03 : BCC .no_cutscene
-                JSR.w SetDungeonCompleted
+                JSR SetDungeonCompleted
                 LDA.w ItemReceiptID
                 REP #$30
                 AND.w #$00FF : ASL : TAX
@@ -120,9 +120,9 @@ RTL
 
 AnimatePrizeCutscene:
         LDA.w ItemReceiptMethod : CMP.b #$03 : BNE +
-                JSR.w CrystalOrPendantBehavior : BCC +
+                JSR CrystalOrPendantBehavior : BCC +
                         LDA.w DungeonID : BMI +
-                        LDA.w RoomItemsTaken : BIT #$80 : BEQ +
+                        LDA.w RoomItemsTaken : BIT.b #$80 : BEQ +
                                 SEC
                                 RTL
         +
@@ -131,7 +131,7 @@ RTL
 
 PrizeDropSparkle:
         LDA.w AncillaID,X : CMP.b #$29 : BNE .no_sparkle
-                JSR.w CrystalOrPendantBehavior : BCC .no_sparkle
+                JSR CrystalOrPendantBehavior : BCC .no_sparkle
                         SEC
                         RTL
         .no_sparkle
@@ -139,8 +139,8 @@ PrizeDropSparkle:
 RTL
 
 HandleDropSFX:
-        LDA.w RoomItemsTaken : BIT #$80 : BEQ .no_sound
-                JSR.w CrystalOrPendantBehavior : BCC .no_sound
+        LDA.w RoomItemsTaken : BIT.b #$80 : BEQ .no_sound
+                JSR CrystalOrPendantBehavior : BCC .no_sound
                         SEC
                         RTL
         .no_sound
@@ -159,7 +159,7 @@ RTL
 MaybeKeepLootID:
         PHA
         LDA.w DungeonID : BMI .no_prize
-        LDA.w RoomItemsTaken : BIT #$80 : BNE .prize
+        LDA.w RoomItemsTaken : BIT.b #$80 : BNE .prize
                 .no_prize
                 STZ.w ItemReceiptID
                 STZ.w ItemReceiptPose
@@ -231,15 +231,15 @@ PrepPrizeOAMCoordinates:
         STA.b Scrap04
 
         REP #$20
-        LDA.w $029E,X
+        LDA.w AncillaZCoord,X
         AND.w #$00FF
-        STA.b $72
+        STA.b ScrapBuffer72
 
-        LDA.b $00
-        STA.b $06
+        LDA.b Scrap00
+        STA.b Scrap06
         SEC
-        SBC.b $72
-        STA.b $00
+        SBC.b ScrapBuffer72
+        STA.b Scrap00
 
         SEP #$20
         TXY

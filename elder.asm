@@ -2,7 +2,7 @@ NewElderCode:
 {
 LDA.b OverworldIndex : CMP.b #$1B : BEQ .newCodeContinue
 ;Restore Jump we can keep the RTL so JML
-JML $85F0CD
+JML Sprite_16_Elder
 .newCodeContinue
 PHB : PHK : PLB
 LDA.b #$07 : STA.w SpriteOAMProp, X ; Palette 
@@ -12,11 +12,10 @@ JSR Elder_Code
 
 PLB
 RTL
-
+}
 
     Elder_Draw:
     {
-
         LDA.b #$02 : STA.b Scrap06 : STZ.b Scrap07 ;Number of Tiles
         
         LDA.w SpriteGFXControl, X : ASL #04
@@ -60,7 +59,7 @@ RTL
             LDA.l GoalCounter
             CMP.l GoalItemRequirement : !BLT +
                 SEP #$20
-                JSL.l ActivateGoal
+                JSL ActivateGoal
             +
         .dont_show
         

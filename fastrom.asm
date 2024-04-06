@@ -12,10 +12,10 @@ TitleCardFix:
 	BNE .exit
 
 	LDA.b #$14
-	STA.b $10
+	STA.b GameMode
 
-	STZ.b $11
-	STZ.b $22
+	STZ.b GameSubMode
+	STZ.b LinkPosX
 
 .exit
 	JML $8CC3D2

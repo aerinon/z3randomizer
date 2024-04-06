@@ -17,7 +17,7 @@ PHP
     LDX.b #$7E : STX.w A1B4
     LDA.w #$0040 : STA.w DAS4L
     LDA.w #$1801 : STA.w DMAP4
-    LDX.b #$10 : STX.w MDMAEN
+    LDX.b #$10 : STX.w DMAENABLE
 
     LDX.b #$0F : STX.w INIDISP
     PLP
@@ -36,7 +36,7 @@ PHP
 
     LDA.w #$0040 : STA.w DAS4L
     LDA.w #$1801 : STA.w DMAP4
-    LDX.b #$10 : STX.w MDMAEN
+    LDX.b #$10 : STX.w DMAENABLE
 
     LDX.b #$0F : STX.w INIDISP
     PLP

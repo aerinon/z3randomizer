@@ -67,7 +67,7 @@ macro ServiceRequestChest(type)
 			LDA.b OverworldIndex : STA.l TxBuffer+9 ; area id
 			LDA.b #$00 : STA.l TxBuffer+10 ; protocol defines this as a ushort
 		++
-		LDA.b $76 : !SUB #$58 : STA.l TxBuffer+11 ; object index (type 2 only)
+		LDA.b $76 : !SUB.b #$58 : STA.l TxBuffer+11 ; object index (type 2 only)
 		LDA.b #<type> : STA.l TxBuffer ; item get
 	LDA.b #$01 : STA.l TxStatus ; mark ready for reading
 	SEC ; mark request as successful
@@ -100,14 +100,14 @@ PollService:
 		LDA.l RxBuffer : CMP.b #!SCM_GIVE : BNE + ; give item
 			PHY : LDA.l RxBuffer+8 : TAY
 			LDA.l RxBuffer+9 : BNE ++
-				JSL.l Link_ReceiveItem ; do something else
+				JSL Link_ReceiveItem ; do something else
 				PLY : BRA .done
 			++
-				JSL.l Link_ReceiveItem
+				JSL Link_ReceiveItem
 				PLY : BRA .done
 		+ : CMP.b #!SCM_SHOW : BNE + ; show item
 			; you could check here if you're on the right screen, etc
-			LDA.l RxBuffer+12 : JSL.l PrepDynamicTile ; we could properly process the whole message but we're not going to
+			LDA.l RxBuffer+12 : JSL PrepDynamicTile ; we could properly process the whole message but we're not going to
 			BRA .done
 		+ : CMP.b #!SCM_PROMPT : BNE + ; item prompt
 			LDA.l RxBuffer+8 : TAX
@@ -115,7 +115,7 @@ PollService:
 			REP #$30 ; set 16-bit accumulator and index registers
 				LDA.l RxBuffer+10 : TAX
 				LDA.l RxBuffer+12
-				JSL.l DoToast
+				JSL DoToast
 			SEP #$30 ; set 8-bit accumulator and index registers
 		+ : CMP.b #!SCM_VERSION : BNE + ; version
 			%ServiceRequestVersion()

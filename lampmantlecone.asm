@@ -13,7 +13,7 @@ LampCheck:
 RTL
 ;================================================================================
 ;--------------------------------------------------------------------------------
-; Output: 0 locked, 1 openA
+; Output: 0 locked, 1 open
 ;--------------------------------------------------------------------------------
 CheckForZelda:
         LDA.l ProgressIndicator : CMP.b #$02 : !BLT + ; Skip if rain is falling
@@ -24,7 +24,7 @@ CheckForZelda:
 RTL
 ;================================================================================
 SetOverlayIfLamp:
-        JSL.l LampCheck
+        JSL LampCheck
         STA.b SUBDESQ ; write it directly to the overlay, this isn't a terrible idea at all
 RTL
 ;================================================================================
@@ -46,7 +46,7 @@ MirrorScrollSpawnZelda:
 	LDA.l MirrorEquipment : CMP.b #$01 : BNE +  ;mirror scroll
 	LDA.l StartingEntrance : CMP.b #$02 : BEQ ++ ; zelda's cell
 	CMP.b #$04 : BNE +
-		++ INC $04AA
+		++ INC.w RespawnFlag
 	; what we replaced
-	+ STZ.b $11 : STZ.b $14
+	+ STZ.b GameSubMode : STZ.b NMISTRIPES
 RTL

@@ -7,60 +7,60 @@
 ;00 00 01 01 01 02 02 02 03 03 03 04 04 04 05 05 05 06 06 06 07 07 07 08 08
 
 MultiplyByY:
-.loop cpy #$0001 : beq .done
-cpy #$0003 : bne ++
+.loop cpy.w #$0001 : beq .done
+cpy.w #$0003 : bne ++
     jsr MultiBy3 : bra .done
-++ cpy #$0005 : bne ++
+++ cpy.w #$0005 : bne ++
     jsr MultiBy5 : bra .done
-++ asl : sta $00 : tya : lsr : tay : lda $00 : bra .loop
+++ asl : sta.b Scrap00 : tya : lsr : tay : lda.b Scrap00 : bra .loop
 .done rts
 
 ;Divisor in Y. Width of division is in X for rounding toward middle
 DivideByY:
 .loop
-cpy #$0000 : beq .done
-cpy #$0001 : beq .done
-cpy #$0003 : bne ++
+cpy.w #$0000 : beq .done
+cpy.w #$0001 : beq .done
+cpy.w #$0003 : bne ++
     jsr DivideBy3 : bra .done
-++ cpy #$0005 : bne ++
+++ cpy.w #$0005 : bne ++
     jsr DivideBy5 : bra .done
-++ jsr DivideBy2 : sta $00
+++ jsr DivideBy2 : sta.b Scrap00
 tya : lsr : tay
 txa : lsr : tax
-lda $00 : bra .loop
+lda.b Scrap00 : bra .loop
 .done rts
 
 MultiBy3:
-sta $00 : asl : !add $00
+sta.b Scrap00 : asl : !ADD.b Scrap00
 rts
 
 MultiBy5:
-sta $00 : asl #2 : !add $00
+sta.b Scrap00 : asl #2 : !ADD.b Scrap00
 rts
 
 ;width of divison in x: rounds toward X/2
 DivideBy2:
-sta $00
+sta.b Scrap00
 lsr : bcc .done
-sta $02 : txa : lsr : cmp $00 : !blt +
-    lda $02 : inc : bra .done
-+ lda $02
+sta.b Scrap02 : txa : lsr : cmp.b Scrap00 : !BLT +
+    lda.b Scrap02 : inc : bra .done
++ lda.b Scrap02
 .done rts
 
 DivideBy3:
-sta $00
-ldx #$0000
-lda #$0002
-.loop cmp $00 : !bge .store
-    inx : !add #$0003 : bra .loop
+sta.b Scrap00
+ldx.w #$0000
+lda.w #$0002
+.loop cmp.b Scrap00 : !BGE .store
+    inx : !ADD.w #$0003 : bra .loop
 .store txa
 rts
 
 DivideBy5:
-sta $00
-ldx #$0000
-lda #$0003
-.loop cmp $00 : !bge .store
-    inx : !add #$0005 : bra .loop
+sta.b Scrap00
+ldx.w #$0000
+lda.w #$0003
+.loop cmp.b Scrap00 : !BGE .store
+    inx : !ADD.w #$0005 : bra .loop
 .store txa
 rts

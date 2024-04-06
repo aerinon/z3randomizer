@@ -1,5 +1,5 @@
 LoadRoomHook:
-    JSL.l IndoorTileTransitionCounter
+    JSL IndoorTileTransitionCounter
 
     .noStats
     JSL Dungeon_LoadRoom
@@ -25,12 +25,12 @@ macro setTilePointer(roomX, roomY, quadX, quadY)
 endmacro
 
 macro writeTile()
-    STA.l $7E2000,x
+    STA.l TileMapA,x
     INX #2
 endmacro
 
 macro writeTileAt(roomX, roomY, quadX, quadY)
-    STA.l <quadY>*32+<roomY>*2+<quadX>*32+<roomX>*2+$7E2000
+    STA.l <quadY>*32+<roomY>*2+<quadX>*32+<roomX>*2+TileMapA
 endmacro
 
 !BOMBOS_BORDER = $08D0

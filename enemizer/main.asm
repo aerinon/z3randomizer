@@ -2,13 +2,6 @@
 
 lorom
 
-;================================================================================
-
-!ADD = "CLC : ADC"
-!SUB = "SEC : SBC"
-!BLT = "BCC"
-!BGE = "BCS"
-
 ;=Constants======================================================================
 
 !BUSHES_FLAG = "$368100"
@@ -59,8 +52,8 @@ incsrc falling_death.asm
 incsrc shell_gfx.asm
 warnpc $B6FFFF ;if we hit this we need to split stuff by bank
 
-org $0684BD
+org $8684BD
 Sprite_Get16BitCoords_long:
 
-org $1EC6FA ;F46FA
+org $9EC6FA ;F46FA
 SpritePrep_Eyegore:

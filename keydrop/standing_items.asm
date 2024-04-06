@@ -43,13 +43,11 @@ org $86d180
 org $86d18d ; <- 3518D - sprite_absorbable.asm : 274 (LDA $7EF36F : INC A : STA $7EF36F)
 	JSL KeyGet
 
-org $86f9f3 ; bank06.asm : 6732 (JSL Sprite_LoadProperties)
+org $86f9f3 ; bank06.asm : 6732 (JSL SpritePrep_LoadProperties)
 	JSL LoadProperties_PreserveCertainProps
 
-;org $808BAA ; NMI hook
-;	JSL TransferPotGFX
-
 org $86828A
+Sprite_SpawnSecret_SpriteSpawnDynamically:
 	JSL CheckSprite_Spawn
 
 org $87B169
@@ -76,28 +74,20 @@ org $8681F4
 Sprite_SpawnSecret_pool_ID:
 org $868283
 Sprite_SpawnSecret_NotRandomBush:
-org $86828A
-Sprite_SpawnSecret_SpriteSpawnDynamically:
 org $86d23a
 Sprite_DrawAbsorbable:
-org $9eff81
-Sprite_DrawRippleIfInWater:
-org $8db818
-Sprite_LoadProperties:
 org $86D038
 KeyRoomFlagMasks:
 org $80FDEE
 InitializeMirrorHDMA:
-org $80E3C4
-LoadCommonSprites_long:
 
-org $09D62E
+org $89D62E
 UWSpritesPointers: ; 0x250 bytes for 0x128 rooms' 16-bit pointers
 
-org $09D87E
+org $89D87E
 UWPotsPointers: ; 0x250 bytes for 0x128 rooms' 16-bit pointers
 
-org $09DACE
+org $89DACE
 UWPotsData: ; variable number of bytes (max 0x11D1) for all pots data
 
 org $A88000
@@ -184,48 +174,48 @@ UWSpecialFlag:
 
 org $A8B128
 RevealPotItem:
-	STA.b $04 ; save tilemap coordinates
+	STA.b Scrap04 ; save tilemap coordinates
 	STZ.w SpawnedItemFlag
 	STZ.w SpawnedItemMWPlayer
 	LDA.w $0B9C : AND.w #$FF00 : STA.w $0B9C
 
-	LDA.b $A0 : ASL : TAX
+	LDA.b RoomIndex : ASL : TAX
 
-	LDA.l UWPotsPointers,X : STA.b $00 ; we may move this
-	LDA.w #UWPotsPointers>>16 : STA.b $02
+	LDA.l UWPotsPointers,X : STA.b Scrap00 ; we may move this
+	LDA.w #UWPotsPointers>>16 : STA.b Scrap02
 
 	LDY.w #$FFFD : LDX.w #$FFFF
 
 .next_pot
 	INY : INY : INY
 
-	LDA.b [$00],Y
+	LDA.b [Scrap00],Y
 	CMP.w #$FFFF : BEQ .exit
 
 	INX
 
-	STA.w $08 ; remember the exact value
+	STA.w Scrap08 ; remember the exact value
 	AND.w #$3FFF
-	CMP.b $04 : BNE .next_pot ; not the correct value
+	CMP.b Scrap04 : BNE .next_pot ; not the correct value
 
 	STZ.w SpawnedItemIsMultiWorld
-	BIT.b $08
+	BIT.b Scrap08
 	BVS LoadMultiWorldPotItem
 	BMI LoadMajorPotItem
 
 .normal_secret
-	STA $08
+	STA.b Scrap08
 
 	PHX : PHY
 		; set bit and count if first time lifting this pot
-		TXA : ASL : TAX : LDA.l BitFieldMasks, X : STA $0A
-		LDA.b $A0 : ASL : TAX
+		TXA : ASL : TAX : LDA.l BitFieldMasks, X : STA.b Scrap0A
+		LDA.b RoomIndex : ASL : TAX
 		JSR ShouldCountNormalPot : BCC .obtained
-		LDA.l RoomPotData, X : BIT $0A : BNE .obtained
-			ORA $0A : STA RoomPotData, X
+		LDA.l RoomPotData, X : BIT.b Scrap0A : BNE .obtained
+			ORA.b Scrap0A : STA.l RoomPotData, X
 			; increment dungeon counts
 			SEP #$10
-			LDX.w $040C : CPX.b #$FF : BEQ +
+			LDX.w DungeonID : CPX.b #$FF : BEQ +
 				CPX.b #$00 : BNE ++
 				 	INX #2 ; treat sewers as HC
 				++ LDA.l DungeonLocationsChecked, X : INC : STA.l DungeonLocationsChecked, X
@@ -237,14 +227,14 @@ RevealPotItem:
 	PLY : PLX
 
 	PLA ; remove the JSL return lower 16 bits
-	LDA $08
-	PEA.w $01E6E2-1 ; change return address to go back to the vanilla routine
+	LDA.b Scrap08
+	PEA.w RevealPotItem_found_match-1 ; return to vanilla routine
 .exit
 	RTL
 
 LoadMultiWorldPotItem:
 	INY : INY
-	LDA.b [$00],Y : AND.w #$00FF
+	LDA.b [Scrap00],Y : AND.w #$00FF
 
 	INC.w SpawnedItemIsMultiWorld
 	PHX
@@ -263,7 +253,7 @@ RTL
 
 LoadMajorPotItem:
 	INY : INY
-	LDA.b [$00],Y : AND.w #$00FF
+	LDA.b [Scrap00],Y : AND.w #$00FF
 
 SaveMajorItemDrop:
 	; A currently holds the item receipt ID
@@ -286,24 +276,24 @@ SaveMajorItemDrop:
 RTL
 	.substitute
 	PHA
-		TXA : ASL : STA.b $00
-		LDA.w #$001F : SBC $00
-		TAX : LDA.l BitFieldMasks, X : STA $00
-		LDA.b $A0 : ASL : TAX
+		TXA : ASL : STA.b Scrap00
+		LDA.w #$001F : SBC.b Scrap00
+		TAX : LDA.l BitFieldMasks, X : STA.b Scrap00
+		LDA.b RoomIndex : ASL : TAX
 		LDA.l $7EF580, X
-		AND.b $00
+		AND.b Scrap00
 		BNE .exit
-		LDA.l $7EF580, X : ORA $00 : STA.l $7EF580, X
-	PLA : STA $0B9C
+		LDA.l $7EF580, X : ORA.b Scrap00 : STA.l $7EF580, X
+	PLA : STA.w $0B9C
 RTL
 	.exit
 	PLA : STZ.w $0B9C
 RTL
 
 ShouldCountNormalPot:
-	INY : INY : LDA [$00], Y : AND #$00FF : CMP #$0080 : BCS .clear
+	INY : INY : LDA.b [Scrap00], Y : AND.w #$00FF : CMP.w #$0080 : BCS .clear
 	LDA.l PotCountMode : BEQ .clear
-	LDA.l PotCollectionRateTable, X : BIT $0A : BEQ .clear ; don't count if clear
+	LDA.l PotCollectionRateTable, X : BIT.b Scrap0A : BEQ .clear ; don't count if clear
 .set
 	SEC
 RTS
@@ -313,12 +303,12 @@ RTS
 
 IncrementCountsForSubstitute:
 	PHX : REP #$30
-	LDA.w SpawnedItemIndex : ASL : TAX : LDA.l BitFieldMasks, X : STA $0A
-	LDA.b $A0 : ASL : TAX
-	LDA.l RoomPotData, X : BIT $0A : BNE .obtained
-		ORA $0A : STA RoomPotData, X
+	LDA.w SpawnedItemIndex : ASL : TAX : LDA.l BitFieldMasks, X : STA.b Scrap0A
+	LDA.b RoomIndex : ASL : TAX
+	LDA.l RoomPotData, X : BIT.b Scrap0A : BNE .obtained
+		ORA.b Scrap0A : STA.l RoomPotData, X
 		SEP #$10
-		LDX.w $040C : CPX.b #$FF : BEQ +
+		LDX.w DungeonID : CPX.b #$FF : BEQ +
 			CPX.b #$00 : BNE ++
 				INX #2 ; treat sewers as HC
 			++ LDA.l DungeonLocationsChecked, X : INC : STA.l DungeonLocationsChecked, X
@@ -331,15 +321,15 @@ IncrementCountsForSubstitute:
 RTS
 
 ClearSpriteData:
-	STZ.b $03 ; what we overrode  # we no longer need STZ $02 see underworld_sprite_hooks
+	STZ.b Scrap03 ; what we overrode  # we no longer need STZ $02 see underworld_sprite_hooks
 	.shared:
 
 	PHX
-		LDA #$00 : LDX #$00
+		LDA.b #$00 : LDX.b #$00
 		.loop
-			STA SprDropsItem, X :  STA SprItemReceipt, X : STA SprItemIndex, X
-			STA SprItemMWPlayer, X : STA SprItemFlags, X
-			INX : CPX #$10 : BCC .loop
+			STA.l SprDropsItem, X :  STA.l SprItemReceipt, X : STA.l SprItemIndex, X
+			STA.l SprItemMWPlayer, X : STA.l SprItemFlags, X
+			INX : CPX.b #$10 : BCC .loop
 		JSR SetupEnemyDropIndicator
 	PLX
 	RTL
@@ -354,40 +344,40 @@ ClearSpriteData2:
 ; uses X register, assumes flags are (MX) but (mX) is fine
 SetupEnemyDropIndicator:
 	REP #$20
-	LDA.w #!BlankTile : STA.w !EnemyDropIndicator
-	LDX.b $1B : BEQ .done
-	LDA.l DRFlags : BIT #$0800 : BEQ .done
+	LDA.w #!BlankTile : STA.w EnemyDropIndicator
+	LDX.b IndoorsFlag : BEQ .done
+	LDA.l DRFlags : BIT.w #$0800 : BEQ .done
 
 ;	Skipping the compass checks, could make this a toggle later?
 	; do we have a flag for enemy drops on? could check it here
-;	LDA.w $040C : AND.w #$00FF : CMP.w #$00FF : BEQ .skipCompassChecks
+;	LDA.w DungeonID : AND.w #$00FF : CMP.w #$00FF : BEQ .skipCompassChecks
 	; compass checks
 	; does compass for dungeon exist?
 ;	LSR : TAX : LDA.l ExistsTransfer, X : TAX : LDA.l CompassExists, X : BEQ .skipCompassChecks
 	; do we have the compass
 	; sewers? outstanding?
-;	LDA.l CompassField : LDX.w $040C : AND.l DungeonMask, X : BEQ .done
+;	LDA.l CompassField : LDX.w DungeonID : AND.l DungeonMask, X : BEQ .done
 
 ;.skipCompassChecks
 	; either we're in a cave ($040C: $FF), compass doesn't exist, or we have the compass
 	; check if there are enemy drops
-	LDA.b $02 : PHA : REP #$10 ; store 02/03 for later
-	LDX.b $A0 : LDA.l UWSpecialFlagIndex, X : AND.w #$00FF ; determine if special case or not
+	LDA.b Scrap02 : PHA : REP #$10 ; store 02/03 for later
+	LDX.b RoomIndex : LDA.l UWSpecialFlagIndex, X : AND.w #$00FF ; determine if special case or not
 	CMP.w #$00FF : BEQ .loadNormalFlags
 	JSR FetchBitmaskForSpecialCase
-	PHA : LDA $A0 : ASL : TAX : PLA
+	PHA : LDA.b RoomIndex : ASL : TAX : PLA
 	BRA .testAgainstMask
 
 .loadNormalFlags
 	TXA : ASL : TAX : LDA.l UWEnemyItemFlags, X
 
 .testAgainstMask
-	STA.b $02 : LDA.l SpriteDropData, X : AND.b $02 : EOR.b $02
+	STA.b Scrap02 : LDA.l SpriteDropData, X : AND.b Scrap02 : EOR.b Scrap02
 	BEQ .cleanup
-	LDA.w #!BlueSquare : STA.w !EnemyDropIndicator
+	LDA.w #!BlueSquare : STA.w EnemyDropIndicator
 
 .cleanup
-	SEP #$10 : PLA : STA.b $02
+	SEP #$10 : PLA : STA.b Scrap02
 
 .done
 SEP #$20
@@ -397,20 +387,20 @@ RTS
 ; Runs during sprite load of the room
 LoadSpriteData:
 	INY : INY
-	LDA.b [$00], Y
-	CMP #$F3 : BCC .normal
+	LDA.b [Scrap00], Y
+	CMP.b #$F3 : BCC .normal
 		PHA
-			DEC.b $03 ; standing items shouldn't consume a sprite slot
-			LDX.b $03 ; these were changed to $03, for moved sprites
-			CMP #$F9 : BNE .not_multiworld
-				DEY : LDA.b [$00], Y : STA.l SprItemMWPlayer, X
+			DEC.b Scrap03 ; standing items shouldn't consume a sprite slot
+			LDX.b Scrap03 ; these were changed to $03, for moved sprites
+			CMP.b #$F9 : BNE .not_multiworld
+				DEY : LDA.b [Scrap00], Y : STA.l SprItemMWPlayer, X
 				LDA.b #$02 : STA.l SprDropsItem, X : BRA .common
 			.not_multiworld
 			LDA.b #$00 : STA.l SprItemMWPlayer, X
 			LDA.b #$01 : STA.l SprDropsItem, X
 			DEY
 			.common
-			DEY : LDA.b [$00], Y : STA.l SprItemReceipt, X
+			DEY : LDA.b [Scrap00], Y : STA.l SprItemReceipt, X
 			STA.b Scrap0E
 			LDA.l SprItemMWPlayer, X : BNE +  ; skip if multiworld
 				PHX
@@ -425,7 +415,7 @@ LoadSpriteData:
 		INY : INY
 		PLA
 		PLA : PLA ; remove the JSL return lower 16 bits
-		PEA.w $09C344-1 ; change return address to exit from Underworld_LoadSingleSprite
+		PEA.w $89C344-1 ; change return address to exit from Underworld_LoadSingleSprite
 		RTL
 	.normal
 	RTL
@@ -440,10 +430,10 @@ CheckIfDropValid:
 	;This section sets up the drop
 		LDA.b #$02 : STA.l SpawnedItemFlag
 		STX.w SpawnedItemIndex
-		LDA.l SprItemReceipt, X : STA SpawnedItemID
-		LDA.l SprItemMWPlayer, X : STA SpawnedItemMWPlayer
+		LDA.l SprItemReceipt, X : STA.l SpawnedItemID
+		LDA.l SprItemMWPlayer, X : STA.l SpawnedItemMWPlayer
 		LDY.b #$01 ; trigger the small key routines
-		LDA.w SpawnedItemID : STA.b $00 : CMP #$32 : BNE +
+		LDA.w SpawnedItemID : STA.b Scrap00 : CMP.b #$32 : BNE +
 		LDA.l StandingItemsOn : BNE +
 			INY ; big key routine
 		+
@@ -452,33 +442,33 @@ CheckIfDropValid:
 	    LDX.b #$00 ; see if the item should be replaced by an absorbable
 		- CPX.b #$1A : BCS .done
 			LDA.l MinorForcedDrops, X
-			CMP.b $00 : BNE +
-				INX : LDA.l MinorForcedDrops, X : STA.b $00
+			CMP.b Scrap00 : BNE +
+				INX : LDA.l MinorForcedDrops, X : STA.b Scrap00
 				PLX : PLA : PLA : PEA.w PrepareEnemyDrop-1 ; change call stack for PrepareEnemyDrop
 				JSR IncrementCountForMinor
-				LDA.b $00 : RTL
+				LDA.b Scrap00 : RTL
 			+ INX #2 : BRA -
 		.done PLX
 		 RTL ; unstun if stunned
 
 DoNormalDrop:
 	SEP #$30
-	LDY.w $0CBA, X : BEQ .no_forced_drop
+	LDY.w SpriteForceDrop, X : BEQ .no_forced_drop
 		RTL
 	.no_forced_drop
-	PLA : PLA ; remove the JSL reswamturn lower 16 bits
-	PEA.w $06F996-1 ; change return address to .no_forced_drop of (Sprite_DoTheDeath)
+	PLA : PLA ; remove the JSL return lower 16 bits
+	PEA.w $86F996-1 ; change return address to .no_forced_drop of (Sprite_DoTheDeath)
 	RTL
 
 RevealSpriteDrop2:
 	LDY.w SprDropsItem, X : BEQ .normal
 		BRA .no_forced_drop
 	.normal
-	LDY.w $0CBA, X : BEQ .no_forced_drop
+	LDY.w SpriteForceDrop, X : BEQ .no_forced_drop
 		RTL
 	.no_forced_drop
 	PLA : PLA ; remove the JSL return lower 16 bits
-	PEA.w $06E3CE-1 ; change return address to .no_forced_drop of (Sprite_DoTheDeath)
+	PEA.w $86E3CE-1 ; change return address to .no_forced_drop of (Sprite_DoTheDeath)
 	RTL
 
 PikitOverride:
@@ -497,17 +487,17 @@ RTL
 ; output - carry clear if the enemy doesn't drop, set if it does
 CheckIfDropsInThisLocation:
 	REP #$30 : PHX ; save it for later
-	TXA : ASL : TAX : LDA.l BitFieldMasks, X : STA.b $00  ; stores the bitmask for the specific drop
+	TXA : ASL : TAX : LDA.l BitFieldMasks, X : STA.b Scrap00  ; stores the bitmask for the specific drop
 	; check sram, if gotten, run normal
-	LDA.b $A0 : ASL : TAX : LDA.l SpriteDropData, X : PLX ; restore X in case we're done
-	BIT.b $00 : BNE .normal_drop ; zero indicates the item has not been obtained
+	LDA.b RoomIndex : ASL : TAX : LDA.l SpriteDropData, X : PLX ; restore X in case we're done
+	BIT.b Scrap00 : BNE .normal_drop ; zero indicates the item has not been obtained
 	PHX  ; save it for later
-	LDX.b $A0 : LDA.l UWSpecialFlagIndex, X : AND.w #$00FF
+	LDX.b RoomIndex : LDA.l UWSpecialFlagIndex, X : AND.w #$00FF
 	CMP.w #$00FF : BEQ + ; $FF indicates the EnemyItemFlags are sufficient
 		JSR FetchBitmaskForSpecialCase
 		BRA .test
 	+ TXA : ASL : TAX : LDA.l UWEnemyItemFlags, X
-	.test PLX : BIT.b $00 : BEQ .normal_drop ; zero indicates the enemy doesn't drop
+	.test PLX : BIT.b Scrap00 : BEQ .normal_drop ; zero indicates the enemy doesn't drop
 	.valid
 	SEP #$30 : SEC
 RTS
@@ -520,15 +510,15 @@ RTS
 ; output - A the correct bitmask
 FetchBitmaskForSpecialCase:
 	ASL : TAX
-	LDA.w $040C : BNE +   ;  here and branch to different function?
+	LDA.w DungeonID : BNE +   ;  here and branch to different function?
 		INC #2 ; move sewers to HC
 	+ CMP.w #$00FF : BNE +  ; check if we are in a cave
 		LDA.l PreviousOverworldDoor : AND.w #$00FF ; use this instead of dungeon id
-	+ STA.b $02
+	+ STA.b Scrap02
 	- LDA.l UWSpecialFlag, X : AND.w #$00FF
 	CMP.w #$00FF : BNE +  ; if the value is FF we are done, use 0 as bitmask
 		LDA.w #$0000 : RTS
-	+  CMP.b $02 : BNE +  ; if the value matches the dungeon, use next 2 bytes as bitmask
+	+  CMP.b Scrap02 : BNE +  ; if the value matches the dungeon, use next 2 bytes as bitmask
 		INX : LDA.l UWSpecialFlag, X : RTS
 	+ INX #3 : BRA - ; else move to the next row
 
@@ -551,14 +541,14 @@ db $D5, $E1 ; ARROW REFILL 5  (x$D5)
 
 IncrementCountForMinor:
 	PHX : REP #$30
-	LDA.w SpawnedItemIndex : ASL : TAX : LDA.l BitFieldMasks, X : STA $0A
-	LDA.b $A0 : ASL : TAX
-	LDA.l SpriteDropData, X : BIT $0A : BNE .obtained
-		ORA $0A : STA SpriteDropData, X
+	LDA.w SpawnedItemIndex : ASL : TAX : LDA.l BitFieldMasks, X : STA.b Scrap0A
+	LDA.b RoomIndex : ASL : TAX
+	LDA.l SpriteDropData, X : BIT.b Scrap0A : BNE .obtained
+		ORA.b Scrap0A : STA.l SpriteDropData, X
 		SEP #$10
 		JSR SetupEnemyDropIndicator
 		REP #$20
-		LDX.w $040C : CPX.b #$FF : BEQ +
+		LDX.w DungeonID : CPX.b #$FF : BEQ +
 			CPX.b #$00 : BNE ++
 				INX #2 ; treat sewers as HC
 			++ LDA.l DungeonLocationsChecked, X : INC : STA.l DungeonLocationsChecked, X
@@ -574,73 +564,73 @@ BitFieldMasks:
 dw $8000, $4000, $2000, $1000, $0800, $0400, $0200, $0100
 dw $0080, $0040, $0020, $0010, $0008, $0004, $0002, $0001
 
-; Runs during Sprite_E4_SmallKey and duning Sprite_E5_BigKey spawns
+; Runs during Sprite_E4_SmallKey and during Sprite_E5_BigKey spawns
 ShouldSpawnItem:
-	LDA $048E : CMP.b #$87 : BNE + ; check for hera basement cage
-	CPX #$0A : BNE +  ; the hera basement key is always sprite 0x0A
-	LDA $A8 : AND.b #$03 : CMP.b #$02 : BNE + ; we're not in that quadrant
-			LDA.w $0403 : AND.w KeyRoomFlagMasks,Y : RTL
+	LDA.w RoomIndexMirror : CMP.b #$87 : BNE + ; check for hera basement cage
+	CPX.b #$0A : BNE +  ; the hera basement key is always sprite 0x0A
+	LDA.b $A8 : AND.b #$03 : CMP.b #$02 : BNE + ; we're not in that quadrant
+			LDA.w RoomItemsTaken : AND.w KeyRoomFlagMasks,Y : RTL
 	+
 	; checking our sram table
 	PHX : PHY
 		REP #$30
-		LDA.b $A0 : ASL : TAY
-		LDA.w SprItemIndex, X : AND #$00FF : ASL
+		LDA.b RoomIndex : ASL : TAY
+		LDA.w SprItemIndex, X : AND.w #$00FF : ASL
 		PHX
-			TAX : LDA.l BitFieldMasks, X : STA $00
+			TAX : LDA.l BitFieldMasks, X : STA.b Scrap00
 		PLX ; restore X again
 		LDA.w SprItemFlags, X : BIT.w #$0001 : BNE +
-			TYX : LDA.l SpriteDropData, X : BIT $00 : BEQ .notObtained
+			TYX : LDA.l SpriteDropData, X : BIT.b Scrap00 : BEQ .notObtained
 			BRA .obtained
-		+ TYX : LDA.l RoomPotData, X : BIT $00 : BEQ .notObtained
+		+ TYX : LDA.l RoomPotData, X : BIT.b Scrap00 : BEQ .notObtained
 			.obtained
-			SEP #$30 : PLY : PLX : LDA #$01 : RTL ; already obtained
+			SEP #$30 : PLY : PLX : LDA.b #$01 : RTL ; already obtained
 	.notObtained
 	SEP #$30 : PLY : PLX
-	LDA #$00
+	LDA.b #$00
 	RTL
 
 MarkSRAMForItem:
 	LDA.b RoomIndex : CMP.b #$87 : BNE + ; check for hera basement cage
-		CPX #$0A : BNE +  ; the hera basement key is always sprite 0x0A
-			LDA $A8 : AND.b #$03 : CMP.b #$02 : BNE +
-				LDA.w $0403 : ORA.w KeyRoomFlagMasks, Y : RTL
+		CPX.b #$0A : BNE +  ; the hera basement key is always sprite 0x0A
+			LDA.b $A8 : AND.b #$03 : CMP.b #$02 : BNE +
+				LDA.w RoomItemsTaken : ORA.w KeyRoomFlagMasks, Y : RTL
 	+ PHX : PHY : REP #$30
-		LDA.b $A0 : ASL : TAY
+		LDA.b RoomIndex : ASL : TAY
 		LDA.l SpawnedItemIndex : ASL
-		TAX : LDA.l BitFieldMasks, X : STA $00
+		TAX : LDA.l BitFieldMasks, X : STA.b Scrap00
 		TYX
-		LDA.w SpawnedItemFlag : CMP #$0001 : BEQ +
-			LDA SpriteDropData, X : ORA $00 : STA SpriteDropData, X
+		LDA.w SpawnedItemFlag : CMP.w #$0001 : BEQ +
+			LDA.l SpriteDropData, X : ORA.b Scrap00 : STA.l SpriteDropData, X
 			SEP #$10 : JSR SetupEnemyDropIndicator
 			BRA .end
-		+ LDA RoomPotData, X : ORA $00 : STA RoomPotData, X
+		+ LDA.l RoomPotData, X : ORA.b Scrap00 : STA.l RoomPotData, X
 	.end
 	SEP #$30 : PLY : PLX
-	LDA.w $0403
+	LDA.w RoomItemsTaken
 	RTL
 
 SpriteKeyPrep:
-	LDA.w $0B9B : STA.w $0CBA, X ; what we wrote over
+	LDA.w $0B9B : STA.w SpriteForceDrop, X ; what we wrote over
 	PHA
-		LDA $A0 : CMP #$87 : BNE .continue
-			CPX #$0A : BNE .continue  ; the hera basement key is always sprite 0x0A
-				LDA $A9 : ORA $AA : AND #$03 : CMP #$02 : BNE .continue
-					LDA #$00 : STA.w SpawnedItemFlag : STA SprItemFlags, X
-					LDA #$24 : STA $0E80, X
+		LDA.b RoomIndex : CMP.b #$87 : BNE .continue
+			CPX.b #$0A : BNE .continue  ; the hera basement key is always sprite 0x0A
+				LDA.b LinkQuadrantH : ORA.b LinkQuadrantV : AND.b #$03 : CMP.b #$02 : BNE .continue
+					LDA.b #$00 : STA.w SpawnedItemFlag : STA.l SprItemFlags, X
+					LDA.b #$24 : STA.w $0E80, X
 					BRA +
 		.continue
-		LDA.w SpawnedItemIndex : STA SprItemIndex, X
-		LDA.w SpawnedItemMWPlayer : STA SprItemMWPlayer, X : STA.w !MULTIWORLD_SPRITEITEM_PLAYER_ID
-		LDA.w SpawnedItemFlag : STA SprItemFlags, X : BEQ +
-		LDA.l SpawnedItemID : STA $0E80, X
+		LDA.w SpawnedItemIndex : STA.l SprItemIndex, X
+		LDA.w SpawnedItemMWPlayer : STA.l SprItemMWPlayer, X : STA.w !MULTIWORLD_SPRITEITEM_PLAYER_ID
+		LDA.w SpawnedItemFlag : STA.l SprItemFlags, X : BEQ +
+		LDA.l SpawnedItemID : STA.w $0E80, X
 		PHA : PHY : PHX
-			JSL.l GetSpritePalette : PLX : STA $0F50, X ; setup the palette
+			JSL GetSpritePalette : PLX : STA.w SpriteOAMProp, X ; setup the palette
 		PLY : PLA
-		CMP #$24 : BNE ++ ;
-			LDA $A0 : CMP.b #$80 : BNE +
-			LDA SpawnedItemFlag : BNE +
-				LDA #$24  ; it's the big key drop?
+		CMP.b #$24 : BNE ++ ;
+			LDA.b RoomIndex : CMP.b #$80 : BNE +
+			LDA.l SpawnedItemFlag : BNE +
+				LDA.b #$24  ; it's the big key drop?
 		++ JSL RequestStandingItemVRAMSlot
 	+ PLA
 	RTL
@@ -651,55 +641,55 @@ SpriteKeyDrawGFX:
     LDA.l SprItemMWPlayer, X : STA.w !MULTIWORLD_SPRITEITEM_PLAYER_ID
     LDA.w $0E80, X
    	CMP.b #$24 : BNE +
-   		LDA $A0 : CMP #$80 : BNE ++
-   		LDA SpawnedItemFlag : BNE ++
-    		LDA #$24 : BRA +
+   		LDA.b RoomIndex : CMP.b #$80 : BNE ++
+   		LDA.l SpawnedItemFlag : BNE ++
+    		LDA.b #$24 : BRA +
     	++ PLA
 		   PHK : PEA.w .jslrtsreturn-1
-		   PEA.w $068014 ; an rtl address - 1 in Bank06
+		   PEA.w $868014 ; an rtl address - 1 in Bank06
 		   JML Sprite_DrawAbsorbable
 		   .jslrtsreturn
 		   RTL
 	+ JSL DrawPotItem
-    CMP #$03 : BNE +
-        PHA : LDA $0E60, X : ORA.b #$20 : STA $0E60, X : PLA
-    + JSL.l Sprite_DrawShadowLong
+    CMP.b #$03 : BNE +
+        PHA : LDA.w SpriteControl, X : ORA.b #$20 : STA.w SpriteControl, X : PLA
+    + JSL Sprite_DrawShadowLong
     PLA : RTL
 
 KeyGet:
-    LDA CurrentSmallKeys ; what we wrote over
+    LDA.l CurrentSmallKeys ; what we wrote over
     PHA
     	LDA.l StandingItemsOn : BNE +
     		PLA : RTL
-    	+ LDY $0E80, X
-    	LDA SprItemIndex, X : STA SpawnedItemIndex
-    	LDA SprItemFlags, X : STA SpawnedItemFlag
-    	LDA $A0 : CMP #$87 : BNE + ;check for hera cage
-    	LDA SpawnedItemFlag : BNE + ; if it came from a pot, it's fine
+    	+ LDY.w $0E80, X
+    	LDA.l SprItemIndex, X : STA.l SpawnedItemIndex
+    	LDA.l SprItemFlags, X : STA.l SpawnedItemFlag
+    	LDA.b RoomIndex : CMP.b #$87 : BNE + ;check for hera cage
+    	LDA.l SpawnedItemFlag : BNE + ; if it came from a pot, it's fine
     		JSR ShouldKeyBeCountedForDungeon : BCC ++
 			JSL CountChestKeyLong
     		++ PLA : RTL
-    	+ STY $00
-    	LDA SprItemMWPlayer, X : STA !MULTIWORLD_ITEM_PLAYER_ID
-			STA !MULTIWORLD_SPRITEITEM_PLAYER_ID : BNE .receive
+    	+ STY.b Scrap00
+    	LDA.l SprItemMWPlayer, X : STA.l !MULTIWORLD_ITEM_PLAYER_ID
+			STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID : BNE .receive
     	PHX
-			LDA $040C : CMP #$FF : BNE +
-				LDA $00 : CMP.b #$AF : BNE .skip
-				LDA CurrentGenericKeys : INC : STA CurrentGenericKeys
-				LDA $00 : BRA .countIt
+			LDA.w DungeonID : CMP.b #$FF : BNE +
+				LDA.b Scrap00 : CMP.b #$AF : BNE .skip
+				LDA.l CurrentGenericKeys : INC : STA.l CurrentGenericKeys
+				LDA.b Scrap00 : BRA .countIt
 			+ LSR : TAX
-			LDA $00 : CMP.l KeyTable, X : BNE +
+			LDA.b Scrap00 : CMP.l KeyTable, X : BNE +
 				.countIt
 				LDA.l StandingItemCounterMask : AND SpawnedItemFlag : BEQ ++
-					JSL.l AddInventory
+					JSL AddInventory
 				++ PLX : PLA : RTL
 			+ CMP.b #$AF : beq .countIt ; universal key
 			CMP.b #$24 : beq .countIt   ; small key for this dungeon
-    	.skip PLX
-    	.receive
-    	JSL $0791b3 ; Player_HaltDashAttackLong
-			TYA : JSL.l AttemptItemSubstitution : JSL.l ResolveLootIDLong : TAY
-    	JSL.l Link_ReceiveItem
+		.skip PLX
+		.receive
+		JSL Player_HaltDashAttackLong
+		TYA : JSL AttemptItemSubstitution : JSL ResolveLootIDLong : TAY
+		JSL Link_ReceiveItem
 	PLA : DEC : RTL
 
 KeyTable:
@@ -708,32 +698,32 @@ db $A0, $A0, $A2, $A3, $A4, $A5, $A6, $A7, $A8, $A9, $AA, $AB, $AC, $AD
 ; Input Y - the item type
 ShouldKeyBeCountedForDungeon:
 	PHX
-		LDA $040C : CMP #$FF : BEQ .done
+		LDA.w DungeonID : CMP.b #$FF : BEQ .done
 		LSR : TAX
-		TYA : cmp KeyTable, X : BNE +
+		TYA : CMP.w KeyTable, X : BNE +
 			- PLX : SEC : RTS
-		+ CMP.B #$24 : BEQ -
+		+ CMP.b #$24 : BEQ -
 	.done
 	PLX : CLC : RTS
 
 
 BigKeyGet:
-	LDY $0E80, X
-	CPY #$32 : BNE +
-		STZ $02E9 : LDY.b #$32 ; what we wrote over
+	LDY.w $0E80, X
+	CPY.b #$32 : BNE +
+		STZ.w ItemReceiptMethod : LDY.b #$32 ; what we wrote over
 		PHX : JSL Link_ReceiveItem : PLX ; what we wrote over
 		CLC : RTL
 	+ SEC : RTL
 
 LoadProperties_PreserveCertainProps:
-	LDA $0E20, X : CMP #$E4 : BEQ +
-	CMP #$E5 : BEQ +
-		JML Sprite_LoadProperties
-	+ LDA $0F50, X : PHA
-    LDA $0E80, X : PHA
-    JSL Sprite_LoadProperties
-    PLA : STA $0E80, X
-    PLA : STA $0F50, X
+	LDA.w SpriteTypeTable, X : CMP.b #$E4 : BEQ +
+	CMP.b #$E5 : BEQ +
+		JML SpritePrep_LoadProperties
+	+ LDA.w SpriteOAMProp, X : PHA
+    LDA.w $0E80, X : PHA
+    JSL SpritePrep_LoadProperties
+    PLA : STA.w $0E80, X
+    PLA : STA.w SpriteOAMProp, X
     RTL
 
 SubstitionFlow:
@@ -750,7 +740,7 @@ SubstitionTable:
 	db $DB ; RED RUPEE - 0x16
 	db $E2 ; ARROW REFILL 10 - 0x17
 	db $DD ; BOMB REFILL 4 - 0x18
-    db $DE ; BOMB REFILL 8  - 0x19
+    db $DE ; BOMB REFILL 8 - 0x19
 
 
 SubstituteSpriteId:
@@ -759,7 +749,7 @@ SubstituteSpriteId:
 	+ LDA.b #$01
 	CPY.b #$18 : BCC +
 		LDA.b #$05
-	+ STA.b $0D
+	+ STA.b Scrap0D
 	JSR IncrementCountsForSubstitute
 	PHB : PHK : PLB
 		LDA.w SubstitionTable-$16, Y ; Do substitute
@@ -772,35 +762,35 @@ CheckSprite_Spawn:
 	BMI .check
 RTL
 .check
-	LDA $0D : CMP #$08 : BNE +
-	LDA $0372 : BNE .error
-		LDX #$0F
+	LDA.b Scrap0D : CMP.b #$08 : BNE +
+	LDA.w LinkDashing : BNE .error
+		LDX.b #$0F
 
 		; loop looking for a Sprite with state 0A (carried by the player)
-		- LDA $0DD0, X : CMP #$0A : BEQ .foundIt
+		- LDA.w SpriteAITable, X : CMP.b #$0A : BEQ .foundIt
 		DEX : BMI .error : BRA -
 
 		.foundIt
-		LDA #$00 : STZ $0DD0, X
-		LDA #$E4 : JSL Sprite_SpawnDynamically
+		LDA.b #$00 : STZ.w SpriteAITable, X
+		LDA.b #$E4 : JSL Sprite_SpawnDynamically
 		BMI .error
-		LDA #$40 : TSB $0308 : RTL
+		LDA.b #$40 : TSB.w AButtonAct : RTL
 
 		.error
 		LDA.b #$3C ; SFX2_3C - error beep
-		STA.w $012E
-	+ LDA #$FF
+		STA.w SFX2
+	+ LDA.b #$FF
 RTL
 
 PreventPotSpawn:
-	LDA #$40 : BIT $0308 : BEQ +
-		STZ $0308 : RTL
-	+ LDA.b #$80 : STA.w $0308  ; what we wrote over
+	LDA.b #$40 : BIT.w AButtonAct : BEQ +
+		STZ.w AButtonAct : RTL
+	+ LDA.b #$80 : STA.w AButtonAct  ; what we wrote over
 RTL
 
 PreventPotSpawn2:
-	LDA $0308 : BEQ +
-		LDA.b #$01 : TSB.b $50 ; what we wrote over
+	LDA.w AButtonAct : BEQ +
+		LDA.b #$01 : TSB.b LinkStrafe ; what we wrote over
 + RTL
 
 CheckIfPotIsSpecial:
@@ -809,7 +799,7 @@ CheckIfPotIsSpecial:
 	BEQ .specialpot
 
     ; Normal pot, so run the vanilla code
-	LDA.l $7EF3CA ; check for dark world
+	LDA.l CurrentWorld ; check for dark world
 	.specialpot ; zero flag already set, so gtg
 RTL
 

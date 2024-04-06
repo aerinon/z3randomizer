@@ -1,7 +1,7 @@
 Module_Password:
 	LDA.b GameSubMode
 
-	JSL.l JumpTableLong
+	JSL JumpTableLong
 
 	dl Password_BeginInit ; 0
 	dl Password_EndInit ; 1
@@ -10,7 +10,7 @@ Module_Password:
 	dl Password_Return ; 4
 
 Password_BeginInit:
-	LDA.b #$80 : STA.w $0710 ;skip animated sprite updates in NMI
+	LDA.b #$80 : STA.w SkipOAM ;skip animated sprite updates in NMI
 
 	JSL EnableForceBlank
 	JSL Vram_EraseTilemaps_triforce
@@ -48,41 +48,41 @@ Password_Main:
     JSR PasswordEraseOldCursors
 
 	; handle joypad input
-	LDA.b $F6 : AND.b #$10 : BEQ + ; R Button
+	LDA.b Joy1B_New : AND.b #$10 : BEQ + ; R Button
 		JSR PasswordMoveCursorRight
 	+
-	LDA.b $F6 : AND.b #$20 : BEQ + ; L Button
+	LDA.b Joy1B_New : AND.b #$20 : BEQ + ; L Button
 		JSR PasswordMoveCursorLeft
 	+
-	LDA.b $F4 : AND.b #$01 : BEQ + ; right
+	LDA.b Joy1A_New : AND.b #$01 : BEQ + ; right
 		LDA.b PasswordSelectPosition : INC A : CMP.b #$24 : !BLT ++
 			!SUB.b #$24
 		++
 		STA.b PasswordSelectPosition
 		LDA.b #$20 : STA.w SFX3
 	+
-	LDA.b $F4 : AND.b #$02 : BEQ + ; left
+	LDA.b Joy1A_New : AND.b #$02 : BEQ + ; left
 		LDA.b PasswordSelectPosition : DEC A : BPL ++
 			!ADD.b #$24
 		++
 		STA.b PasswordSelectPosition
 		LDA.b #$20 : STA.w SFX3
 	+
-	LDA.b $F4 : AND.b #$04 : BEQ + ; down
+	LDA.b Joy1A_New : AND.b #$04 : BEQ + ; down
 		LDA.b PasswordSelectPosition : !ADD.b #$09 : CMP.b #$24 : !BLT ++
 			!SUB.b #$24
 		++
 		STA.b PasswordSelectPosition
 		LDA.b #$20 : STA.w SFX3
 	+
-	LDA.b $F4 : AND.b #$08 : BEQ + ; up
+	LDA.b Joy1A_New : AND.b #$08 : BEQ + ; up
 		LDA.b PasswordSelectPosition : !SUB.b #$09 :  BPL ++
 			!ADD.b #$24
 		++
 		STA.b PasswordSelectPosition
 		LDA.b #$20 : STA.w SFX3
 	+
-	LDA.b $F4 : ORA.b $F6 : AND.b #$C0 : BEQ + ; face button
+	LDA.b Joy1A_New : ORA.b Joy1B_New : AND.b #$C0 : BEQ + ; face button
 		LDX.b PasswordSelectPosition
 		LDA.l .selectionValues, X : BPL ++
 			CMP.b #$F0 :  BNE +++
@@ -111,7 +111,7 @@ Password_Main:
 		++
 		LDA.b #$2B : STA.w SFX2
 	+
-	LDA.b $F4 : AND.b #$10 : BEQ + ; start
+	LDA.b Joy1A_New : AND.b #$10 : BEQ + ; start
 		INC.b GameSubMode
 	+
 	.endOfButtonChecks
@@ -129,7 +129,7 @@ db $11, $12, $13, $14, $15, $16, $17, $18, $F2
 db $19, $1A, $1B, $1C, $1D, $1E, $1F, $20, $F3
 
 Password_Check:
-	JSL.l ValidatePassword : BNE .correct
+	JSL ValidatePassword : BNE .correct
 	LDA.b #$3C : STA.w SFX2 ; error
 	DEC.b GameSubMode
 RTL
@@ -184,9 +184,9 @@ ValidatePassword:
 	LDA.l KnownEncryptedValue+4 : STA.l CryptoBuffer+4
 	LDA.l KnownEncryptedValue+6 : STA.l CryptoBuffer+6
 
-	LDA.w #$0002 : STA.b $04 ;set block size
+	LDA.w #$0002 : STA.b Scrap04 ;set block size
 
-	JSL.l XXTEA_Decode
+	JSL XXTEA_Decode
 
 	SEP #$20 ; 8 bit accumulator
 
@@ -219,29 +219,29 @@ PasswordToKey:
 	; $00 input offset
 	; $02 output offset
 	; $04 shift amount
-	LDA.w #$0000 : STA.b $00 : STA.b $02
-	LDA.w #$000B : STA.b $04
+	LDA.w #$0000 : STA.b Scrap00 : STA.b Scrap02
+	LDA.w #$000B : STA.b Scrap04
 	-
-		LDX.b $00
+		LDX.b Scrap00
 		LDA.l PasswordSRAM, X : DEC : AND.w #$001F
-		LDY.b $04
+		LDY.b Scrap04
 		-- : BEQ + : ASL : DEY : BRA -- : + ; Shift left by Y
 		XBA
-		LDX.b $02
+		LDX.b Scrap02
 		ORA.l KeyBase, X
 		STA.l KeyBase, X
 
-		LDA.b $04 : !SUB.w #$0005 : BPL +
+		LDA.b Scrap04 : !SUB.w #$0005 : BPL +
 			!ADD.w #$0008
-			INC $02
-		+ : STA.b $04
+			INC.b Scrap02
+		+ : STA.b Scrap04
 
-	LDA.b $00 : INC : STA.b $00 : CMP.w #$0010 : !BLT -
+	LDA.b Scrap00 : INC : STA.b Scrap00 : CMP.w #$0010 : !BLT -
 RTS
 
 LoadPasswordStripeTemplate:
-	LDA.w DMAP0 : PHA : LDA.w BBAD0 : PHA :	LDA.w A1T0L : PHA ; preserve DMA parameters
-	LDA.w A1T0H : PHA : LDA.w A1B0 : PHA :	LDA.w DAS0L : PHA ; preserve DMA parameters
+	LDA.w DMAP0 : PHA : LDA.w BBAD0 : PHA : LDA.w A1T0L : PHA ; preserve DMA parameters
+	LDA.w A1T0H : PHA : LDA.w A1B0 : PHA : LDA.w DAS0L : PHA ; preserve DMA parameters
 	LDA.w DAS0H : PHA ; preserve DMA parameters  
   
 	LDA.b #$00 : STA.w DMAP0 ; set DMA transfer direction A -> B, bus A auto increment, single-byte mode
@@ -260,7 +260,7 @@ LoadPasswordStripeTemplate:
 	LDA.b #Password_StripeImageTemplate_end-Password_StripeImageTemplate>>8
 	STA.w DAS0H ; set transfer size
 
-	LDA.b #$01 : STA.w MDMAEN ; begin DMA transfer
+	LDA.b #$01 : STA.w DMAENABLE ; begin DMA transfer
 
 	PLA : STA.w DAS0H : PLA : STA.w DAS0L :	PLA : STA.w A1B0 ; restore DMA parameters
 	PLA : STA.w A1T0H : PLA : STA.w A1T0L :	PLA : STA.w BBAD0 ; restore DMA parameters
@@ -332,16 +332,16 @@ UpdatePasswordTiles:
 	LDX.w #$000F
 	-
 		LDA.l PasswordSRAM, X : AND.w #$00FF : TXY
-		ASL #3 : STA.b $00
-		TYA : ASL #4 : STA.b $03
-		LDX.b $00 : LDA.l HashAlphabetTilesWithBlank, X
-		LDX.b $03 : STA.w $1006, X
-		LDX.b $00 : LDA.l HashAlphabetTilesWithBlank+$02, X
-		LDX.b $03 : STA.w $1008, X
-		LDX.b $00 : LDA.l HashAlphabetTilesWithBlank+$04, X
-		LDX.b $03 : STA.w $100E, X
-		LDX.b $00 : LDA.l HashAlphabetTilesWithBlank+$06, X
-		LDX.b $03 : STA.w $1010, X
+		ASL #3 : STA.b Scrap00
+		TYA : ASL #4 : STA.b Scrap03
+		LDX.b Scrap00 : LDA.l HashAlphabetTilesWithBlank, X
+		LDX.b Scrap03 : STA.w $1006, X
+		LDX.b Scrap00 : LDA.l HashAlphabetTilesWithBlank+$02, X
+		LDX.b Scrap03 : STA.w $1008, X
+		LDX.b Scrap00 : LDA.l HashAlphabetTilesWithBlank+$04, X
+		LDX.b Scrap03 : STA.w $100E, X
+		LDX.b Scrap00 : LDA.l HashAlphabetTilesWithBlank+$06, X
+		LDX.b Scrap03 : STA.w $1010, X
 
 		TYX : DEX : BMI + : BRA -
 	+

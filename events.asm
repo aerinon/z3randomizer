@@ -5,20 +5,20 @@ OnPrepFileSelect:
         +
         PHA : PHX
         REP #$10
-        JSL.l LoadAlphabetTilemap
-        JSL.l LoadFullItemTiles
+        JSL LoadAlphabetTilemap
+        JSL LoadFullItemTiles
         SEP #$10
         PLX : PLA
 RTL
 ;--------------------------------------------------------------------------------
 OnDrawHud:
-	JSL.l DrawChallengeTimer ; this has to come before NewDrawHud because the timer overwrites the compass counter
-	JSL.l NewDrawHud
-	JSL.l DrHudOverride
-	JSL.l SwapSpriteIfNecessary
-	JSL.l CuccoStorm
-	JSL.l PollService
-JML.l ReturnFromOnDrawHud
+	JSL DrawChallengeTimer ; this has to come before NewDrawHud because the timer overwrites the compass counter
+	JSL NewDrawHud
+	JSL DrHudOverride
+	JSL SwapSpriteIfNecessary
+	JSL CuccoStorm
+	JSL PollService
+JML ReturnFromOnDrawHud
 ;--------------------------------------------------------------------------------
 OnDungeonEntrance:
 	STA.l PegColor ; thing we wrote over
@@ -27,35 +27,35 @@ OnDungeonEntrance:
 RTL
 ;--------------------------------------------------------------------------------
 OnDungeonBossExit:
-        JSL.l StatTransitionCounter
+        JSL StatTransitionCounter
 RTL
 ;--------------------------------------------------------------------------------
 OnPlayerDead:
 	PHA
-		JSL.l SetDeathWorldChecked
-		JSL.l SetSilverBowMode
-		JSL.l RefreshRainAmmo
+		JSL SetDeathWorldChecked
+		JSL SetSilverBowMode
+		JSL RefreshRainAmmo
 	PLA
 RTL
 ;--------------------------------------------------------------------------------
 OnDungeonExit:
         PHA : PHP
         SEP #$20 ; set 8-bit accumulator
-        JSL.l SQEGFix
+        JSL SQEGFix
         PLP : PLA
 
         STA.w DungeonID : STZ.w Map16ChangeIndex ; thing we wrote over
 
         PHA : PHP
         INC.w UpdateHUDFlag
-        JSL.l HUD_RebuildLong
-        JSL.l FloodGateResetInner
-        JSL.l SetSilverBowMode
+        JSL HUD_RebuildLong
+        JSL FloodGateResetInner
+        JSL SetSilverBowMode
         PLP : PLA
 RTL
 ;--------------------------------------------------------------------------------
 OnQuit:
-	JSL.l SQEGFix
+	JSL SQEGFix
 	LDA.b #$00 : STA.l AltTextFlag ; bandaid patch bug with mirroring away from text
 	LDA.b #$10 : STA.b MAINDESQ ; thing we wrote over
 RTL
@@ -68,9 +68,9 @@ OnUncleItemGet:
 	BIT.b #$02 : BEQ + : STA.l InfiniteBombs : +
 	BIT.b #$01 : BEQ + : STA.l InfiniteArrows : +
 
-	LDA UncleItem_Player : STA !MULTIWORLD_ITEM_PLAYER_ID
+	LDA.l UncleItem_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID
 	PLA
-	JSL.l Link_ReceiveItem
+	JSL Link_ReceiveItem
 
 	LDA.l UncleRefill : BIT.b #$04 : BEQ + : LDA.b #$80 : STA.l MagicFiller : + ; refill magic
 	LDA.l UncleRefill : BIT.b #$02 : BEQ + : LDA.b #50 : STA.l BombsFiller : + ; refill bombs
@@ -104,13 +104,13 @@ OnAga1Defeated:
 RTL
 ;--------------------------------------------------------------------------------
 OnAga2Defeated:
-        JSL.l Dungeon_SaveRoomData_justKeys ; thing we wrote over, make sure this is first
+        JSL Dungeon_SaveRoomData_justKeys ; thing we wrote over, make sure this is first
         LDA.b #$01 : STA.l Aga2Duck
         LDA.w DungeonID : CMP.b #$1A : BNE +
                 LDA.l DungeonsCompleted : ORA.b #$04 : STA.l DungeonsCompleted
         +
         LDA.b #$FF : STA.w DungeonID
-        JML.l IncrementAgahnim2Sword
+        JML IncrementAgahnim2Sword
 ;--------------------------------------------------------------------------------
 OnFileCreation:
         PHB
@@ -135,37 +135,37 @@ OnFileCreation:
 
         ; Set validity value and do some cleanup. Jump to checksum done.
         LDA.w #$55AA : STA.l FileValiditySRAM
-        JSL.l WriteSaveChecksumAndBackup
+        JSL WriteSaveChecksumAndBackup
         STZ.b Scrap00
         STZ.b Scrap01
 
-JML.l InitializeSaveFile_checksum_done
+JML InitializeSaveFile_checksum_done
 ;--------------------------------------------------------------------------------
 OnFileLoad:
 	REP #$10 ; set 16 bit index registers
-	JSL.l EnableForceBlank ; what we wrote over
+	JSL EnableForceBlank ; what we wrote over
 	REP #$20 : LDA.l TotalItemCount : STA.l MultiClientFlagsWRAM+1 : SEP #$20
-	LDA MultiClientFlagsROM : STA.l MultiClientFlagsWRAM
+	LDA.l MultiClientFlagsROM : STA.l MultiClientFlagsWRAM
 
 	LDA.b #$07 : STA.w BG34NBA ; Restore screen 3 to normal tile area
 
 	LDA.l FileMarker : BNE +
-		JSL.l OnNewFile
+		JSL OnNewFile
 		LDA.b #$FF : STA.l FileMarker
 	+
 	LDA.w DeathReloadFlag : BNE + ; don't adjust the worlds for "continue" or "save-continue"
 	LDA.l MosaicLevel : BNE + ; don't adjust worlds if mosiac is enabled (Read: mirroring in dungeon)
-		JSL.l DoWorldFix
+		JSL DoWorldFix
 	+
-	JSL.l MasterSwordFollowerClear
+	JSL MasterSwordFollowerClear
 	LDA.b #$FF : STA.l RNGLockIn ; reset rng item lock-in
 	LDA.l GenericKeys : BEQ +
 		LDA.l CurrentGenericKeys : STA.l CurrentSmallKeys ; copy generic keys to key counter
 	+
 
-	JSL.l SetSilverBowMode
-	JSL.l RefreshRainAmmo
-	JSL.l SetEscapeAssist
+	JSL SetSilverBowMode
+	JSL RefreshRainAmmo
+	JSL SetEscapeAssist
 
 	LDA.l IsEncrypted : CMP.b #01 : BNE +
 		JSL LoadStaticDecryptionKey
@@ -196,19 +196,19 @@ RTL
 ;--------------------------------------------------------------------------------
 OnInitFileSelect:
 	LDA.b #$51 : STA.w $0AA2 ;<-- Line missing from JP1.0, needed to ensure "extra" copy of naming screen graphics are loaded.
-	JSL.l EnableForceBlank
+	JSL EnableForceBlank
 RTL
 ;--------------------------------------------------------------------------------
 OnLinkDamaged:
-	JSL.l IncrementDamageTakenCounter_Arb
-	JML.l OHKOTimer
+	JSL IncrementDamageTakenCounter_Arb
+	JML OHKOTimer
 ;--------------------------------------------------------------------------------
 ;OnEnterWater:
-;       JSL.l UnequipCapeQuiet ; what we wrote over
+;       JSL UnequipCapeQuiet ; what we wrote over
 ;RTL
 ;--------------------------------------------------------------------------------
 OnLinkDamagedFromPit:
-	JSL.l OHKOTimer
+	JSL OHKOTimer
 
 	LDA.l AllowAccidentalMajorGlitch
 	BEQ ++
@@ -222,11 +222,11 @@ OnLinkDamagedFromPit:
 	RTL
 ;--------------------------------------------------------------------------------
 OnLinkDamagedFromPitOutdoors:
-	JML.l OHKOTimer ; make sure this is last
+	JML OHKOTimer ; make sure this is last
 ;--------------------------------------------------------------------------------
 OnOWTransition:
-        JSL.l FloodGateReset
-        JSL.l StatTransitionCounter
+        JSL FloodGateReset
+        JSL StatTransitionCounter
         PHP
         SEP #$20 ; set 8-bit accumulator
         LDA.b #$FF : STA.l RNGLockIn ; clear lock-in
@@ -261,25 +261,25 @@ PostItemAnimation:
         LDA.b #$00 : STA.l BusyItem ; mark item as finished
         LDA.l TextBoxDefer : BEQ +
                 STZ.w TextID : STZ.w TextID+1 ; reset decompression buffer
-                JSL.l Main_ShowTextMessage_Alt
+                JSL Main_ShowTextMessage_Alt
                 LDA.b #$00 : STA.l TextBoxDefer
         +
 
-        LDA $1B : BEQ +
-        		REP #$20 : LDA $A0 : STA !MULTIWORLD_ROOMID : SEP #$20
-        		LDA $0403 : STA !MULTIWORLD_ROOMDATA
+        LDA.b IndoorsFlag : BEQ +
+        		REP #$20 : LDA.b RoomIndex : STA.l !MULTIWORLD_ROOMID : SEP #$20
+        		LDA.w RoomItemsTaken : STA.l !MULTIWORLD_ROOMDATA
         +
 
-        LDA !MULTIWORLD_ITEM_PLAYER_ID : BEQ +
-        		STZ $02E9
-        		LDA #$00 : STA !MULTIWORLD_ITEM_PLAYER_ID
+        LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BEQ +
+        		STZ.w ItemReceiptMethod
+        		LDA.b #$00 : STA.l !MULTIWORLD_ITEM_PLAYER_ID
         		PLB
-        		JML.l Ancilla_ReceiveItem_objectFinished
+        		JML Ancilla_ReceiveItem_objectFinished
 		+
 
         LDA.w ItemReceiptMethod : CMP.b #$01 : BNE +
                 LDA.b LinkDirection : BEQ +
-                        JSL.l IncrementChestTurnCounter
+                        JSL IncrementChestTurnCounter
         +
         REP #$20
         PEA.w $7E00

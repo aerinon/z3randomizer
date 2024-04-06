@@ -3,19 +3,19 @@
 ;--------------------------------------------------------------------------------
 DarkWorldSaveFix:
 	LDA.b #$70 : PHA : PLB ; thing we wrote over - data bank change
-	JSL.l MasterSwordFollowerClear
-	JML.l StatSaveCounter
+	JSL MasterSwordFollowerClear
+	JML StatSaveCounter
 ;--------------------------------------------------------------------------------
 DoWorldFix:
 	LDA.l InvertedMode : BEQ +
 		JMP DoWorldFix_Inverted
 	+
 	LDA.l Bugfix_MirrorlessSQToLW : BEQ .skip_mirror_check
-                LDA.l FollowerIndicator : CMP.b #$04 : BEQ .setLightWorld ; check if old man is following
-		LDA MirrorEquipment : AND #$02 : BEQ .noMirror ; check if we have the mirror
+		LDA.l FollowerIndicator : CMP.b #$04 : BEQ .setLightWorld ; check if old man is following
+		LDA.l MirrorEquipment : AND.b #$02 : BEQ .noMirror ; check if we have the mirror
 	.skip_mirror_check ; alt entrance point
 	LDA.l ProgressIndicator : CMP.b #$03 : BCS .done ; check if agahnim 1 is alive
-        .setLightWorld
+	.setLightWorld
 	LDA.b #$00
 	.noMirror
 	STA.l CurrentWorld ; set flag to light world
@@ -31,7 +31,7 @@ SetDeathWorldChecked:
 		LDA.w DungeonID : CMP.b #$FF : BNE .dungeon
 		LDA.b RoomIndex : ORA.b RoomIndex+1 : BNE ++
 			LDA.l GanonPyramidRespawn : BNE .pyramid ; if flag is set, force respawn at pyramid on death to ganon
-	    ++
+	++
 	.outdoors
 JMP DoWorldFix
 
@@ -47,11 +47,11 @@ RTL
 ;================================================================================
 DoWorldFix_Inverted:
 	LDA.l Bugfix_MirrorlessSQToLW : BEQ .skip_mirror_check
-                LDA.l FollowerIndicator : CMP.b #$04 : BEQ .setDarkWorld ; check if old man is following
-		LDA.l MirrorEquipment : AND #$02 : BEQ .setDarkWorld ; check if we have the mirror
+		LDA.l FollowerIndicator : CMP.b #$04 : BEQ .setDarkWorld ; check if old man is following
+		LDA.l MirrorEquipment : AND.b #$02 : BEQ .setDarkWorld ; check if we have the mirror
 	.skip_mirror_check ; alt entrance point
 	LDA.l ProgressIndicator : CMP.b #$03 : BCS .done ; check if agahnim 1 is alive
-        .setDarkWorld
+	.setDarkWorld
 	LDA.b #$40 : STA.l CurrentWorld ; set flag to dark world
 	LDA.l FollowerIndicator
 	CMP.b #$07 : BEQ .clear ; clear frog

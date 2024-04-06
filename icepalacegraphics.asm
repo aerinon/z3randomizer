@@ -1,6 +1,6 @@
 ShouldOverrideFileLoad:
     ; Y = Graphics file being loaded
-    CPY #$0A ; 0A = Ice/Mire floor file
+    CPY.b #$0A ; 0A = Ice/Mire floor file
     BNE .no
 
     LDA.w DungeonID ; Dungeon number
@@ -33,14 +33,14 @@ BgGraphicsLoading:
     LDX.b #64*2 ; Tiles to load * 2
 -
     ; Unrolled loop to upload half a tile
-    LDA.b [$00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
-    LDA.b [$00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
-    LDA.b [$00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
-    LDA.b [$00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
-    LDA.b [$00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
-    LDA.b [$00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
-    LDA.b [$00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
-    LDA.b [$00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
+    LDA.b [Scrap00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
+    LDA.b [Scrap00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
+    LDA.b [Scrap00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
+    LDA.b [Scrap00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
+    LDA.b [Scrap00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
+    LDA.b [Scrap00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
+    LDA.b [Scrap00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
+    LDA.b [Scrap00] : STA.w VMDATAL : INC.b Scrap00 : INC.b Scrap00
     DEX
     BNE -
 

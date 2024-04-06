@@ -1,103 +1,103 @@
 RecordStairType: {
     pha
     lda.l DRMode : beq .norm
- 	REP #$30 : LDA.b $A2 : CMP.w #$00E1 : BCS .norm
-	CMP #$00DF : BEQ .norm
+ 	REP #$30 : LDA.b PreviousRoom : CMP.w #$00E1 : BCS .norm
+	CMP.w #$00DF : BEQ .norm
 	SEP #$30
-        lda $0e
-        cmp #$25 : bcc ++ ; don't record straight staircases
-            sta $045e
+        lda.b Scrap0E
+        cmp.b #$25 : bcc ++ ; don't record straight staircases
+            sta.w $045e
         ++ pla : bra +
-    .norm SEP #$30 : pla : sta $a0
-    + lda $063d, x
+    .norm SEP #$30 : pla : sta.b RoomIndex
+    + lda.w $063d, x
     rtl
 }
 
 SpiralWarp: {
     lda.l DRMode : beq .abort ; abort if not DR
-    REP #$30 : LDA.b $A2 : CMP.w #$00E1 : BCS .abort
-    CMP #$00DF : BEQ .abort
+    REP #$30 : LDA.b PreviousRoom : CMP.w #$00E1 : BCS .abort
+    CMP.w #$00DF : BEQ .abort
     SEP #$30
-    lda $045e : cmp #$5e : beq .gtg ; abort if not spiral - intended room is in A!
-    cmp #$5f : beq .gtg
-    cmp #$26 : beq .inroom
+    lda.w $045e : cmp.b #$5e : beq .gtg ; abort if not spiral - intended room is in A!
+    cmp.b #$5f : beq .gtg
+    cmp.b #$26 : beq .inroom
     .abort
-    SEP #$30 : stz $045e : lda $a2 : and.b #$0f : rtl ; clear,run hijacked code and get out
+    SEP #$30 : stz.w $045e : lda.b PreviousRoom : and.b #$0f : rtl ; clear,run hijacked code and get out
     .inroom
     jsr InroomStairsWarp
-    lda $a2 : and #$0f ; this is the code we are hijacking
+    lda.b PreviousRoom : and.b #$0f ; this is the code we are hijacking
     rtl
 
     .gtg
     phb : phk : plb : phx : phy ; push stuff
     jsr LookupSpiralOffset
-    rep #$30 : and #$00FF : asl #2 : tax
-    lda.w SpiralTable, x : sta $00
-    lda.w SpiralTable+2, x : sta $02
+    rep #$30 : and.w #$00FF : asl #2 : tax
+    lda.w SpiralTable, x : sta.b Scrap00
+    lda.w SpiralTable+2, x : sta.b Scrap02
     sep #$30
-    lda $00 : sta $a0
+    lda.b Scrap00 : sta.b RoomIndex
     ; shift quadrant if necessary
-    stz $07 ; this is a x quad adjuster for those blasted staircase on the edges
-    lda $01 : and #$01 : !sub $a9
+    stz.b Scrap07 ; this is a x quad adjuster for those blasted staircase on the edges
+    lda.b Scrap01 : and.b #$01 : !SUB.b LinkQuadrantH
     bne .xQuad
-    lda $0462 : and #$04 : bne .xqCont
-    inc $07
-    .xqCont lda $22 : bne .skipXQuad ; this is an edge case
-    dec $23 : bra .skipXQuad ; need to -1 if $22 is 0
-    .xQuad sta $06 : !add $a9 : sta $a9
-    lda $0462 : and #$04 : bne .xCont
-    inc $07 ; up stairs are going to -1 the quad anyway during transition, need to add this back
-    .xCont ldy #$00 : jsr ShiftQuadSimple
+    lda.w $0462 : and.b #$04 : bne .xqCont
+    inc.b Scrap07
+    .xqCont lda.b LinkPosX : bne .skipXQuad ; this is an edge case
+    dec.b LinkPosX+1 : bra .skipXQuad ; need to -1 if $22 is 0
+    .xQuad sta.b Scrap06 : !ADD.b LinkQuadrantH : sta.b LinkQuadrantH
+    lda.w $0462 : and.b #$04 : bne .xCont
+    inc.b Scrap07 ; up stairs are going to -1 the quad anyway during transition, need to add this back
+    .xCont ldy.b #$00 : jsr ShiftQuadSimple
 
     .skipXQuad
-    lda $aa : lsr : sta $06 : lda $01 : and #$02 : lsr : !sub $06
+    lda.b LinkQuadrantV : lsr : sta.b Scrap06 : lda.b Scrap01 : and.b #$02 : lsr : !SUB.b Scrap06
     beq .skipYQuad
-    sta $06 : asl : !add $aa : sta $aa
-    ldy #$01 : jsr ShiftQuadSimple
+    sta.b Scrap06 : asl : !ADD.b LinkQuadrantV : sta.b LinkQuadrantV
+    ldy.b #$01 : jsr ShiftQuadSimple
 
     .skipYQuad
-    lda $01 : and #$04 : lsr : sta $048a ;fix layer calc 0->0 2->1
-    lda $01 : and #$08 : lsr #2 : sta $0492 ;fix from layer calc 0->0 2->1
+    lda.b Scrap01 : and.b #$04 : lsr : sta.w $048a ;fix layer calc 0->0 2->1
+    lda.b Scrap01 : and.b #$08 : lsr #2 : sta.w $0492 ;fix from layer calc 0->0 2->1
     ; shift lower coordinates
-    lda $02 : sta $22 : bne .adjY : lda $23 : !add $07 : sta $23
-    .adjY lda $03 : sta $20 : bne .upDownAdj : inc $21
-    .upDownAdj ldx #$08
-    lda $0462 : and #$04 : beq .upStairs
-    ldx #$fd
-    lda $01 : and #$80 : bne .set53
+    lda.b Scrap02 : sta.b LinkPosX : bne .adjY : lda.b LinkPosX+1 : !ADD.b Scrap07 : sta.b LinkPosX+1
+    .adjY lda.b Scrap03 : sta.b LinkPosY : bne .upDownAdj : inc.b LinkPosY+1
+    .upDownAdj ldx.b #$08
+    lda.w $0462 : and.b #$04 : beq .upStairs
+    ldx.b #$fd
+    lda.b Scrap01 : and.b #$80 : bne .set53
     ; if target is also down adjust by (6,-15)
-    lda #$06 : !add $20 : sta $20 : lda #$eb : !add $22 : sta $22 : bra .set53
+    lda.b #$06 : !ADD.b LinkPosY : sta.b LinkPosY : lda.b #$eb : !ADD.b LinkPosX : sta.b LinkPosX : bra .set53
     .upStairs
-    lda $01 : and #$80 : beq .set53
+    lda.b Scrap01 : and.b #$80 : beq .set53
     ; if target is also up adjust by (-6, 14)
-    lda #$fa : !add $20 : sta $20 : lda #$14 : !add $22 : sta $22
-    bne .set53 : inc $23
+    lda.b #$fa : !ADD.b LinkPosY : sta.b LinkPosY : lda.b #$14 : !ADD.b LinkPosX : sta.b LinkPosX
+    bne .set53 : inc.b LinkPosX+1
     .set53
-    txa : !add $22 : sta $53
+    txa : !ADD.b LinkPosX : sta.b $53
 
-    lda $01 : and #$10 : sta $07 ; zeroHzCam check
-    ldy #$00 : jsr SetCamera
-    lda $01 : and #$20 : sta $07 ; zeroVtCam check
-    ldy #$01 : jsr SetCamera
+    lda.b Scrap01 : and.b #$10 : sta.b Scrap07 ; zeroHzCam check
+    ldy.b #$00 : jsr SetCamera
+    lda.b Scrap01 : and.b #$20 : sta.b Scrap07 ; zeroVtCam check
+    ldy.b #$01 : jsr SetCamera
 
     jsr StairCleanup
     ply : plx : plb ; pull the stuff we pushed
-    lda $a2 : and #$0f ; this is the code we are hijacking
+    lda.b PreviousRoom : and.b #$0f ; this is the code we are hijacking
     rtl
 }
 
 StairCleanup: {
-    stz $045e ; clear the staircase flag
+    stz.w $045e ; clear the staircase flag
 
     ; animated tiles fix
-    lda.l DRMode : cmp #$02 : bne + ; only do this in crossed mode
-        ldx $a0 : lda.l TilesetTable, x
-        cmp $0aa1 : beq + ; already eq no need to decomp
-            sta $0aa1
-            tax : lda $02802e, x : tay
+    lda.l DRMode : cmp.b #$02 : bne + ; only do this in crossed mode
+        ldx.b RoomIndex : lda.l TilesetTable, x
+        cmp.w $0aa1 : beq + ; already eq no need to decomp
+            sta.w $0aa1
+            tax : lda.l AnimatedTileSheets, x : tay
             jsl DecompDungAnimatedTiles
     +
-    stz $047a
+    stz.w LayerAdjustment
     rts
 }
 
@@ -110,58 +110,58 @@ LookupSpiralOffset_long:
 LookupSpiralOffset: {
     ;where link currently is in $a2: quad in a8 & #$03
     ;count doors
-    stz $00 : ldx #$00 : stz $01
+    stz.b Scrap00 : ldx.b #$00 : stz.b Scrap01
 
     .loop
-    lda $047e, x : cmp $00 : bcc .continue
-    sta $00
+    lda.w $047e, x : cmp.b Scrap00 : bcc .continue
+    sta.b Scrap00
     .continue inx #2
-    cpx #$08 : bcc .loop
+    cpx.b #$08 : bcc .loop
 
-    lda $00 : lsr
-    cmp #$01 : beq .done
+    lda.b Scrap00 : lsr
+    cmp.b #$01 : beq .done
 
     ; look up the quad
-    lda $a9 : ora $aa : and #$03 : beq .quad0
-    cmp #$01 : beq .quad1
-    cmp #$02 : beq .quad2
+    lda.b LinkQuadrantH : ora.b LinkQuadrantV : and.b #$03 : beq .quad0
+    cmp.b #$01 : beq .quad1
+    cmp.b #$02 : beq .quad2
     bra .quad3
     .quad0
-    inc $01 : lda $a2
-    cmp #$0c : beq .q0diff ;gt ent
-    cmp #$70 : bne .done   ;hc stairwell
-    .q0diff lda $22 : cmp #$00 : beq .secondDoor
-    cmp #$98 : bcc .done ;gt ent and hc stairwell
-    .secondDoor inc $01 : bra .done
+    inc.b Scrap01 : lda.b PreviousRoom
+    cmp.b #$0c : beq .q0diff ;gt ent
+    cmp.b #$70 : bne .done   ;hc stairwell
+    .q0diff lda.b LinkPosX : cmp.b #$00 : beq .secondDoor
+    cmp.b #$98 : bcc .done ;gt ent and hc stairwell
+    .secondDoor inc.b Scrap01 : bra .done
     .quad1
-    lda $a2
-    cmp #$1a : beq .q1diff ;pod compass
-    cmp #$26 : beq .q1diff ;swamp elbows
-    cmp #$6a : beq .q1diff ;pod dark basement
-    cmp #$76 : bne .done   ;swamp drain
-    .q1diff lda $22 : cmp #$98 : bcc .done
-    inc $01 : bra .done
+    lda.b PreviousRoom
+    cmp.b #$1a : beq .q1diff ;pod compass
+    cmp.b #$26 : beq .q1diff ;swamp elbows
+    cmp.b #$6a : beq .q1diff ;pod dark basement
+    cmp.b #$76 : bne .done   ;swamp drain
+    .q1diff lda.b LinkPosX : cmp.b #$98 : bcc .done
+    inc.b Scrap01 : bra .done
     .quad2
-    lda #$03 : sta $01 : lda $a2
-    cmp #$5f : beq .iceu ;ice u room
-    cmp #$3f : bne .done ;hammer ice exception
-    stz $01 : bra .done
-    .iceu lda $22 : cmp #$78 : bcc .done
-    inc $01 : bra .done
+    lda.b #$03 : sta.b Scrap01 : lda.b PreviousRoom
+    cmp.b #$5f : beq .iceu ;ice u room
+    cmp.b #$3f : bne .done ;hammer ice exception
+    stz.b Scrap01 : bra .done
+    .iceu lda.b LinkPosX : cmp.b #$78 : bcc .done
+    inc.b Scrap01 : bra .done
     .quad3
-    lda $a2 : cmp #$40 : beq .done ; top of aga exception
-    lda #$02 : sta $01 ; always 2
+    lda.b PreviousRoom : cmp.b #$40 : beq .done ; top of aga exception
+    lda.b #$02 : sta.b Scrap01 ; always 2
 
     .done
-    lda $a2 : tax : lda.w SpiralOffset,x
-    !add $01 ;add a thing (0 in easy case)
+    lda.b PreviousRoom : tax : lda.w SpiralOffset,x
+    !ADD.b Scrap01 ;add a thing (0 in easy case)
     rts
 }
 
 InroomStairsWarp: {
     phb : phk : plb : phx : phy ; push stuff
     ; find stairs by room and store index in X
-    lda $a0 : ldx #$07
+    lda.b RoomIndex : ldx.b #$07
     .loop
         cmp.w InroomStairsRoom,x
         beq .found
@@ -169,94 +169,94 @@ InroomStairsWarp: {
         bne .loop
     .found
     rep #$30
-    txa : and #$00ff : asl : tay
-    lda.w InroomStairsTable,y : sta $00
+    txa : and.w #$00ff : asl : tay
+    lda.w InroomStairsTable,y : sta.b Scrap00
 	sep #$30
-    sta $a0
+    sta.b RoomIndex
 
     ; set position and everything else based on target door type
-    txa : and #$01 : eor #$01 : sta $07
+    txa : and.b #$01 : eor.b #$01 : sta.b Scrap07
     ; should be the same as lda $0462 : and #$04 : lsr #2 : eor #$01 : sta $07
-    lda $01 : and #$80 : beq .notEdge
-        lda $07 : sta $03 : beq +
-            lda $01 : jsr LoadSouthMidpoint : sta $22 : lda #$f4
+    lda.b Scrap01 : and.b #$80 : beq .notEdge
+        lda.b Scrap07 : sta.b Scrap03 : beq +
+            lda.b Scrap01 : jsr LoadSouthMidpoint : sta.b LinkPosX : lda.b #$f4
             bra ++
         +
-            lda $01 : jsr LoadNorthMidpoint : sta $22 : dec $21 : lda #$f7
+            lda.b Scrap01 : jsr LoadNorthMidpoint : sta.b LinkPosX : dec.b LinkPosY+1 : lda.b #$f7
         ++
-        sta $20
-        lda $01 : and #$20 : beq +
-            lda #$01
+        sta.b LinkPosY
+        lda.b Scrap01 : and.b #$20 : beq +
+            lda.b #$01
         +
-        sta $02
-        stz $07
-        lda $01 : and #$10 : lsr #4
+        sta.b Scrap02
+        stz.b Scrap07
+        lda.b Scrap01 : and.b #$10 : lsr #4
         JMP .layer
     .notEdge
-    lda $01 : and #$03 : cmp #$03 : bne .normal
-        txa : and #$06 : sta $07
-        lda $01 : and #$30 : lsr #3 : tay
-        lda.w InroomStairsX+1,y : sta $02
-        lda.w InroomStairsY+1,y : sta $03
-        cpy $07 : beq .vanillaTransition
-            lda.w InroomStairsX,y : sta $22
+    lda.b Scrap01 : and.b #$03 : cmp.b #$03 : bne .normal
+        txa : and.b #$06 : sta.b Scrap07
+        lda.b Scrap01 : and.b #$30 : lsr #3 : tay
+        lda.w InroomStairsX+1,y : sta.b Scrap02
+        lda.w InroomStairsY+1,y : sta.b Scrap03
+        cpy.b Scrap07 : beq .vanillaTransition
+            lda.w InroomStairsX,y : sta.b LinkPosX
             lda.w InroomStairsY,y
-            ldy $07 : beq +
-                !add #$07
+            ldy.b Scrap07 : beq +
+                !ADD #$07
             +
-            sta $20
-            inc $07
+            sta.b LinkPosY
+            inc.b Scrap07
             bra ++
         .vanillaTransition
-            lda #$c0 : sta $07 ; leave camera
+            lda.b #$c0 : sta.b Scrap07 ; leave camera
         ++
         %StonewallCheck($1b)
-        lda $01 : and #$04 : lsr #2
+        lda.b Scrap01 : and.b #$04 : lsr #2
         bra .layer
     .normal
-        lda $01 : sta $fe ; trap door
-        lda $07 : sta $03 : beq +
-            lda $01 : and #$04 : bne .specialFix
-            lda #$e0 : bra ++
+        lda.b Scrap01 : sta.b $fe ; trap door
+        lda.b Scrap07 : sta.b Scrap03 : beq +
+            lda.b Scrap01 : and.b #$04 : bne .specialFix
+            lda.b #$e0 : bra ++
             .specialFix
-            lda #$c8 : bra ++
+            lda.b #$c8 : bra ++
         +
             %StonewallCheck($43)
-            lda $01 : and #$04 : bne +
-            lda #$1b : bra ++
-            + lda #$33
-        ++ sta $20
-        inc $07 : stz $02 : lda #$78 : sta $22
-        lda $01 : and #$03 : beq ++
-            cmp #$02 : !bge +
-                lda #$f8 : sta $22 : stz $07 : bra ++
-            + inc $02
+            lda.b Scrap01 : and.b #$04 : bne +
+            lda.b #$1b : bra ++
+            + lda.b #$33
+        ++ sta.b LinkPosY
+        inc.b Scrap07 : stz.b Scrap02 : lda.b #$78 : sta.b LinkPosX
+        lda.b Scrap01 : and.b #$03 : beq ++
+            cmp.b #$02 : !BGE +
+                lda.b #$f8 : sta.b LinkPosX : stz.b Scrap07 : bra ++
+            + inc.b Scrap02
         ++
-        lda $01 : and #$04 : lsr #2
+        lda.b Scrap01 : and.b #$04 : lsr #2
 
     .layer
-    sta $ee
+    sta.b LinkLayer
     bne +
-    	stz $0476
+    	stz.w $0476
     +
 
-    lda $02 : !sub $a9
+    lda.b Scrap02 : !SUB.b LinkQuadrantH
     beq .skipXQuad
-        sta $06 : !add $a9 : sta $a9
-        ldy #$00 : jsr ShiftQuadSimple
+        sta.b Scrap06 : !ADD.b LinkQuadrantH : sta.b LinkQuadrantH
+        ldy.b #$00 : jsr ShiftQuadSimple
     .skipXQuad
-    lda $aa : lsr : sta $06 : lda $03 : !sub $06
+    lda.b LinkQuadrantV : lsr : sta.b Scrap06 : lda.b Scrap03 : !SUB.b Scrap06
     beq .skipYQuad
-        sta $06 : asl : !add $aa : sta $aa
-        ldy #$01 : jsr ShiftQuadSimple
+        sta.b Scrap06 : asl : !ADD.b LinkQuadrantV : sta.b LinkQuadrantV
+        ldy.b #$01 : jsr ShiftQuadSimple
     .skipYQuad
 
-    lda $07 : bmi .skipCamera
-    ldy #$00 : jsr SetCamera ; horizontal camera
-    ldy #$01 : sty $07 : jsr SetCamera ; vertical camera
-    lda $20 : cmp #$e0 : bcc +
-    lda $e8 : bne +
-        lda #$10 : sta $e8 ; adjust vertical camera at bottom
+    lda.b Scrap07 : bmi .skipCamera
+    ldy.b #$00 : jsr SetCamera ; horizontal camera
+    ldy.b #$01 : sty.b Scrap07 : jsr SetCamera ; vertical camera
+    lda.b LinkPosY : cmp.b #$e0 : bcc +
+    lda.b BG2V : bne +
+        lda.b #$10 : sta.b BG2V ; adjust vertical camera at bottom
     +
     .skipCamera
 
@@ -267,72 +267,72 @@ InroomStairsWarp: {
 
 ShiftQuadSimple: {
 	lda.w CoordIndex,y : tax
-	lda $20,x : beq .skip
-	lda $21,x : !add $06 : sta $21,x ; coordinate update
+	lda.b LinkPosY,x : beq .skip
+	lda.b LinkPosY+1,x : !ADD.b Scrap06 : sta.b LinkPosY+1,x ; coordinate update
 	.skip
 	lda.w CamQuadIndex,y : tax
-	lda $0601,x : !add $06 : sta $0601,x
-	lda $0605,x : !add $06 : sta $0605,x ; high bytes of these guys
+	lda.w $0601,x : !ADD.b Scrap06 : sta.w $0601,x
+	lda.w $0605,x : !ADD.b Scrap06 : sta.w $0605,x ; high bytes of these guys
 	rts
 }
 
 SetCamera: {
-    stz $04
-    tyx : lda $a9,x : bne .nonZeroHalf
-    lda.w CamQuadIndex,y : tax : lda $607,x : pha
-    lda.w CameraIndex,y : tax : pla : cmp $e3, x : bne .noQuadAdj
-    dec $e3,x
+    stz.b Scrap04
+    tyx : lda.b LinkQuadrantH,x : bne .nonZeroHalf
+    lda.w CamQuadIndex,y : tax : lda.w $0607,x : pha
+    lda.w CameraIndex,y : tax : pla : cmp.b BG2H+1, x : bne .noQuadAdj
+    dec.b BG2H+1,x
 
     .noQuadAdj
-    lda $07 : bne .adj0
+    lda.b Scrap07 : bne .adj0
     lda.w CoordIndex,y : tax
-    lda $20,x : beq .oddQuad
-    cmp #$79 : bcc .adj0
-    !sub #$78 : sta $04
-    tya : asl : !add #$04 : tax : jsr AdjCamBounds : bra .done
+    lda.b LinkPosY,x : beq .oddQuad
+    cmp.b #$79 : bcc .adj0
+    !SUB.b #$78 : sta.b Scrap04
+    tya : asl : !ADD.b #$04 : tax : jsr AdjCamBounds : bra .done
     .oddQuad
-    lda #$80 : sta $04 : bra .adj1 ; this is such a weird case - quad cross boundary
+    lda.b #$80 : sta.b Scrap04 : bra .adj1 ; this is such a weird case - quad cross boundary
     .adj0
     tya : asl : tax : jsr AdjCamBounds : bra .done
 
     .nonZeroHalf ;meaning either right half or bottom half
-    lda $07 : bne .setQuad
+    lda.b Scrap07 : bne .setQuad
     lda.w CoordIndex,y : tax
-    lda $20,x : cmp #$78 : bcs .setQuad
-    !add #$78 : sta $04
-    lda.w CamQuadIndex,y : tax : lda $0603, x : pha
-    lda.w CameraIndex,y : tax : pla : sta $e3, x
+    lda.b LinkPosY,x : cmp.b #$78 : bcs .setQuad
+    !ADD.b #$78 : sta.b Scrap04
+    lda.w CamQuadIndex,y : tax : lda.w $0603, x : pha
+    lda.w CameraIndex,y : tax : pla : sta.b BG2H+1, x
     .adj1
-    tya : asl : !add #$08 : tax : jsr AdjCamBounds : bra .done
+    tya : asl : !ADD.b #$08 : tax : jsr AdjCamBounds : bra .done
 
     .setQuad
-    lda.w CamQuadIndex,y : tax : lda $0607, x : pha
-    lda.w CameraIndex,y : tax : pla : sta $e3, x
-    tya : asl : !add #$0c : tax : jsr AdjCamBounds : bra .done
+    lda.w CamQuadIndex,y : tax : lda.w $0607, x : pha
+    lda.w CameraIndex,y : tax : pla : sta.b BG2H+1, x
+    tya : asl : !ADD.b #$0c : tax : jsr AdjCamBounds : bra .done
 
     .done
     lda.w CameraIndex,y : tax
-    lda $04 : sta $e2, x
+    lda.b Scrap04 : sta.b BG2H, x
     rts
 }
 
 ; input, expects X to be an appropriate offset into the CamBoundBaseLine table
 ; when $04 is 0 no coordinate are added
 AdjCamBounds: {
-    rep #$20 : lda.w CamBoundBaseLine, x : sta $05
-    lda $04 : and #$00ff : beq .common
+    rep #$20 : lda.w CamBoundBaseLine, x : sta.b Scrap05
+    lda.b Scrap04 : and.w #$00ff : beq .common
     lda.w CoordIndex,y : tax
-    lda $20, x : and #$00ff : !add $05 : sta $05
+    lda.b LinkPosY, x : and.w #$00ff : !ADD.b Scrap05 : sta.b Scrap05
     .common
     lda.w OppCamBoundIndex,y : tax
-    lda $05 : sta $0618, x
-    inc #2 : sta $061A, x : sep #$20
+    lda.b Scrap05 : sta.w CameraScrollN, x
+    inc #2 : sta.w CameraScrollS, x : sep #$20
     rts
 }
 
 SpiralPriorityHack: {
     lda.l DRMode : beq +
-        lda #$01 : rtl ; always skip the priority code - until I figure out how to fix it
-    + lda $0462 : and #$04 ; what we wrote over
+        lda.b #$01 : rtl ; always skip the priority code - until I figure out how to fix it
+    + lda.w $0462 : and.b #$04 ; what we wrote over
     rtl
 }

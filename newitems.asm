@@ -71,7 +71,7 @@ macro ProgrammableItemLogic(index)
 	LDA.l ProgrammableItemLogicPointer_<index>+2 : BNE ?jump
 		BRA ?end
 	?jump:
-		JSL.l ProgrammableItemLogicJump_<index>
+		JSL ProgrammableItemLogicJump_<index>
 	?end:
 endmacro
 
@@ -89,23 +89,23 @@ ProcessEventItems:
 		CMP.b #$E0 : BNE +
 			REP #$30 ; set 16-bit accumulator & index registers
 			LDA.l RNGItem : ASL : TAX
-			LDA.l EventDataOffsets, X : !ADD #EventDataTable : STA.b Scrap00
+			LDA.l EventDataOffsets, X : !ADD.l #EventDataTable : STA.b Scrap00
 
 			SEP #$20 ; set 8-bit accumulator
 			LDA.b #$AF : STA.b Scrap02
 
-			JSL.l LoadDialogAddressIndirect
+			JSL LoadDialogAddressIndirect
 			LDA.l RNGItem : INC : STA.l RNGItem
 
 			SEP #$10 ; set 8-bit index registers
-                        REP #$20 ; set 16-bit accumulator
+			REP #$20 ; set 16-bit accumulator
 			LDA.l GoalItemRequirement : BEQ ++
 			LDA.l GoalCounter : INC : STA.l GoalCounter
 			CMP.l GoalItemRequirement : BCC ++
 			LDA.l TurnInGoalItems : AND.w #$00FF : BNE ++
-				JSL.l ActivateGoal
+				JSL ActivateGoal
 			++
-                        SEP #$20 ; set 8-bit accumulator
+			SEP #$20 ; set 8-bit accumulator
 			LDX.b #$01 : BRA .done
 		+
 		LDX.b #$00
@@ -119,26 +119,26 @@ RTS
 ;--------------------------------------------------------------------------------
 AddReceivedItemExpanded:
 	PHA : PHX
-		LDA.l RemoteItems : BEQ + : LDA !MULTIWORLD_ITEM_PLAYER_ID : BEQ +
+		LDA.l RemoteItems : BEQ + : LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BEQ +
 			LDA.w ItemReceiptMethod : BEQ ++ : CMP.b #$03 : BNE +++ : ++
 				; fromTextOrObject
-				LDA.w $0345 : BEQ ++ : LDA.b #$04 : ++ : STA.b $5D ; Restore Link to his swimming state
+				LDA.w $0345 : BEQ ++ : LDA.b #$04 : ++ : STA.b LinkState ; Restore Link to his swimming state
 				STZ.w ItemReceiptPose : STZ.w NoDamage : STZ.w CutsceneFlag
 				LDA.b #$0E : STA.w SFX3
 			+++
-			STZ.w ItemReceiptID : STZ.w $02D9 : STZ.w ItemReceiptMethod
+			STZ.w ItemReceiptID : STZ.w ItemReceiptID+1 : STZ.w ItemReceiptMethod
 			PHY : LDY.b #$00 : JSL AddInventory : PLY
 			PLX : PLA : RTL
 		+ PLX : PLA
-        JSR.w ResolveReceipt
-        PHB : PHK
+	JSR ResolveReceipt
+	PHB : PHK
 JML AddReceivedItem+2
 
 AddReceivedItemExpandedGetItem:
 	PHX : PHB
 
 	LDA.w ItemReceiptID
-	JSL.l FreeDungeonItemNotice
+	JSL FreeDungeonItemNotice
 	PHA : LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BEQ +
 		PLA : BRA .done
 	+ PLA
@@ -151,9 +151,9 @@ RTL
 
 ItemBehavior:
         REP #$30
-        AND #$00FF : ASL :  TAX
+        AND.w #$00FF : ASL :  TAX
         SEP #$20
-        JMP.w (ItemReceipts_behavior,X)
+        JMP (ItemReceipts_behavior,X)
 
         .skip
         RTS
@@ -266,7 +266,7 @@ ItemBehavior:
         RTS
 
         .bow
-        BIT #$40 : BNE .silversbow
+        BIT.b #$40 : BNE .silversbow
                 LDA.b #$01 : STA.l BowEquipment
         RTS
 
@@ -284,11 +284,11 @@ ItemBehavior:
         TAX
         LDA.l DungeonItemMasks,X : TAY
         ORA.l CompassField : STA.l CompassField
-        JMP.w .increment_compass
+        JMP .increment_compass
         ..hc_sewers
         LDA.w #$C000 : TAY
         ORA.l CompassField : STA.l CompassField
-        JMP.w .increment_compass
+        JMP .increment_compass
 
 
         .dungeon_bigkey
@@ -296,10 +296,10 @@ ItemBehavior:
         LDA.w DungeonID : CMP.w #$0003 : BCC ..hc_sewers
         TAX
         LDA.l DungeonItemMasks,X : ORA.l BigKeyField : STA.l BigKeyField
-        JMP.w .increment_bigkey
+        JMP .increment_bigkey
         ..hc_sewers
         LDA.w #$C000 : ORA.l BigKeyField : STA.l BigKeyField
-        JMP.w .increment_bigkey
+        JMP .increment_bigkey
 
         .dungeon_map
         REP #$20
@@ -307,11 +307,11 @@ ItemBehavior:
         TAX
         LDA.l DungeonItemMasks,X : TAY
         ORA.l MapField : STA.l MapField
-        JMP.w .increment_map
+        JMP .increment_map
         ..hc_sewers
         LDA.w #$C000 : TAY
         ORA.l MapField : STA.l MapField
-        JMP.w .increment_map
+        JMP .increment_map
 
         .bow_and_arrows
         LDA.l BowTracking : BIT.b #$40 : BEQ .no_silvers
@@ -429,7 +429,7 @@ ItemBehavior:
         RTS
 
         .rupoor
-        REP #$20 : LDA.l CurrentRupees : !SUB RupoorDeduction : STA.l CurrentRupees : SEP #$20 ; Take 1 rupee
+        REP #$20 : LDA.l CurrentRupees : !SUB.l RupoorDeduction : STA.l CurrentRupees : SEP #$20 ; Take 1 rupee
         RTS
 
         .null
@@ -457,7 +457,7 @@ ItemBehavior:
         RTS
 
         .triforce
-        JSL.l ActivateGoal
+        JSL ActivateGoal
         RTS
 
         .goal_item
@@ -466,25 +466,25 @@ ItemBehavior:
         LDA.l GoalCounter : INC : STA.l GoalCounter
         CMP.w GoalItemRequirement : BCC +
         LDA.l TurnInGoalItems : AND.w #$00FF : BNE +
-                JSL.l ActivateGoal
+                JSL ActivateGoal
         +
         SEP #$20 ; set 8-bit accumulator
         RTS
 
         .request_F0
-        JSL.l ItemGetServiceRequest_F0
+        JSL ItemGetServiceRequest_F0
         RTS
 
         .request_F1
-        JSL.l ItemGetServiceRequest_F1
+        JSL ItemGetServiceRequest_F1
         RTS
 
         .request_F2
-        JSL.l ItemGetServiceRequest_F2
+        JSL ItemGetServiceRequest_F2
         RTS
 
         .request_async
-        ; JSL.l ItemGetServiceRequest
+        ; JSL ItemGetServiceRequest
         RTS
 
         .free_map
@@ -495,13 +495,13 @@ ItemBehavior:
         LDA.l DungeonItemMasks,X : TAY
         ORA.l MapField : STA.l MapField
         SEP #$20
-        JMP.w .increment_map
+        JMP .increment_map
 
         .hc_map
         REP #$20
         LDA.w #$C000 : TAY
         ORA.l MapField : STA.l MapField
-        JMP.w .increment_map
+        JMP .increment_map
 
         .free_compass
         REP #$20
@@ -511,14 +511,14 @@ ItemBehavior:
         LDA.l DungeonItemMasks,X : TAY
         ORA.l CompassField : STA.l CompassField
         SEP #$20
-        JMP.w .increment_compass
+        JMP .increment_compass
 
         .hc_compass
         REP #$20
         LDA.w #$C000 : TAY
         ORA.l CompassField : STA.l CompassField
         SEP #$20
-        JMP.w .increment_compass
+        JMP .increment_compass
 
         .free_bigkey
         REP #$20
@@ -527,11 +527,11 @@ ItemBehavior:
         LDA.w DungeonItemIDMap,X : TAX
         LDA.l DungeonItemMasks,X : ORA.l BigKeyField : STA.l BigKeyField
         SEP #$20
-        JMP.w .increment_bigkey
+        JMP .increment_bigkey
 
         .hc_bigkey
         LDA.b #$C0 : ORA.l BigKeyField+1 : STA.l BigKeyField+1
-        JMP.w .increment_bigkey
+        JMP .increment_bigkey
 
         .free_smallkey
         REP #$20
@@ -606,7 +606,7 @@ ItemBehavior:
                 LDA.l MapsCompasses
                 CLC : ADC.b #$10
                 STA.l MapsCompasses
-                JSL.l MaybeFlagMapTotalPickup
+                JSL MaybeFlagMapTotalPickup
         +
         RTS
 
@@ -661,42 +661,42 @@ ItemBehavior:
         .bee_trap
         SEP #$30
         LDA.b #$79 : JSL Sprite_SpawnDynamically : BMI + ; DashBeeHive_SpawnBee
-		LDA $22 : CLC : ADC.b #$03 : AND.b #$F8 : STA $0D10,Y
-		LDA $23 : ADC.b #$00 : STA $0D30,Y ; round X to nearest 8
-		LDA $20 : STA $0D00, Y : LDA $21 : STA $0D20, Y
-		LDA.b $EE : STA.w $0F20,Y ; spawns on same layer as link
-		+ RTS
+                LDA.b LinkPosX : CLC : ADC.b #$03 : AND.b #$F8 : STA.w SpritePosXLow,Y
+                LDA.b LinkPosX+1 : ADC.b #$00 : STA.w SpritePosXHigh,Y ; round X to nearest 8
+                LDA.b LinkPosY : STA.w SpritePosYLow, Y : LDA.b LinkPosY+1 : STA.w SpritePosYHigh, Y
+                LDA.b LinkLayer : STA.w SpriteLayer,Y ; spawns on same layer as link
+        + RTS
 
-		.fairy
-		SEP #$30
-		LDA.b #$E3 : JSL Sprite_SpawnDynamically : BMI +
-		LDA $22 : CLC : ADC.b #$03 : AND.b #$F8 : STA $0D10,Y
-		LDA $23 : ADC.b #$00 : STA $0D30,Y ; round X to nearest 8
-		LDA.b $20 : SEC : SBC.b #$10 : STA.w $0D00,Y
-		LDA.b $21 : SBC.b #$00 : STA.w $0D20,Y ; move up 16 pixels
-		LDA.b $EE : STA.w $0F20,Y ; spawns on same layer as link
-		LDA.b #$FF : STA.w $0B58,Y ; allows them to expire
-		+ RTS
+        .fairy
+        SEP #$30
+        LDA.b #$E3 : JSL Sprite_SpawnDynamically : BMI +
+                LDA.b LinkPosX : CLC : ADC.b #$03 : AND.b #$F8 : STA.w SpritePosXLow,Y
+                LDA.b LinkPosX+1 : ADC.b #$00 : STA.w SpritePosXHigh,Y ; round X to nearest 8
+                LDA.b LinkPosY : SEC : SBC.b #$10 : STA.w SpritePosYLow,Y
+                LDA.b LinkPosY+1 : SBC.b #$00 : STA.w SpritePosYHigh,Y ; move up 16 pixels
+                LDA.b LinkLayer : STA.w SpriteLayer,Y ; spawns on same layer as link
+                LDA.b #$FF : STA.w EnemyStunTimer,Y ; allows them to expire
+        + RTS
 
-		.chicken
-		SEP #$30
-		LDA.b #$0B : JSL Sprite_SpawnDynamically : BMI +
-		LDA $22 : CLC : ADC.b #$03 : AND.b #$F8 : STA $0D10,Y
-		LDA $23 : ADC.b #$00 : STA $0D30,Y ; round X to nearest 8
-		LDA.b $20 : SEC : SBC.b #$08 : STA.w $0D00,Y
-		LDA.b $21 : SBC.b #$00 : STA.w $0D20,Y ; move up 8 pixels
-		LDA.b $EE : STA.w $0F20,Y ; spawns on same layer as link
-		+ RTS
+        .chicken
+        SEP #$30
+        LDA.b #$0B : JSL Sprite_SpawnDynamically : BMI +
+                LDA.b LinkPosX : CLC : ADC.b #$03 : AND.b #$F8 : STA.w SpritePosXLow,Y
+                LDA.b LinkPosX+1 : ADC.b #$00 : STA.w SpritePosXHigh,Y ; round X to nearest 8
+                LDA.b LinkPosY : SEC : SBC.b #$08 : STA.w SpritePosYLow,Y
+                LDA.b LinkPosY+1 : SBC.b #$00 : STA.w SpritePosYHigh,Y ; move up 8 pixels
+                LDA.b LinkLayer : STA.w SpriteLayer,Y ; spawns on same layer as link
+        + RTS
 
 ResolveReceipt:
-		PHA : PHX
+        PHA : PHX
         PHK : PLB
-        JSL.l PreItemGet
+        JSL PreItemGet
         LDA.l !MULTIWORLD_ITEM_PLAYER_ID : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
         LDA.w ItemReceiptID : STA.l !MULTIWORLD_ITEM_ID
-        JSL.l AttemptItemSubstitution
-        JSR.w HandleBowTracking
-        JSR.w ResolveLootID
+        JSL AttemptItemSubstitution
+        JSR HandleBowTracking
+        JSR ResolveLootID
         STA.w ItemReceiptID
         LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BNE +
                 LDA.w ItemReceiptID
@@ -707,7 +707,7 @@ ResolveReceipt:
 
 ResolveLootIDLong:
         PHY
-        JSR.w ResolveLootID
+        JSR ResolveLootID
         PLY
 RTL
 
@@ -723,30 +723,30 @@ ResolveLootID:
         REP #$30
         AND.w #$00FF : ASL : TAX
         TYA
-        JMP.w (ItemReceipts_resolution,X)
+        JMP (ItemReceipts_resolution,X)
         .have_item
         SEP #$30
         PLB : PLX
         RTS
 
         .skip
-        JMP.w .have_item
+        JMP .have_item
 
         .bottles
         SEP #$30
-        JSR.w CountBottles : CMP.l BottleLimit : BCC +
+        JSR CountBottles : CMP.l BottleLimit : BCC +
         		LDA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID : BNE +
                 LDA.l BottleLimitReplacement
-                JMP.w .get_item
+                JMP .get_item
         +
         TYA
-        JMP.w .have_item
+        JMP .have_item
 
         .magic
         SEP #$20
         LDA.l MagicConsumption : TAX
         LDA.w .magic_ids,X
-        JMP.w .have_item
+        JMP .have_item
         ..ids
         db $4E, $4F, $4F
 
@@ -756,28 +756,28 @@ ResolveLootID:
         LDA.l HighestSword
         CMP.l ProgressiveSwordLimit : BCC +
                 LDA.l ProgressiveSwordReplacement
-                JMP.w .get_item
+                JMP .get_item
 			++ LDA.l SwordEquipment
         +
         TAX
         LDA.w .prog_sword_ids,X
-        JMP.w .have_item
+        JMP .have_item
         ..ids
         db $49, $50, $02, $03, $03
 
         .shields
         SEP #$20
-        LDA !MULTIWORLD_SPRITEITEM_PLAYER_ID : BNE ++
+        LDA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID : BNE ++
         LDA.b #$01 : STA.l ProgressiveFlag
         LDA.l HighestShield
         CMP.l ProgressiveShieldLimit : BCC +
                 LDA.l ProgressiveShieldReplacement
-                JMP.w .get_item
+                JMP .get_item
         	++ LDA.l HighestShield
         +
         TAX
         LDA.w .shields_ids,X
-        JMP.w .have_item
+        JMP .have_item
         ..ids
         db $04, $05, $06, $06
 
@@ -787,12 +787,12 @@ ResolveLootID:
         LDA.l HighestMail
         CMP.l ProgressiveArmorLimit : BCC +
                 LDA.l ProgressiveArmorReplacement
-                JMP.w .get_item
+                JMP .get_item
         +
         	++ LDA.l ArmorEquipment
         TAX
         LDA.w .armor_ids,X
-        JMP.w .have_item
+        JMP .have_item
         ..ids
         db $22, $23, $23
 
@@ -801,7 +801,7 @@ ResolveLootID:
         SEP #$20
         LDA.l GloveEquipment : TAX
         LDA.w .gloves_ids,X
-        JMP.w .have_item
+        JMP .have_item
         ..ids
         db $1B, $1C, $1C
 
@@ -812,7 +812,7 @@ ResolveLootID:
         LDA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID : BNE .skipbowlimit
         LDA.l BowEquipment : INC : LSR : CMP.l ProgressiveBowLimit : BCC +
                 LDA.l ProgressiveBowReplacement
-                JMP.w .get_item
+                JMP .get_item
         +
         LDA.w ItemReceiptMethod : CMP.b #$01 : BEQ +
                 LDX.w CurrentSpriteSlot
@@ -821,14 +821,14 @@ ResolveLootID:
         .skipbowlimit
         LDA.l BowEquipment : TAX
         LDA.w ResolveLootID_bows_ids,X
-        JMP.w .get_item
+        JMP .get_item
 
         .progressive_bow_2
         SEP #$30
         LDA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID : BNE .skipbowlimit_2
         LDA.l BowEquipment : INC : LSR : CMP.l ProgressiveBowLimit : BCC +
                 LDA.l ProgressiveBowReplacement
-                JMP.w .get_item
+                JMP .get_item
         +
         LDA.w ItemReceiptMethod : CMP.b #$01 : BEQ +
                 LDX.w CurrentSpriteSlot
@@ -837,7 +837,7 @@ ResolveLootID:
         +
         LDA.l BowEquipment : TAX
         LDA.w ResolveLootID_bows_ids,X
-        JMP.w .get_item
+        JMP .get_item
 
         .bows
         ..ids
@@ -845,18 +845,18 @@ ResolveLootID:
 
         .null_chest
         ; JSL ChestItemServiceRequest
-        JMP.w .have_item
+        JMP .have_item
 
         .rng_single
-        JSL.l GetRNGItemSingle : STA.w ScratchBufferV+6
-        XBA : JSR.w MarkRNGItemSingle
+        JSL GetRNGItemSingle : STA.w ScratchBufferV+6
+        XBA : JSR MarkRNGItemSingle
         LDA.b #$FF : STA.l RNGLockIn ; clear lock-in
-        LDA.w ScratchBufferV+6 : JMP.w .get_item
+        LDA.w ScratchBufferV+6 : JMP .get_item
 
         .rng_multi
-        JSL.l GetRNGItemMulti : STA.w ScratchBufferV+6
+        JSL GetRNGItemMulti : STA.w ScratchBufferV+6
         LDA.b #$FF : STA.l RNGLockIn ; clear lock-in
-        LDA.w ScratchBufferV+6 : JMP.w .get_item
+        LDA.w ScratchBufferV+6 : JMP .get_item
 
 ;--------------------------------------------------------------------------------
 DungeonItemMasks:
@@ -925,16 +925,16 @@ RTS
 CheckHUDSilverArrows:
         LDA.l ArrowMode : BNE .rupee_bow
                 LDA.l BowEquipment : TAX : BEQ .nobow
-                        JSL.l DrawHUDArrows_normal
+                        JSL DrawHUDArrows_normal
                         TXA
                         RTL
         .rupee_bow
         LDA.l BowEquipment : TAX
-        JSL.l DrawHUDArrows_rupee_arrows
+        JSL DrawHUDArrows_rupee_arrows
         TXA
         RTL
         .nobow
-        JSL.l DrawHUDArrows_silverscheck
+        JSL DrawHUDArrows_silverscheck
         TXA
         RTL
 ;--------------------------------------------------------------------------------
@@ -976,7 +976,7 @@ GetRNGItemSingle:
 		LDA.l RNGLockIn : CMP.b #$FF : BEQ + : TAX : XBA : LDA.l RNGSingleItemTable, X : RTL : +
 		LDX.b #$00
 		.single_reroll
-			JSL.l GetRandomInt : AND.b #$7F ; select random value
+			JSL GetRandomInt : AND.b #$7F ; select random value
 			INX : CPX.b #$7F : BCC + : LDA.b #$00 : BRA +++ : + ; default to 0 if too many attempts
 			CMP.l RNGSingleTableSize : !BGE .single_reroll
 		+++
@@ -986,7 +986,7 @@ GetRNGItemSingle:
 		TAY
 		.recheck
 			TYA
-			JSR.w CheckSingleItem : BEQ .single_unused ; already used
+			JSR CheckSingleItem : BEQ .single_unused ; already used
 				LDA.w ScratchBufferV : INC ; increment index
 				CMP.l RNGSingleTableSize : BCC +++ : LDA.b #$00 : +++ ; rollover index if needed
 				STA.w ScratchBufferV ; store index
@@ -1041,7 +1041,7 @@ GetRNGItemMulti:
 	LDA.l RNGLockIn : CMP.b #$FF : BEQ + : TAX : XBA : LDA.l RNGMultiItemTable, X : RTL : +
 	LDX.b #$00
 	- ; reroll
-		JSL.l GetRandomInt : AND.b #$7F ; select random value
+		JSL GetRandomInt : AND.b #$7F ; select random value
 		INX : CPX.b #$7F : BCC + : LDA.b 00 : BRA .done : + ; default to 0 if too many attempts
 		CMP.l RNGMultiTableSize : !BGE -
 	.done
@@ -1108,13 +1108,13 @@ RTS
 ActivateGoal:
         STZ.b GameSubMode
         STZ.b SubSubModule
-JML.l StatsFinalPrep
+JML StatsFinalPrep
 ;--------------------------------------------------------------------------------
 ChestPrep:
 	LDA.b #$01 : STA.w ItemReceiptMethod
-        JSL.l IncrementChestCounter
+        JSL IncrementChestCounter
 	LDA.l ServerRequestMode : BEQ +
-		JSL.l ChestItemServiceRequest
+		JSL ChestItemServiceRequest
 		RTL
 	+
     LDY.b Scrap0C ; get item value
@@ -1156,11 +1156,11 @@ MaybeFlagDungeonTotalsEntrance:
                 REP #$10
                 LDA.l DungeonItemMasks,X : TAY
                 LDA.l CompassMode : AND.w #$000F : BEQ .maps ; Skip if we're not showing compass counts
-                        JSR.w FlagCompassCount
+                        JSR FlagCompassCount
                 .maps
 ;                LDA.l MapHUDMode : AND.w #$000F : BEQ .done
                         LDX.w DungeonID
-                        JSR.w FlagMapCount
+                        JSR FlagMapCount
         .done
 RTL
 ;--------------------------------------------------------------------------------
@@ -1201,5 +1201,3 @@ dw $0000 ; Sewers
 
 PendantMasks:
 db $04, 01, 02
-
-

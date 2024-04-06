@@ -226,7 +226,7 @@ CheckMusicLoadRequest:
             PHA
                 LDA.l CrystalsField : CMP.b #$7F : BEQ -
                 LDA.l CurrentWorld : BEQ --
-                LDA.b OverworldIndex : CMP #$40 : BNE --
+                LDA.b OverworldIndex : CMP.b #$40 : BNE --
             PLA
             LDA.b #15 : BRA .check_fallback-3
 .castle
@@ -248,7 +248,7 @@ CheckMusicLoadRequest:
                 PLA : LSR #3 : TAX
             LDA.w MSUFallbackTable,X : BEQ .secondary_fallback : CMP.b #$FF : BEQ .mute
             
-            - : CPY #$00 : BEQ +
+            - : CPY.b #$00 : BEQ +
                 LSR : DEY : BRA -
             +
             
@@ -264,8 +264,8 @@ CheckMusicLoadRequest:
                 TAX : LDA.l MusicShuffleTable-1,X
             PLX
             CMP.w MusicControlRequest : BEQ .unmute
-            CPX #35 : !BLT +
-                CPX #47 : !BLT .dungeon_fallback
+            CPX.b #35 : !BLT +
+                CPX.b #47 : !BLT .dungeon_fallback
             +
 
             STA.w MusicControlRequest
@@ -377,7 +377,7 @@ SpiralStairsPreCheck:
 ;--------------------------------------------------------------------------------
 SpiralStairsPostCheck:
     LDA.l DRMode : BEQ + ; if door rando enabled
-        LDA.b $A2 : CMP.w #$0007 : BNE .done
+        LDA.b PreviousRoom : CMP.w #$0007 : BNE .done
         LDA.l Music_Hera : TAX : STX.w MusicControlRequest
         BRA .done
     + LDA.b RoomIndex
@@ -496,9 +496,9 @@ PHA : XBA : PHA
     JSR IsResumableTrack : BCC +
         ; dont save if we already saved recently
         REP #$20
-        LDA.w MSUResumeTrack : AND #$00FF : BEQ ++
-            LDA.l NMIFrames : !SUB MSUResumeTime : PHA
-            LDA.l NMIFrames+2 : SBC MSUResumeTime+2 : BNE +++
+        LDA.w MSUResumeTrack : AND.w #$00FF : BEQ ++
+            LDA.l NMIFrames : !SUB.l MSUResumeTime : PHA
+            LDA.l NMIFrames+2 : SBC.l MSUResumeTime+2 : BNE +++
                 PLA : CMP.l MSUResumeTimer : !BLT .too_early
                 BRA ++
             +++
@@ -571,7 +571,7 @@ MSUMain:
         PLA : LSR #3 : TAX
     LDA.w MSUFallbackTable,X : BEQ +++ : CMP.b #$FF : BEQ ++
 
-    - : CPY #$00 : BEQ +
+    - : CPY.b #$00 : BEQ +
         LSR : DEY : BRA -
     +
 
@@ -663,8 +663,8 @@ MSUMain:
     PLX
     TXA : CMP.w MSUResumeTrack : BNE + ; dont resume if too late
         REP #$20
-            LDA.l NMIFrames : !SUB MSUResumeTime : PHA
-            LDA.l NMIFrames+2 : SBC MSUResumeTime+2 : BNE ++
+            LDA.l NMIFrames : !SUB.l MSUResumeTime : PHA
+            LDA.l NMIFrames+2 : SBC.l MSUResumeTime+2 : BNE ++
                 PLA : CMP.l MSUResumeTimer : !BGE +++
                 SEP #$20
                 LDA.b #!FLAG_RESUME_FADEIN : BRA .done_resume
@@ -677,8 +677,8 @@ MSUMain:
         STA.w MSUResumeControl
         LDA.b #$00 : STA.w MSUResumeTrack
     +
-    CPX #07 : BNE + ; Kakariko Village
-        LDA.b GameMode : CMP #$07 : BNE +
+    CPX.b #07 : BNE + ; Kakariko Village
+        LDA.b GameMode : CMP.b #$07 : BNE +
         ; we're in link's house -> ignore
         LDA.b #$00
         BRA ++
@@ -687,7 +687,7 @@ MSUMain:
     ++
     STA.w MSULoadedTrack
     STX.w CurrentMSUTrack
-    LDA.w MSUPackCurrent : CMP #$FE : !BLT +
+    LDA.w MSUPackCurrent : CMP.b #$FE : !BLT +
         LDA.b #$00 : BRA ++
         + : LDA.l MSUTrackList-1,X
     ++ : STA.w MSUDelayedCommand
@@ -740,7 +740,7 @@ PendantFanfareWait:
     LDA.w MSUID+2 : CMP.w #!VAL_MSU_ID_23 : BNE .spc
     LDA.w MSUID+4 : CMP.w #!VAL_MSU_ID_45 : BNE .spc
     SEP #$20
-    LDA.w MSUPackCurrent : CMP #$FE : !BGE .spc
+    LDA.w MSUPackCurrent : CMP.b #$FE : !BGE .spc
     LDA.w MSUSTATUS : BIT.b #!FLAG_MSU_STATUS_TRACK_MISSING : BNE .spc
     LDA.w MSUDelayedCommand : BNE .continue
     LDA.w MSUSTATUS : BIT.b #!FLAG_MSU_STATUS_AUDIO_PLAYING : BEQ .done
@@ -799,7 +799,7 @@ EndingMusicWait:
     LDA.w MSUID+4 : CMP.w #!VAL_MSU_ID_45 : BNE .done
     SEP #$20
 .wait
-    LDA.b Strafe : BNE .done
+    LDA.b LinkStrafe : BNE .done
     LDA.w MSUSTATUS : BIT.b #!FLAG_MSU_STATUS_AUDIO_PLAYING : BNE .wait
 .done
     SEP #$20

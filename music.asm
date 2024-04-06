@@ -3,7 +3,7 @@ PreOverworld_LoadProperties_ChooseMusic:
     ; A: scratch space (value never used)
     ; Y: set to overworld animated tileset
     ; X: set to music track/command id
-    JSL.l FixFrogSmith ; Just a convenient spot to install this hook
+    JSL FixFrogSmith ; Just a convenient spot to install this hook
 
     LDY.b #$58 ; death mountain animated tileset.
 
@@ -79,7 +79,7 @@ PreOverworld_LoadProperties_ChooseMusic:
         LDX.b #$F3
     +
 
-    JML.l PreOverworld_LoadProperties_SetSong
+    JML PreOverworld_LoadProperties_SetSong
 ;--------------------------------------------------------------------------------
 
 ;--------------------------------------------------------------------------------
@@ -103,8 +103,8 @@ Overworld_FinishMirrorWarp:
     LDA.w #$0000 : STA.l FadeTimer : STA.l FadeDirection
 
     SEP #$20
-    JSL $80D7C8
-    LDA.b #$80 : STA.b HDMAENQ
+    JSL ReloadPreviouslyLoadedSheets
+    LDA.b #$80 : STA.b HDMAENABLEQ
     LDX.b #$04  ; bunny theme
 
     ; if not inverted and light world, or inverted and dark world, skip moon pearl check
@@ -265,24 +265,24 @@ Overworld_MosaicDarkWorldChecks:
 ;
 ; On entry, A=16bit XY=8bit, A & X safe to mod, Y unknown
 Underworld_DoorDown_Entry:
-    LDX #$FF ; some junk value to be used later to determine if the below lines will change the track
+    LDX.b #$FF ; some junk value to be used later to determine if the below lines will change the track
     LDA.l ProgressIndicator : AND.w #$00FF : CMP.w #2 : !BLT .vanilla
     LDA.l DRMode : BNE .done
 
 .vanilla ; thing we wrote over
-    LDA $A0 : CMP.w #$0012 : BNE +
+    LDA.b RoomIndex : CMP.w #$0012 : BNE +
         LDX.b #$14 ; value for Sanc music
         BRA .done
-    + LDA $A2 : CMP.w #$0012 : BNE .done
+    + LDA.b PreviousRoom : CMP.w #$0012 : BNE .done
         LDX.b #$10 ; value for Hyrule Castle music
 .done
-    LDA $A0 : RTL
+    LDA.b RoomIndex : RTL
 ;--------------------------------------------------------------------------------
 
 ;--------------------------------------------------------------------------------
 ; Check if the boss in ToH has been defeated (16-bit accumulator)
 CheckHeraBossDefeated:
-LDA RoomDataWRAM[$07].high : AND.w #$00FF : BEQ +
+LDA.l RoomDataWRAM[$07].high : AND.w #$00FF : BEQ +
     SEC : RTL
 + CLC : RTL
 

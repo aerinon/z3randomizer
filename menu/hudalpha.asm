@@ -1,8 +1,8 @@
 OnMenuLoad:
-	LDA.b #UploadMenuOnlyIcons>>0 : STA NMIAux
-	LDA.b #UploadMenuOnlyIcons>>8 : STA NMIAux+1
-	LDA.b #UploadMenuOnlyIcons>>16 : STA NMIAux+2
-	LDA.b #$0E : STA.b $10 ; what we overwrote
+	LDA.b #UploadMenuOnlyIcons>>0 : STA.l NMIAux
+	LDA.b #UploadMenuOnlyIcons>>8 : STA.l NMIAux+1
+	LDA.b #UploadMenuOnlyIcons>>16 : STA.l NMIAux+2
+	LDA.b #$0E : STA.b GameMode ; what we overwrote
 RTL
 
 UploadMenuOnlyIcons:
@@ -15,7 +15,7 @@ UploadMenuOnlyIcons:
     SEP #$20
     LDA.b #MenuOnlyIcons>>16 : STA.w $4344
     LDA.b #$80 : STA.w $2118
-    LDA.b #$10 : STA.w $420B
+    LDA.b #$10 : STA.w DMAENABLE
 
     RTL
 

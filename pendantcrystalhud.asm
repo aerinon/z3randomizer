@@ -22,11 +22,11 @@ HUDRebuildIndoorHole:
 	.generic
 	PLA
 	LDA.l CurrentGenericKeys ; generic key count
-        JSL.l HUD_RebuildIndoor_Palace
+        JSL HUD_RebuildIndoor_Palace
 RTL
 	.normal
 	PLA
-        JSL.l HUD_RebuildIndoor_Palace
+        JSL HUD_RebuildIndoor_Palace
 RTL
 ;================================================================================
 HUDRebuildIndoor:
@@ -83,7 +83,7 @@ BringMenuDownEnhanced:
 
 		EOR.w #$FFFF : !ADD.w #$0001 ; negate menu speed
 
-		!ADD BG3VOFSQL : CMP.w #$FF18 : !BGE .noOvershoot
+		!ADD.l BG3VOFSQL : CMP.w #$FF18 : !BGE .noOvershoot
 			LDA.w #$FF18 ; if we went past the limit, go to the limit
 		.noOvershoot
 		STA.b BG3VOFSQL : CMP.w #$FF18
@@ -101,7 +101,7 @@ RaiseHudMenu:
 		LDA.l MenuSpeed : AND.w #$00FF
 	++
 
-	!ADD BG3VOFSQL : BMI .noOvershoot
+	!ADD.l BG3VOFSQL : BMI .noOvershoot
 		LDA.w #$0000 ; if we went past the limit, go to the limit
 	.noOvershoot
 	STA.b BG3VOFSQL
@@ -139,7 +139,7 @@ UpdateKeys:
                 .castle_sewers
                 STA.l HyruleCastleKeys : STA.l SewerKeys
         .skip
-        JSL.l PostItemGet
+        JSL PostItemGet
         PLP : PLX
 RTL
 ;$37C = Sewer Passage
@@ -567,7 +567,7 @@ HandleEmptyMenu:
         LDA.b Joy1A_All : BIT.b #$20 : BNE .wait_for_change
 		LDA.l HudFlag : AND.b #$60 : BEQ .wait_for_change
 		LDA.l HudFlag : AND.b #$9F : STA.l HudFlag ; Unset without select
-                JSL.l MaybePlaySelectSFX
+                JSL MaybePlaySelectSFX
                 LDA.b #$0C : BRA .done
         .sel_pressed
         LDA.l HUDDungeonItems : BIT.b #$0C : BNE +
@@ -577,7 +577,7 @@ HandleEmptyMenu:
         LDA.b #$60
         .store_flag
         STA.l HudFlag
-        JSL.l MaybePlaySelectSFX
+        JSL MaybePlaySelectSFX
         LDA.b #$0C : BRA .done
         .wait_for_change
         LDA.b #$03 : BRA .done
@@ -589,9 +589,9 @@ RTL
 ;-------------------------------------------------------------------------------
 MaybeDrawEquippedItem:
         LDA.w ItemCursor : BEQ +
-                JML.l ItemMenu_DrawEquippedYItem+$07
+                JML ItemMenu_DrawEquippedYItem+$07
         +
-JML.l ItemMenu_DrawEquippedYItem_exit
+JML ItemMenu_DrawEquippedYItem_exit
 ;-------------------------------------------------------------------------------
 RestoreMenu_SetSubModule:
         LDA.w ItemCursor : BEQ +

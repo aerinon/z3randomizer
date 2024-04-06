@@ -71,7 +71,7 @@ Init_PostRAMClear:
 	JSL DecompressAllItemGraphics
         JSR InitDungeonCounts
 
-JML $80D463	; The original target of the jump table that we hijacked
+JML Tagalong_LoadGfx	; The original target of the jump table that we hijacked
 
 ;===================================================================================================
 InitDungeonCounts:
@@ -93,7 +93,7 @@ InitDungeonCounts:
         PHA : PLB
         REP #$30
         LDA.l TotalItemCount
-        JSL.l HUDHex4Digit_Long 
+        JSL HUDHex4Digit_Long 
         SEP #$20
         LDA.b Scrap04 : TAX : STX.w TotalItemCountTiles+$00
         LDA.b Scrap05 : TAX : STX.w TotalItemCountTiles+$02

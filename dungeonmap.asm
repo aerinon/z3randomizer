@@ -18,14 +18,14 @@ DoDungeonMapBossIcon:
 	TAX
 
 	; get sprite pointer for room
-	LDA.l $89D62E,X
-	STA.b $00                ; pointer in $00
-	LDA.w #$0028 : STA.b $02 ; set the bank to 28 for now
+	LDA.l UWSpritesPointers,X
+	STA.b Scrap00                ; pointer in $00
+	LDA.w #$0028 : STA.b Scrap02 ; set the bank to 28 for now
 	LDY.w #$0001 ; to skip the "sort"
 
 	; get first byte to make sure it isn't an empty room
 	SEP #$20
-	LDA.b [$00], Y
+	LDA.b [Scrap00], Y
 	CMP.b #$FF
 	BNE ++
 
@@ -34,7 +34,7 @@ DoDungeonMapBossIcon:
 
 	; check first sprite
 ++	INY #2
-	LDA.b [$00], Y
+	LDA.b [Scrap00], Y
 	SEP #$10
 
 	; match boss id
@@ -99,13 +99,13 @@ DoDungeonMapBossIcon:
 	STA.w DAS1L
 
 	LDX.b #$02
-	STX.w MDMAEN
+	STX.w DMAENABLE
 
 	STA.w DAS1L
 	LDA.w #$A260>>1
 	STA.w VMADDL
 
-	STX.w MDMAEN
+	STX.w DMAENABLE
 
 	; done
 	SEP #$30

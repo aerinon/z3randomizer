@@ -129,7 +129,7 @@ NewHUD_DrawDungeonCounters:
         LDA.w UpdateHUDFlag : BEQ NewHUD_DrawPrizeIcon
         LDA.l CompassMode : ORA.l MapHUDMode : BIT.b #$03 : BEQ NewHUD_DrawPrizeIcon
         LDX.b IndoorsFlag : BNE +
-        JMP.w NewHUD_DrawMagicMeter
+        JMP NewHUD_DrawMagicMeter
         +
         SEP #$30
         ; extra hard safeties for getting dungeon ID to prevent crashes
@@ -139,10 +139,10 @@ NewHUD_DrawDungeonCounters:
         LSR : TAY
         PHX : PHY
 
-        JSR.w DrawCompassCounts
+        JSR DrawCompassCounts
         SEP #$10
         PLY : PLX
-        JSR.w DrawMapCounts
+        JSR DrawMapCounts
 
 ;================================================================================
 NewHUD_DrawPrizeIcon:
@@ -213,10 +213,10 @@ NewHUD_DrawItemCounter:
         LDA.w TotalItemCountTiles+$06 : STA.w HUDGoalIndicator+$0E
 
         LDA.w TotalItemCounter
-        JSR.w HUDHex4Digit
-        LDA.b $05 : TAX : STX.w HUDGoalIndicator+$02
-        LDA.b $06 : TAX : STX.w HUDGoalIndicator+$04
-        LDA.b $07 : TAX : STX.w HUDGoalIndicator+$06
+        JSR HUDHex4Digit
+        LDA.b Scrap05 : TAX : STX.w HUDGoalIndicator+$02
+        LDA.b Scrap06 : TAX : STX.w HUDGoalIndicator+$04
+        LDA.b Scrap07 : TAX : STX.w HUDGoalIndicator+$06
         REP #$20 : LDA.w TotalItemCounter
 		LDX.w #!BlankTile
 		CMP.w #100 : BCS NewHUD_DrawMagicMeter : STX.w HUDGoalIndicator+$02
@@ -230,11 +230,11 @@ NewHUD_DrawItemCounter:
         LDA.w TotalItemCountTiles+$06 : STA.w HUDGoalIndicator+$10
 
         LDA.w TotalItemCounter
-        JSR.w HUDHex4Digit
-        LDA.b $04 : TAX : STX.w HUDGoalIndicator+$00
-        LDA.b $05 : TAX : STX.w HUDGoalIndicator+$02
-        LDA.b $06 : TAX : STX.w HUDGoalIndicator+$04
-        LDA.b $07 : TAX : STX.w HUDGoalIndicator+$06
+        JSR HUDHex4Digit
+        LDA.b Scrap04 : TAX : STX.w HUDGoalIndicator+$00
+        LDA.b Scrap05 : TAX : STX.w HUDGoalIndicator+$02
+        LDA.b Scrap06 : TAX : STX.w HUDGoalIndicator+$04
+        LDA.b Scrap07 : TAX : STX.w HUDGoalIndicator+$06
         REP #$20 : LDA.w TotalItemCounter
 		LDX.w #!BlankTile
 		CMP.w #1000 : BCS NewHUD_DrawMagicMeter : STX.w HUDGoalIndicator+$00
@@ -457,8 +457,8 @@ UpdateHearts:
 	TAY
 
 	LDA.w #HUDTileMapBuffer+$068
-	STA.b $07
-	STA.b $09
+	STA.b Scrap07
+	STA.b Scrap09
 
 .next_filled_heart
 	CPX.b #$01
@@ -477,12 +477,12 @@ UpdateHearts:
 	INC
 
 .add_heart
-	STA.b ($07)
+	STA.b (Scrap07)
 
 	DEY
 	DEX
 
-	LDA.b $07
+	LDA.b Scrap07
 	INC
 	INC
 	CMP.w #HUDTileMapBuffer+$07C
@@ -495,12 +495,12 @@ UpdateHearts:
 	ADC.w #$002B
 
 .fine
-	STA.b $07
+	STA.b Scrap07
 
 	CPY.b #$00
 	BNE .next_filled_heart
 
-	STA.b $09
+	STA.b Scrap09
 	BRA .next_filled_heart
 
 .done_hearts
@@ -513,14 +513,14 @@ UpdateHearts:
         LDA.l HUDHeartColors_index : ASL : TAX
         LDA.l HUDHeartColors_masks_game_hud,X
         ORA.w #$20A1
-	STA.b ($09)
+	STA.b (Scrap09)
         BRA .skip_partial
 
 .more_than_half
         LDA.l HUDHeartColors_index : ASL : TAX
         LDA.l HUDHeartColors_masks_game_hud,X
         ORA.w #$20A0
-	STA.b ($09)
+	STA.b (Scrap09)
 
 .skip_partial
 	SEP #$30

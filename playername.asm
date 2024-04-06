@@ -99,34 +99,34 @@ TransferNewNameStripes:
         REP #$30
         LDA.w GameMode : CMP.w #$0204 : BNE .exit
         SEP #$20
-        LDA.b #NewNameStripes>>0 : STA.b $00
-        LDA.b #NewNameStripes>>8 : STA.b $01
-        LDA.b #NewNameStripes>>16 : STA.b $02 : STA.w DMA1ADDRB
-        STZ.b $06 : LDY.w #$0000
+        LDA.b #NewNameStripes>>0 : STA.b Scrap00
+        LDA.b #NewNameStripes>>8 : STA.b Scrap01
+        LDA.b #NewNameStripes>>16 : STA.b Scrap02 : STA.w DMA1ADDRB
+        STZ.b Scrap06 : LDY.w #$0000
         .check_next
-        LDA.b [$00],Y : BPL .next_stripe
+        LDA.b [Scrap00],Y : BPL .next_stripe
         .exit
         SEP #$30
 RTL
         .next_stripe
-        STA.b $04
+        STA.b Scrap04
         INY
-        LDA.b [$00],Y : STA.b $03
+        LDA.b [Scrap00],Y : STA.b Scrap03
         INY
-        LDA.b [$00],Y : AND.b #$80 : ASL : ROL : STA.b $07
-        LDA.b [$00],Y : AND.b #$40 : STA.b $05
+        LDA.b [Scrap00],Y : AND.b #$80 : ASL : ROL : STA.b Scrap07
+        LDA.b [Scrap00],Y : AND.b #$40 : STA.b Scrap05
         LSR #3 : ORA.b #$01 : STA.w DMA1MODE
         LDA.b #VMDATAL : STA.w DMA1PORT
         REP #$20
-        LDA.b $03 : STA.w VMADDR
-        LDA.b [$00],Y : XBA : AND.w #$3FFF
+        LDA.b Scrap03 : STA.w VMADDR
+        LDA.b [Scrap00],Y : XBA : AND.w #$3FFF
         TAX : INX : STX.w DMA1SIZE
         INY #2 : TYA
-        CLC : ADC.b $00 : STA.w DMA1ADDRL
-        LDA.b $05
-        STX.b $03
-        TYA : CLC : ADC.b $03 : TAY
+        CLC : ADC.b Scrap00 : STA.w DMA1ADDRL
+        LDA.b Scrap05
+        STX.b Scrap03
+        TYA : CLC : ADC.b Scrap03 : TAY
         SEP #$20
-        LDA.b $07 : ORA.b #$80 : STA.w VMAIN
+        LDA.b Scrap07 : ORA.b #$80 : STA.w VMAIN
         LDA.b #$02 : STA.w DMAENABLE
-        JMP.w .check_next
+        JMP .check_next

@@ -6,20 +6,20 @@
 ; out:	A - Sprite GFX ID
 ;--------------------------------------------------------------------------------
 GetSpriteID:
-	JSL.l AttemptItemSubstitution
-	JSR.w ResolveLootID
+	JSL AttemptItemSubstitution
+	JSR ResolveLootID
         CMP.b #$6D : BEQ .server_F0 ; Server Request F0
         CMP.b #$6E : BEQ .server_F1 ; Server Request F1
         CMP.b #$6F : BEQ .server_F2 ; Server Request F2
 	BRA .normal
                 .server_F0
-                JSL.l ItemVisualServiceRequest_F0
+                JSL ItemVisualServiceRequest_F0
                 BRA .normal
                 .server_F1
-                JSL.l ItemVisualServiceRequest_F1
+                JSL ItemVisualServiceRequest_F1
 		BRA .normal
 		.server_F2
-		JSL.l ItemVisualServiceRequest_F2
+		JSL ItemVisualServiceRequest_F2
 	.normal
 	PHX
 	TAX : LDA.l ItemReceipts_graphics, X ; look up item gfx
@@ -32,15 +32,15 @@ RTL
 ; out:	A - Palette
 ;--------------------------------------------------------------------------------
 GetSpritePalette:
-        JSL.l AttemptItemSubstitution
-        JSR.w ResolveLootID
+        JSL AttemptItemSubstitution
+        JSR ResolveLootID
         .resolved
         TAX
         LDA.l SpriteProperties_standing_palette, X : BIT #$80 : BNE .load_palette
         ASL
 RTL
         .load_palette
-        JSL.l LoadItemPalette
+        JSL LoadItemPalette
         ASL
 RTL
 
@@ -61,13 +61,13 @@ PrepDynamicTile:
 		LDA.b #$00 : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
 		LDA.b #$6B : STA.l SpriteID, X ; make it a power star, I guess
 	.notRemote
-	JSR.w ResolveLootID
+	JSR ResolveLootID
         -
 	JSR ResolveBeeTrap
-	JSR.w LoadDynamicTileOAMTable
+	JSR LoadDynamicTileOAMTable
 	JSL TransferItemReceiptToBuffer_using_ReceiptID
         SEP #$30
-    LDA.b #$00 : STA !MULTIWORLD_SPRITEITEM_PLAYER_ID  ; clear player id
+    LDA.b #$00 : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID  ; clear player id
 	PLB : PLY : PLX
 RTL
         .loot_resolved
@@ -83,7 +83,7 @@ ResolveBeeTrap:
 		LDA.b #$00 : STA.l BeeTrapDisguise ; clear it
 	PLA
 	CMP.b #$D0 : BNE +
-		JSL.l GetRandomInt : AND.b #$3F
+		JSL GetRandomInt : AND.b #$3F
 		BNE ++ : LDA.b #$49 : ++ CMP.b #$26 : BNE ++ : LDA.b #$6A : ++
 		STA.l BeeTrapDisguise
 + RTS
@@ -115,7 +115,7 @@ LoadDynamicTileOAMTable:
 
 		LDA.l BeeTrapDisguise : BNE +
 			LDA.w SpriteID,X
-        + JSL.l GetSpritePalette_resolved
+        + JSL GetSpritePalette_resolved
         STA.l SpriteOAM+5 : STA.l SpriteOAM+13
         PHX
         LDA.l SpriteProperties_standing_width,X : BEQ .narrow
@@ -154,14 +154,14 @@ DrawDynamicTile:
         .full
         PLX
         LDA.b #$01 : STA.b Scrap06
-        LDA.b #$0C : JSL.l OAM_AllocateFromRegionC
+        LDA.b #$0C : JSL OAM_AllocateFromRegionC
         LDA.b #$02 : PHA
         BRA .draw
 
         .narrow
         PLX
         LDA.b #$02 : STA.b Scrap06
-        LDA.b #$10 : JSL.l OAM_AllocateFromRegionC
+        LDA.b #$10 : JSL OAM_AllocateFromRegionC
         LDA.b #$03 : PHA
 
         .draw
@@ -188,13 +188,13 @@ DrawDynamicTileNoShadow:
         .full
         PLX
         LDA.b #$01 : STA.b Scrap06
-        LDA.b #$04 : JSL.l OAM_AllocateFromRegionC
+        LDA.b #$04 : JSL OAM_AllocateFromRegionC
         BRA .draw
 
         .narrow
         PLX
         LDA.b #$02 : STA.b Scrap06
-        LDA.b #$08 : JSL.l OAM_AllocateFromRegionC
+        LDA.b #$08 : JSL OAM_AllocateFromRegionC
 
         .draw
         LDA.b #SpriteOAM>>0 : STA.b Scrap08
@@ -221,7 +221,7 @@ PrepDrawRemoteItemSprite:
 				LDA.l !MULTIWORLD_SCOUTREPLY_LOCATION
 				STA.l SpriteID, X
 				JSL PrepDynamicTile
-				LDA #$00
+				LDA.b #$00
 				BRA ++
 			+++
 			LDA.l !MULTIWORLD_SCOUTREPLY_PLAYER : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
@@ -318,7 +318,7 @@ SkipDrawEOR:
 	LDA.w #$0000 : STA.l SpriteSkipEOR
 	LDA.w #$0F00 : TRB.b Scrap04
 	.normal
-	LDA.b ($08), Y : EOR.w Scrap04 ; thing we wrote over
+	LDA.b (Scrap08), Y : EOR.w Scrap04 ; thing we wrote over
 RTL
 
 ;--------------------------------------------------------------------------------
@@ -356,7 +356,7 @@ WriteVRAMBlock:
         PHX
                 TYX ; set X to source
                 PHA
-                        TXA : !ADD #$1002 : TAY ; set Y to dest
+                        TXA : !ADD.w #$1002 : TAY ; set Y to dest
                 PLA
                 ;A is already the value we need for mvn
                 MVN $7F7E ; currently we transfer from our buffers in 7F to the vram buffer in 7E
@@ -415,7 +415,7 @@ CheckReceivedItemPropertiesBeforeLoad:
                         LDA.l SpriteProperties_chest_palette,X : BIT #$80 : BNE .load_palette
                         RTL
                         .load_palette
-                        JSL.l LoadItemPalette
+                        JSL LoadItemPalette
                         RTL
         .falling_sprite
         PLX
@@ -435,7 +435,7 @@ LoadItemPalette:
         TXA : ASL : TAX
         LDA.l SpriteProperties_palette_addr,X : STA.b Scrap0A
         LDY.w #$000E
-        JSR.w AuxPaletteCheck : BCS .aux
+        JSR AuxPaletteCheck : BCS .aux
                 LDA.w TransparencyFlag : BNE .SP05
                         -
                                 LDA.b [Scrap0A], Y
@@ -475,8 +475,8 @@ RTL
         BRA .done
 
 TransferVRAMStripes:
-        JSL.l TransferNewNameStripes
-        JSL.l DoDungeonMapBossIcon
+        JSL TransferNewNameStripes
+        JSL DoDungeonMapBossIcon
         LDA.b NMISTRIPES : CMP.b #$01 ; What we wrote over
 RTL
 

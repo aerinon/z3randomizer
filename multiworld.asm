@@ -3,43 +3,43 @@
 macro Print_Text(hdr, hdr_len, player_id)
 PHX : PHY : PHP
 	REP #$30
-	LDX #$0000
+	LDX.w #$0000
 	-
-	CPX <hdr_len> : !BGE ++
-		LDA <hdr>, X
-		STA !MULTIWORLD_HUD_CHARACTER_DATA, X
+	CPX.w <hdr_len> : !BGE ++
+		LDA.l <hdr>, X
+		STA.l !MULTIWORLD_HUD_CHARACTER_DATA, X
 		INX #2
 		BRA -
 	++
-	LDY <hdr_len>
+	LDY.w <hdr_len>
 
-	LDA <player_id>
-	AND #$00FF
+	LDA.l <player_id>
+	AND.w #$00FF
 	DEC
-	CMP #$00FF : !BGE .textdone
+	CMP.w #$00FF : !BGE .textdone
 	ASL #5
 	TAX
 	-
-	CPY <hdr_len>+$20 : !BGE ++
-		LDA PlayerNames, X
-		PHX : TYX : STA !MULTIWORLD_HUD_CHARACTER_DATA, X : PLX
+	CPY.w <hdr_len>+$20 : !BGE ++
+		LDA.l PlayerNames, X
+		PHX : TYX : STA.l !MULTIWORLD_HUD_CHARACTER_DATA, X : PLX
 		INX #2 : INY #2
 		BRA -
 	++
 
 	TYX
 	-
-	CPX #$0040 : !BGE ++
-		LDA #$007F
-		STA !MULTIWORLD_HUD_CHARACTER_DATA, X
+	CPX.w #$0040 : !BGE ++
+		LDA.w #$007F
+		STA.l !MULTIWORLD_HUD_CHARACTER_DATA, X
 		INX #2
 		BRA -
 	++
 
 	SEP #$20
-	LDA #$01 : STA !NMI_MW+1 : STA !NMI_MW
-	LDA !MULTIWORLD_HUD_DELAY
-	STA !MULTIWORLD_HUD_TIMER
+	LDA.b #$01 : STA.l !NMI_MW+1 : STA.l !NMI_MW
+	LDA.b !MULTIWORLD_HUD_DELAY
+	STA.l !MULTIWORLD_HUD_TIMER
 .textdone
 PLP : PLY : PLX
 endmacro
@@ -48,38 +48,38 @@ WriteText:
 {
 	PHA : PHX : PHP
 		SEP #$10
-		LDX $4340 : PHX ; preserve DMA parameters
-		LDX $4341 : PHX ; preserve DMA parameters
-		LDX $4342 : PHX ; preserve DMA parameters
-		LDX $4343 : PHX ; preserve DMA parameters
-		LDX $4344 : PHX ; preserve DMA parameters
-		LDX $4345 : PHX ; preserve DMA parameters
-		LDX $4346 : PHX ; preserve DMA parameters
-		LDX $2115 : PHX ; preserve DMA parameters
-		LDX $2116 : PHX ; preserve DMA parameters
-		LDX $2117 : PHX ; preserve DMA parameters
-		LDX $2100 : PHX : LDX.b #$80 : STX $2100 ; save screen state & turn screen off
+		LDX.w $4340 : PHX ; preserve DMA parameters
+		LDX.w $4341 : PHX ; preserve DMA parameters
+		LDX.w $4342 : PHX ; preserve DMA parameters
+		LDX.w $4343 : PHX ; preserve DMA parameters
+		LDX.w $4344 : PHX ; preserve DMA parameters
+		LDX.w $4345 : PHX ; preserve DMA parameters
+		LDX.w $4346 : PHX ; preserve DMA parameters
+		LDX.w $2115 : PHX ; preserve DMA parameters
+		LDX.w $2116 : PHX ; preserve DMA parameters
+		LDX.w $2117 : PHX ; preserve DMA parameters
+		LDX.w $2100 : PHX : LDX.b #$80 : STX.w $2100 ; save screen state & turn screen off
 
 		REP #$20
-		LDX #$80 : STX $2115
-		LDA #$6000+$0340 : STA $2116
-		LDA.w #!MULTIWORLD_HUD_CHARACTER_DATA : STA $4342
-		LDX.b #!MULTIWORLD_HUD_CHARACTER_DATA>>16 : STX $4344
-		LDA #$0040 : STA $4345
-		LDA #$1801 : STA $4340
-		LDX #$10 : STX $420B
+		LDX.b #$80 : STX.w $2115
+		LDA.w #$6000+$0340 : STA.w $2116
+		LDA.w #!MULTIWORLD_HUD_CHARACTER_DATA : STA.w $4342
+		LDX.b #!MULTIWORLD_HUD_CHARACTER_DATA>>16 : STX.w $4344
+		LDA.w #$0040 : STA.w $4345
+		LDA.w #$1801 : STA.w $4340
+		LDX.b #$10 : STX.w DMAENABLE
 
-		PLX : STX $2100 ; put screen back however it was before
-		PLX : STX $2117 ; restore DMA parameters
-		PLX : STX $2116 ; restore DMA parameters
-		PLX : STX $2115 ; restore DMA parameters
-		PLX : STX $4346 ; restore DMA parameters
-		PLX : STX $4345 ; restore DMA parameters
-		PLX : STX $4344 ; restore DMA parameters
-		PLX : STX $4343 ; restore DMA parameters
-		PLX : STX $4342 ; restore DMA parameters
-		PLX : STX $4341 ; restore DMA parameters
-		PLX : STX $4340 ; restore DMA parameters
+		PLX : STX.w $2100 ; put screen back however it was before
+		PLX : STX.w $2117 ; restore DMA parameters
+		PLX : STX.w $2116 ; restore DMA parameters
+		PLX : STX.w $2115 ; restore DMA parameters
+		PLX : STX.w $4346 ; restore DMA parameters
+		PLX : STX.w $4345 ; restore DMA parameters
+		PLX : STX.w $4344 ; restore DMA parameters
+		PLX : STX.w $4343 ; restore DMA parameters
+		PLX : STX.w $4342 ; restore DMA parameters
+		PLX : STX.w $4341 ; restore DMA parameters
+		PLX : STX.w $4340 ; restore DMA parameters
 	PLP : PLX : PLA
 RTL
 }
@@ -87,49 +87,49 @@ RTL
 GetMultiworldItem:
 {
 	PHP
-	LDA !MULTIWORLD_ITEM : BNE +
-	LDA !MULTIWORLD_HUD_TIMER : BNE +
+	LDA.l !MULTIWORLD_ITEM : BNE +
+	LDA.l !MULTIWORLD_HUD_TIMER : BNE +
 		BRL .return
 	+
 
-	LDA $10
-	CMP #$07 : BEQ +
-	CMP #$09 : BEQ +
-	CMP #$0B : BEQ +
+	LDA.b GameMode
+	CMP.b #$07 : BEQ +
+	CMP.b #$09 : BEQ +
+	CMP.b #$0B : BEQ +
 		BRL .return
 	+
 
-	LDA !MULTIWORLD_HUD_TIMER : BEQ .textend
-		DEC #$01 : STA !MULTIWORLD_HUD_TIMER
-		CMP #$00 : BNE .textend
+	LDA.l !MULTIWORLD_HUD_TIMER : BEQ .textend
+		DEC.b #$01 : STA.l !MULTIWORLD_HUD_TIMER
+		CMP.b #$00 : BNE .textend
 			; Clear text
 			PHP : REP #$30
-			LDX #$0000
+			LDX.w #$0000
 			-
-			CPX #$0040 : !BGE ++
-				LDA #$007F
-				STA !MULTIWORLD_HUD_CHARACTER_DATA, X
+			CPX.w #$0040 : !BGE ++
+				LDA.w #$007F
+				STA.l !MULTIWORLD_HUD_CHARACTER_DATA, X
 				INX #2
 				BRA -
 			++
 			PLP
-			LDA #$01 : STA !NMI_MW+1 : STA !NMI_MW
+			LDA.b #$01 : STA.l !NMI_MW+1 : STA.l !NMI_MW
 	.textend
 
-	LDA $5D
-	CMP #$00 : BEQ +
-	CMP #$04 : BEQ +
-	CMP #$17 : BEQ +
+	LDA.b LinkState
+	CMP.b #$00 : BEQ +
+	CMP.b #$04 : BEQ +
+	CMP.b #$17 : BEQ +
 		BRL .return
 	+
 
-	LDA !MULTIWORLD_ITEM : BNE +
+	LDA.l !MULTIWORLD_ITEM : BNE +
 		BRL .return
 	+
 
 	PHA
-	LDA #$22
-	LDY #$04
+	LDA.b #$22
+	LDY.b #$04
 	JSL Ancilla_CheckForAvailableSlot : BPL +
 		PLA
 		BRL .return
@@ -137,55 +137,55 @@ GetMultiworldItem:
 	PLA
 
 	; Check if we have a key for the dungeon we are currently in
-	LDX $040C
+	LDX.w DungeonID
 	; Escape
-	CMP #$A0 : BNE + : CPX #$00 : BEQ ++ : CPX #$02 : BEQ ++ : BRL .keyend : ++ : BRL .thisdungeon : +
+	CMP.b #$A0 : BNE + : CPX.b #$00 : BEQ ++ : CPX.b #$02 : BEQ ++ : BRL .keyend : ++ : BRL .thisdungeon : +
 	; Eastern
-	CMP #$A2 : BNE + : CPX #$04 : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$A2 : BNE + : CPX.b #$04 : BEQ .thisdungeon : BRA .keyend : +
 	; Desert
-	CMP #$A3 : BNE + : CPX #$06 : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$A3 : BNE + : CPX.b #$06 : BEQ .thisdungeon : BRA .keyend : +
 	; Hera
-	CMP #$AA : BNE + : CPX #$14 : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$AA : BNE + : CPX.b #$14 : BEQ .thisdungeon : BRA .keyend : +
 	; Aga
-	CMP #$A4 : BNE + : CPX #$08 : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$A4 : BNE + : CPX.b #$08 : BEQ .thisdungeon : BRA .keyend : +
 	; PoD
-	CMP #$A6 : BNE + : CPX #$0C : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$A6 : BNE + : CPX.b #$0C : BEQ .thisdungeon : BRA .keyend : +
 	; Swamp
-	CMP #$A5 : BNE + : CPX #$0A : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$A5 : BNE + : CPX.b #$0A : BEQ .thisdungeon : BRA .keyend : +
 	; SW
-	CMP #$A8 : BNE + : CPX #$10 : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$A8 : BNE + : CPX.b #$10 : BEQ .thisdungeon : BRA .keyend : +
 	; TT
-	CMP #$AB : BNE + : CPX #$16 : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$AB : BNE + : CPX.b #$16 : BEQ .thisdungeon : BRA .keyend : +
 	; Ice
-	CMP #$A9 : BNE + : CPX #$12 : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$A9 : BNE + : CPX.b #$12 : BEQ .thisdungeon : BRA .keyend : +
 	; Mire
-	CMP #$A7 : BNE + : CPX #$0E : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$A7 : BNE + : CPX.b #$0E : BEQ .thisdungeon : BRA .keyend : +
 	; TR
-	CMP #$AC : BNE + : CPX #$18 : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$AC : BNE + : CPX.b #$18 : BEQ .thisdungeon : BRA .keyend : +
 	; GT
-	CMP #$AD : BNE + : CPX #$1A : BEQ .thisdungeon : BRA .keyend : +
+	CMP.b #$AD : BNE + : CPX.b #$1A : BEQ .thisdungeon : BRA .keyend : +
 	; GT BK
-	CMP #$92 : BNE .keyend : CPX #$1A : BNE .keyend : LDA #$32 : BRA .keyend
+	CMP.b #$92 : BNE .keyend : CPX.b #$1A : BNE .keyend : LDA.b #$32 : BRA .keyend
 	.thisdungeon
-	LDA #$24
+	LDA.b #$24
 	.keyend
 
-	STA $02D8 ;Set Item to receive
+	STA.w ItemReceiptID ;Set Item to receive
 	TAY
 
-	LDA #$01 : STA !MULTIWORLD_RECEIVING_ITEM
-	LDA #$00 : STA !MULTIWORLD_ITEM_PLAYER_ID
+	LDA.b #$01 : STA.l !MULTIWORLD_RECEIVING_ITEM
+	LDA.b #$00 : STA.l !MULTIWORLD_ITEM_PLAYER_ID
 
-	STZ $02E9
-	JSL.l $0791B3 ; Player_HaltDashAttackLong
+	STZ.w ItemReceiptMethod
+	JSL Player_HaltDashAttackLong
 	JSL Link_ReceiveItem
-	LDA #$00 : STA !MULTIWORLD_ITEM : STA !MULTIWORLD_RECEIVING_ITEM
+	LDA.b #$00 : STA.l !MULTIWORLD_ITEM : STA.l !MULTIWORLD_RECEIVING_ITEM
 
 	%Print_Text(HUD_ReceivedFrom, #$001C, !MULTIWORLD_ITEM_FROM)
 	
 	.return
 	PLP
-	LDA $5D : ASL A : TAX
+	LDA.b LinkState : ASL A : TAX
 RTL
 }
 
@@ -193,10 +193,10 @@ Multiworld_OpenKeyedObject:
 {
 	PHP
 	SEP #$20
-	LDA ChestData_Player+2, X : STA !MULTIWORLD_ITEM_PLAYER_ID
+	LDA.l ChestData_Player+2, X : STA.l !MULTIWORLD_ITEM_PLAYER_ID
 	PLP
 
-	LDA !Dungeon_ChestData+2, X ; thing we wrote over
+	LDA.l !Dungeon_ChestData+2, X ; thing we wrote over
 RTL
 }
 
@@ -204,7 +204,7 @@ Multiworld_BottleVendor_GiveBottle:
 {
 	PHA : PHP
 	SEP #$20
-	LDA BottleMerchant_Player : STA !MULTIWORLD_ITEM_PLAYER_ID
+	LDA.l BottleMerchant_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID
 	PLP : PLA
 
 	JSL Link_ReceiveItem ; thing we wrote over
@@ -215,7 +215,7 @@ Multiworld_MiddleAgedMan_ReactToSecretKeepingResponse:
 {
 	PHA : PHP
 	SEP #$20
-	LDA PurpleChest_Item_Player : STA !MULTIWORLD_ITEM_PLAYER_ID
+	LDA.l PurpleChest_Item_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID
 	PLP : PLA
 
 	JSL Link_ReceiveItem ; thing we wrote over
@@ -226,7 +226,7 @@ Multiworld_Hobo_GrantBottle:
 {
 	PHA : PHP
 	SEP #$20
-	LDA HoboItem_Player : STA !MULTIWORLD_ITEM_PLAYER_ID
+	LDA.l HoboItem_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID
 	PLP : PLA
 
 	JSL Link_ReceiveItem ; thing we wrote over
@@ -237,7 +237,7 @@ Multiworld_MasterSword_GrantToPlayer:
 {
 	PHA : PHP
 	SEP #$20
-	LDA PedestalSword_Player : STA !MULTIWORLD_ITEM_PLAYER_ID
+	LDA.l PedestalSword_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID
 	PLP : PLA
 
 	JSL Link_ReceiveItem ; thing we wrote over
@@ -246,40 +246,40 @@ RTL
 
 Multiworld_AddReceivedItem_notCrystal:
 {
-	TYA : STA $02E4 : PHX ; things we wrote over
+	TYA : STA.w CutsceneFlag : PHX ; things we wrote over
 	
-	LDA !MULTIWORLD_ITEM_PLAYER_ID : BEQ +
-		PHY : LDY $02D8 : JSL AddInventory : PLY
+	LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BEQ +
+		PHY : LDY.w ItemReceiptID : JSL AddInventory : PLY
 
 		%Print_Text(HUD_SentTo, #$0010, !MULTIWORLD_ITEM_PLAYER_ID)
-		LDA #$33 : STA $012F
+		LDA.b #$33 : STA.w SFX3
 
-		JML.l AddReceivedItem_gfxHandling
+		JML AddReceivedItem_gfxHandling
 	+
-	JML.l AddReceivedItem_notCrystal+5
+	JML AddReceivedItem_notCrystal+5
 }
 
 Multiworld_Ancilla_ReceiveItem_stillInMotion:
 {
 	CMP.b #$28 : BNE + ; thing we wrote over
-	LDA !MULTIWORLD_ITEM_PLAYER_ID : BNE +
-		JML.l Ancilla_ReceiveItem_stillInMotion_moveon
+	LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BNE +
+		JML Ancilla_ReceiveItem_stillInMotion_moveon
 	+
-	JML.l Ancilla_ReceiveItem_dontGiveRupees
+	JML Ancilla_ReceiveItem_dontGiveRupees
 }
 
 Multiworld_ConsumingFire_TransmuteToSkullWoodsFire:
 {
-	LDA $8A : AND.b #$40 : BEQ .failed ; things we wrote over
-	LDA $0C4A : CMP #$22 : BEQ .failed
-	LDA $0C4B : CMP #$22 : BEQ .failed
-	LDA $0C4C : CMP #$22 : BEQ .failed
-	LDA $0C4D : CMP #$22 : BEQ .failed
-	LDA $0C4E : CMP #$22 : BEQ .failed
-	LDA $0C4F : CMP #$22 : BEQ .failed
+	LDA.b OverworldIndex : AND.b #$40 : BEQ .failed ; things we wrote over
+	LDA.w AncillaID : CMP.b #$22 : BEQ .failed
+	LDA.w AncillaID+1 : CMP.b #$22 : BEQ .failed
+	LDA.w AncillaID+2 : CMP.b #$22 : BEQ .failed
+	LDA.w AncillaID+3 : CMP.b #$22 : BEQ .failed
+	LDA.w AncillaID+4 : CMP.b #$22 : BEQ .failed
+	LDA.w AncillaID+5 : CMP.b #$22 : BEQ .failed
 
-	JML.l ConsumingFire_TransmuteToSkullWoodsFire_continue
+	JML ConsumingFire_TransmuteToSkullWoodsFire_continue
 
 	.failed
-	JML.l AddDoorDebris_spawn_failed
+	JML AddDoorDebris_spawn_failed
 }

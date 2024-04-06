@@ -21,7 +21,7 @@ macro LoadDialogAddress(address)
 	PHB : PHK : PLB
 		SEP #$20 ; set 8-bit accumulator
 		REP #$10 ; set 16-bit index registers
-		PEI.b ($00)
+		PEI.b (Scrap00)
 		LDA.b Scrap02 : PHA
 			STZ.w TextID : STZ.w TextID+1 ; reset decompression buffer
 			LDA.b #$01 : STA.l AltTextFlag ; set flag
@@ -44,7 +44,7 @@ endmacro
 macro CopyDialogIndirect()
 	REP #$20 : LDA.l DialogOffsetPointer : TAX : LDY.w #$0000 : SEP #$20 ; copy 2-byte offset pointer to X and set Y to 0
 	?loop:
-		LDA.b [$00], Y ; load the next character from the pointer
+		LDA.b [Scrap00], Y ; load the next character from the pointer
 		STA.l DialogBuffer, X ; write to the buffer
 		INX : INY
 	CMP.b #$7F : BNE ?loop
@@ -149,7 +149,7 @@ FreeDungeonItemNotice:
                         .self_notice
                         SEP #$20
 		        %CopyDialog(Notice_Self)
-                        JMP.w .done
+                        JMP .done
         +
         SEP #$20
 	LDA.w ScratchBufferNV+1
@@ -228,7 +228,7 @@ RTL
 
 ;--------------------------------------------------------------------------------
 DialogResetSelectionIndex:
-    JSL.l Attract_DecompressStoryGfx ; what we wrote over
+    JSL Attract_DecompressStoryGfx ; what we wrote over
     STZ.w MessageCursor
 RTL
 ;--------------------------------------------------------------------------------
@@ -251,7 +251,7 @@ DialogFairyThrow:
         ORA.l BottleContentsTwo : ORA.l BottleContentsThree : ORA.l BottleContentsFour : BNE .normal
 	
 	.noInventory
-	LDA.w SpriteActivity, X : !ADD #$08 : STA.w SpriteActivity, X
+	LDA.w SpriteActivity, X : !ADD.b #$08 : STA.w SpriteActivity, X
 	LDA.b #$51
 	LDY.b #$01
 RTL
@@ -261,14 +261,14 @@ RTL
 RTL
 ;--------------------------------------------------------------------------------
 DialogGanon1:
-	JSL.l CheckGanonVulnerability
+	JSL CheckGanonVulnerability
 	REP #$20
 	LDA.w #$018C
 	BCC +
 	LDA.w #$016D
 +	STA.w TextID
 	SEP #$20
-	JSL.l Sprite_ShowMessageMinimal_Alt
+	JSL Sprite_ShowMessageMinimal_Alt
 RTL
 ;--------------------------------------------------------------------------------
 ; #$0192 - no bow
@@ -280,7 +280,7 @@ RTL
 ; s = silver arrow bow
 ; p = 2nd progressive bow
 DialogGanon2:
-        JSL.l CheckGanonVulnerability
+        JSL CheckGanonVulnerability
 
         REP #$20
         BCS +
@@ -304,7 +304,7 @@ DialogGanon2:
         ++
         STA.w TextID
         SEP #$20
-        JSL.l Sprite_ShowMessageMinimal_Alt
+        JSL Sprite_ShowMessageMinimal_Alt
 RTL
 ;--------------------------------------------------------------------------------
 DialogEtherTablet:
@@ -366,7 +366,7 @@ DialogBombShopGuy:
 	+
 	TYA
 	LDY.b #$01
-	JSL.l Sprite_ShowMessageUnconditional
+	JSL Sprite_ShowMessageUnconditional
 RTL
 
 ;---------------------------------------------------------------------------------------------------
@@ -382,7 +382,7 @@ AgahnimAsksAboutPed:
 	STA.w TextID
 
 .vanilla
-	JML $85FA8E ; Sprite_ShowMessageMinimal
+	JML Sprite_ShowMessageMinimal
 ;--------------------------------------------------------------------------------
 Main_ShowTextMessage_Alt:
 	; Are we in text mode? If so then end the routine.
@@ -474,7 +474,7 @@ Sprite_ShowSolicitedMessageIfPlayerFacing_Alt:
 
 	; Make sure that the sprite is facing towards the player, otherwise
 	; talking can't happen. (What sprites actually use this???)
-	LDA.l $85E1A3, X : PLX : CMP.b LinkDirection : BNE .not_facing_each_other
+	LDA.l Sprite_ShowSolicitedMessage_Direction, X : PLX : CMP.b LinkDirection : BNE .not_facing_each_other
 
 	PHY
 
@@ -531,7 +531,7 @@ Sprite_ShowSolicitedMessageIfPlayerFacing_PreserveMessage:
 
 	; Make sure that the sprite is facing towards the player, otherwise
 	; talking can't happen. (What sprites actually use this???)
-	LDA.l $85E1A3, X : PLX : CMP.b LinkDirection : BNE .not_facing_each_other
+	LDA.l Sprite_ShowSolicitedMessage_Direction, X : PLX : CMP.b LinkDirection : BNE .not_facing_each_other
 
 	PLA : XBA : PLA
 

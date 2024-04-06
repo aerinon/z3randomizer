@@ -142,13 +142,13 @@ TransferItemToVRAM:
 	STA.w $2116
 
 	LDX.b #$01
-	STX.w $420B
+	STX.w DMAENABLE
 
 	ADC.w #$0100
 	STA.w $2116
 
 	INX
-	STX.w $420B
+	STX.w DMAENABLE
 
 	STZ.w ItemGFXPtr
 	STZ.w ItemGFXTarget
@@ -248,9 +248,9 @@ endmacro
 FastSpriteDecomp:
 	SEP #$30
 
-	LDA.l $80CFC0,X : PHA : PLB ; bank
-	LDA.l $80D09F,X : XBA ; high
-	LDA.l $80D17E,X ; low
+	LDA.l GFXSheetPointers_background_bank,X : PHA : PLB
+	LDA.l GFXSheetPointers_background_high,X : XBA
+	LDA.l GFXSheetPointers_background_low,X
 
 	REP #$10
 

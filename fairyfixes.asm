@@ -27,9 +27,9 @@ RTL
 FairyPond_Init:
 	LDA.l Restrict_Ponds : BNE +
 		LDA.b #$48
-		JML.l Sprite_ShowMessageFromPlayerContact
+		JML Sprite_ShowMessageFromPlayerContact
 	+
-	PHY : JSL.l Sprite_CheckDamageToPlayerSameLayerLong : BCC +
+	PHY : JSL Sprite_CheckDamageToPlayerSameLayerLong : BCC +
 		LDA.l BottleContentsOne : CMP.b #$02 : BNE ++ : LDA.b #$1C : PHA : BRA .emptyBottle : ++
 		LDA.l BottleContentsTwo : CMP.b #$02 : BNE ++ : LDA.b #$1D : PHA : BRA .emptyBottle : ++
 		LDA.l BottleContentsThree : CMP.b #$02 : BNE ++ : LDA.b #$1E : PHA : BRA .emptyBottle : ++
@@ -38,7 +38,7 @@ FairyPond_Init:
 			LDA.b #$0A : STA.w SpriteActivity, X
 			LDA.b #$51
 			LDY.b #$01
-			JSL.l Sprite_ShowMessageFromPlayerContact
+			JSL Sprite_ShowMessageFromPlayerContact
 			JMP .cleanup
 		
 			.emptyBottle

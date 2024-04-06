@@ -8,21 +8,21 @@ NMIHookActionEnemizer:
 
     SEP #$20 ; get into 8-bit mode
     
-    LDA !SHELL_DMA_FLAG : BEQ .return ; check our draw flag
-    AND #$01 : BNE .loadKholdstare
-    LDA !SHELL_DMA_FLAG : AND #$02 : BNE .loadTrinexx
+    LDA.l !SHELL_DMA_FLAG : BEQ .return ; check our draw flag
+    AND.b #$01 : BNE .loadKholdstare
+    LDA.l !SHELL_DMA_FLAG : AND.b #$02 : BNE .loadTrinexx
     BRA .return ; just in case
-    ;BIT #$01 : BEQ .loadKholdstare
-    ;BIT #$02 : BEQ .loadTrinexx
+    ;BIT.b #$01 : BEQ .loadKholdstare
+    ;BIT.b #$02 : BEQ .loadTrinexx
 
 .loadKholdstare
     JSL DMAKholdstare
-    LDA #$00 : STA !SHELL_DMA_FLAG ; clear our draw flag
+    LDA.b #$00 : STA.l !SHELL_DMA_FLAG ; clear our draw flag
     BRA .return
 
 .loadTrinexx
     JSL DMATrinexx
-    LDA #$00 : STA !SHELL_DMA_FLAG ; clear our draw flag
+    LDA.b #$00 : STA.l !SHELL_DMA_FLAG ; clear our draw flag
 
 .return
     PLP
@@ -33,7 +33,7 @@ NMIHookActionEnemizer:
     ; Sets DP to $0000
     LDA.w #$0000 : TCD
 
-JML.l NMIHookReturnEnemizer
+JML NMIHookReturnEnemizer
 }
 
 DMAKholdstare:

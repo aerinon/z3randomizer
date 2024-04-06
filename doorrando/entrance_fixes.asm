@@ -20,10 +20,10 @@
 ;===================================================================================================
 pushpc
 
-org $01B0E6
+org $81B0E6
 	JSL StoreDoorInfo
 
-org $01892F
+org $81892F
 DoorDrawJankMove:
 	JML PrepDoorDraw
 
@@ -33,12 +33,12 @@ DoorDrawJankMove:
 
 ; we don't want to overwrite the JMP ($000E) that's already there
 ; Well, we could, but we don't need to
-warnpc $018939
+warnpc $818939
 
-org $01BF43
+org $81BF43
 	JSL AdjustEscapeDoorCollision
 
-org $01C132  ; ADC.w #$0040 : TAX : LDA.b $00
+org $81C132  ; ADC.w #$0040 : TAX : LDA.b $00
 	JSL AdjustEscapeDoorCollision_LowEntrance : NOP #2
 
 pullpc
@@ -46,7 +46,7 @@ pullpc
 ;===================================================================================================
 StoreDoorInfo:
 	STA.w $1980,X
-    LDA.b $00 : STA.w $19F0,X
+    LDA.b Scrap00 : STA.w $19F0,X
     TXA
 RTL
 
@@ -59,18 +59,18 @@ PrepDoorDraw:
 	; Much easier to just tell you to look at $01890D in the disassembly
 	; and you should understand the vanilla program flow we need to reject
 	PEA.w DoorDrawJankMove_return-1
-	LDA.b $00
+	LDA.b Scrap00
 	STA.w $19EE ; for current routine
 
 	; copy vanilla code (but fast rom)
 	LDA.l $8186F0,X
-	STA.b $0E
+	STA.b Scrap0E
 
-	LDX.b $02
-	LDA.b $04
+	LDX.b Scrap02
+	LDA.b Scrap04
 
 	; and to execute the jump, we'll use the JMP ($000E) we carefully avoided overwriting
-	JML.l $818939
+	JML $818939
 
 ;===================================================================================================
 
@@ -106,20 +106,20 @@ AdjustEscapeDoorGraphics:
 
 	; row 1
 	LDA.w #$8838
-	STA.l $7E2000+$080,X
+	STA.l TileMapA+$080,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$086,X
+	STA.l TileMapA+$086,X
 
 	; row 2
 	LDA.w #$8828
-	STA.l $7E2000+$100,X
+	STA.l TileMapA+$100,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$106,X
+	STA.l TileMapA+$106,X
 
 	LDA.w #$8829
-	STA.l $7E2000+$102,X
+	STA.l TileMapA+$102,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$104,X
+	STA.l TileMapA+$104,X
 
 	JSR IdentifySwampEntrance
 	BCS .fix_swamp_entrance_alternate
@@ -134,26 +134,26 @@ AdjustEscapeDoorGraphics:
 
 	; row 0
 	LDA.w #$14C4
-	STA.l $7E2000+$000,X  ; sanity check = should calculate to 7e3bbc
+	STA.l TileMapA+$000,X  ; sanity check = should calculate to 7e3bbc
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$006,X
+	STA.l TileMapA+$006,X
 
 	LDA.w #$14C5
-	STA.l $7E2000+$002,X
+	STA.l TileMapA+$002,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$004,X
+	STA.l TileMapA+$004,X
 
 	; row 1
 	LDA.w #$14E8
-	STA.l $7E2000+$082,X
+	STA.l TileMapA+$082,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$084,X
+	STA.l TileMapA+$084,X
 
 	; row 2
 	LDA.w #$14F8
-	STA.l $7E2000+$102,X
+	STA.l TileMapA+$102,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$104,X
+	STA.l TileMapA+$104,X
 	RTL
 
 .fix_swamp_entrance
@@ -162,56 +162,56 @@ AdjustEscapeDoorGraphics:
 
 	; row 1 - outer section
 	LDA.w #$0908
-	STA.l $7E2000+$080,X
+	STA.l TileMapA+$080,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$086,X
+	STA.l TileMapA+$086,X
 
 	; row 2
 	LDA.w #$0918
-	STA.l $7E2000+$100,X
+	STA.l TileMapA+$100,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$106,X
+	STA.l TileMapA+$106,X
 
 	LDA.w #$14F8
-	STA.l $7E2000+$102,X
+	STA.l TileMapA+$102,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$104,X
+	STA.l TileMapA+$104,X
 
 .fix_swamp_entrance_alternate
 	; row 0
 	LDA.w #$9DFC
-	STA.l $7E2000+$000,X
-	STA.l $7E2000+$002,X
-	STA.l $7E2000+$004,X
-	STA.l $7E2000+$006,X
+	STA.l TileMapA+$000,X
+	STA.l TileMapA+$002,X
+	STA.l TileMapA+$004,X
+	STA.l TileMapA+$006,X
 
 	; row 1 - mid section
 	LDA.w #$14E8
-	STA.l $7E2000+$082,X
+	STA.l TileMapA+$082,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$084,X
+	STA.l TileMapA+$084,X
 
 	; row 3
 	LDA.w #$A82C
-	STA.l $7E2000+$180,X
+	STA.l TileMapA+$180,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$186,X
+	STA.l TileMapA+$186,X
 
 	LDA.w #$A82D
-	STA.l $7E2000+$182,X
+	STA.l TileMapA+$182,X
 	ORA.w #$4000 ; horizontally flip
-	STA.l $7E2000+$184,X
+	STA.l TileMapA+$184,X
 	RTL
 
 IdentifySancEntrance:
-	LDA.b $A0 : CMP.w #$0012 : BNE +
-	LDA.b $0A : CMP.w #$0010 : BNE +
+	LDA.b RoomIndex : CMP.w #$0012 : BNE +
+	LDA.b Scrap0A : CMP.w #$0010 : BNE +
 		SEC : RTS
 	+ CLC : RTS
 
 IdentifySwampEntrance:
-	LDA.b $A0 : CMP.w #$0036 : BNE +
-	LDA.b $0A : CMP.w #$0010 : BNE +
+	LDA.b RoomIndex : CMP.w #$0036 : BNE +
+	LDA.b Scrap0A : CMP.w #$0010 : BNE +
 		SEC : RTS
 	+ CLC : RTS
 
@@ -250,7 +250,7 @@ AdjustEscapeDoorCollisionShared:
 	BCS .block_entrance
 
 	; vanilla value
-	LDA.b $00
+	LDA.b Scrap00
 
 	RTL
 
@@ -274,21 +274,21 @@ IdentifyBlockedEntrance:
 	LDA.l ProgressIndicator : AND.w #$00FF : CMP.w #$0002 : BCS .leave_alone ; only in rain states (0 or 1)
 	LDA.l ProgressFlags : AND.w #$0004 : BNE .leave_alone ; zelda's been rescued
 	LDA.l BlockSanctuaryDoorInRain : BEQ + ;flagged
-	LDA.b $A0 : CMP.w #$0012 : BNE +
+	LDA.b RoomIndex : CMP.w #$0012 : BNE +
 		; we're in the sanctuary
 		; 	this code could be removed because you can't reach sanc without zelda currently
 		; 	but that's enforced in the logic, so this is to catch that case in case some mode allows it
 		LDA.l FollowerIndicator : AND.w #$00FF : CMP.w #$0001 : BEQ .leave_alone ; zelda is following
-		LDA.b $0A
+		LDA.b Scrap0A
 		CMP.w #$000A : BCC .leave_alone
 		CMP.w #$0014 : BCS .leave_alone
 			.block_door
 			SEC : RTS
 	+ LDA.l BlockCastleDoorsInRain : AND.w #$00FF : BEQ .leave_alone
-	LDX #$FFFE
+	LDX.w #$FFFE
 	- INX #2
 	LDA.l RemoveRainDoorsRoom, X : CMP.w #$FFFF : BEQ .leave_alone
-	CMP $A0 : BNE -
+	CMP.b RoomIndex : BNE -
 	LDA.l RainDoorMatch, X
 	CMP.w $19EE : BNE .leave_alone
 	BRA .block_door

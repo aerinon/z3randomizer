@@ -383,39 +383,3 @@ org $80D25B ; 0x525B - HUD Main L
 db GFX_HUD_Main
 
 ;================================================================================
-
-org $828AD9
-Underworld_SetBossOrSancMusicUponEntry:
-
-
-org $02C11D
-CalculateTransitionLanding:
-
-org $02D9B9
-Underworld_LoadSpawnEntrance:
-
-
-org $08C505
-Ancilla_ReceiveItem_objectFinished:
-
-org $08CE2E
-GTCutscene_AnimateCrystals_NoRotate:
-
-org $08CEB6
-GTCutscene_DrawSingleCrystal_SkipCrystal:
-
-org $08CEC3
-GTCutscene_DrawSingleCrystal_SkipSparkle:
-
-org $08CF59
-GTCutscene_SparkleALot:
-
-
-org $098605
-AddReceivedItem_notCrystal:
-
-org $098766
-AddReceivedItem_gfxHandling:
-
-org $8AE817
-DungeonMapBossRooms:

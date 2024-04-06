@@ -38,7 +38,7 @@ DecrementArrows:
 		REP #$20
 		LDA.b RoomIndex : CMP.w #$0111 : SEP #$20 : BNE .not_archery_game
 			LDA.b IndoorsFlag : BEQ .not_archery_game ; in overworld
-			LDA.w $0B9A : BEQ .shoot_arrow ; arrow game active
+			LDA.w BowDryFire : BEQ .shoot_arrow ; arrow game active
 			LDA.b #$00 : BRA .done
 		
 		.not_archery_game

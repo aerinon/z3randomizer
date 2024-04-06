@@ -19,12 +19,12 @@ QuickSwap:
 		LDX.w ItemCursor : BRA .special_swap
 	+
 	BIT.b #$10 : BEQ + ; Only pressed R
-		JSR.w RCode
+		JSR RCode
 		LDA.b Joy1B_All : BIT.b #$20 : BNE .special_swap ; Still holding L from a previous frame
 		BRA .store
 	+
 	; Only pressed L
-	JSR.w LCode
+	JSR LCode
 	LDA.b Joy1B_All : BIT #$10 : BNE .special_swap ; Still holding R from a previous frame
 	BRA .store
 
@@ -61,7 +61,7 @@ RCode:
 		+ INX
                 DEY : BEQ +
 	.nextItem
-	JSL.l IsItemAvailable : BEQ -
+	JSL IsItemAvailable : BEQ -
         +
 RTS
 
@@ -78,7 +78,7 @@ LCode:
 		+ DEX
                 DEY : BEQ +
 	.nextItem
-	JSL.l IsItemAvailable : BEQ -
+	JSL IsItemAvailable : BEQ -
         +
 RTS
 

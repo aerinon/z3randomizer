@@ -5,11 +5,11 @@
 ;================================================================================
 LoadSwordForDamage:
 	LDA.w SpriteTypeTable, X : CMP.b #$88 : BNE .notMoth
-		JSR.w LoadModifiedSwordLevel ; load normal sword value
+		JSR LoadModifiedSwordLevel ; load normal sword value
 		CMP.b #$04 : !BLT + : DEC : + ; if it's gold sword, change it to tempered
 		RTL
 	.notMoth
-	JSR.w LoadModifiedSwordLevel ; load normal sword value
+	JSR LoadModifiedSwordLevel ; load normal sword value
 RTL
 ;================================================================================
 LookupDamageLevel:
@@ -33,7 +33,7 @@ RTL
 ;================================================================================
 LoadModifiedSwordLevel: ; returns short
 	LDA.l SwordModifier : BEQ +
-		!ADD SwordEquipment ; add normal sword value to modifier
+		!ADD.l SwordEquipment ; add normal sword value to modifier
 			BNE ++ : LDA.b #$01 : RTS : ++
 			CMP.b #$05 : !BLT ++ : LDA.b #$04 : RTS : ++
 		RTS
@@ -44,18 +44,18 @@ RTS
 ; ArmorEquipment - Armor Inventory
 LoadModifiedArmorLevel:
 	PHA
-		LDA.l ArmorEquipment : !ADD ArmorModifier
+		LDA.l ArmorEquipment : !ADD.l ArmorModifier
 		CMP.b #$FF : BNE + : LDA.b #$00 : +
 		CMP.b #$03 : !BLT + : LDA.b #$02 : +
 		STA.l ScratchBufferV
 	PLA
-	!ADD ScratchBufferV
+	!ADD.l ScratchBufferV
 RTL
 ;================================================================================
 ; MagicConsumption - Magic Inventory
 LoadModifiedMagicLevel:
 	LDA.l MagicModifier : BEQ +
-		!ADD MagicConsumption ; add normal magic value to modifier
+		!ADD.l MagicConsumption ; add normal magic value to modifier
 			CMP.b #$FF : BNE ++ : LDA.b #$00 : RTL : ++
 			CMP.b #$03 : !BLT ++ : LDA.b #$02 : ++
 		RTL
@@ -105,9 +105,9 @@ RTL
 RTL
 ;================================================================================
 GetSmithSword:
-	JSL ItemCheck_SmithSword : BEQ + : JML.l Smithy_AlreadyGotSword : +
+	JSL ItemCheck_SmithSword : BEQ + : JML Smithy_AlreadyGotSword : +
 	LDA.l SmithItemMode : BNE +
-		JML.l Smithy_DoesntHaveSword ; Classic Smithy
+		JML Smithy_DoesntHaveSword ; Classic Smithy
 	+
 
 	REP #$20 : LDA.l CurrentRupees : CMP.w #$000A : SEP #$20 : !BGE .buy
@@ -115,13 +115,13 @@ GetSmithSword:
 		REP #$10
 		LDA.b #$7A
 		LDY.b #$01
-		JSL.l Sprite_ShowMessageUnconditional
+		JSL Sprite_ShowMessageUnconditional
 		LDA.b #$3C : STA.w SFX2 ; error sound
 		SEP #$10
 		BRA .done
 
 	.buy
-		LDA SmithItem_Player : STA !MULTIWORLD_ITEM_PLAYER_ID
+		LDA.l SmithItem_Player : STA.l !MULTIWORLD_ITEM_PLAYER_ID
 		LDA.l SmithItem : TAY
 		STZ.w ItemReceiptMethod ; Item from NPC
 		PHX : JSL Link_ReceiveItem : PLX
@@ -130,7 +130,7 @@ GetSmithSword:
 		JSL ItemSet_SmithSword
 	
 	.done
-		JML.l Smithy_AlreadyGotSword
+		JML Smithy_AlreadyGotSword
 ;================================================================================
 CheckMedallionSword:
 	LDA.l AllowSwordlessMedallionUse : BEQ .check_sword
@@ -178,13 +178,13 @@ CheckMedallionSword:
 				LDA.l MireRequiredMedallion : TAX : LDA.l .medallion_type, X : CMP.w CurrentYItem : BNE .done
 				LDA.l OverworldEventDataWRAM+$70 : AND.b #$20 : BNE .done
 				LDA.b #$08 : PHA : PLB ; set data bank to $08
-				LDY.b #$02 : JSL.l Ancilla_CheckIfEntranceTriggered : BCS .permit ; misery mire
+				LDY.b #$02 : JSL Ancilla_CheckIfEntranceTriggered : BCS .permit ; misery mire
 				BRA .done
 			+ : CMP.b #$47 : BNE +
 				LDA.l TRockRequiredMedallion : TAX : LDA.l .medallion_type, X : CMP.w CurrentYItem : BNE .done
 				LDA.l OverworldEventDataWRAM+$47 : AND.b #$20 : BNE .done
 				LDA.b #$08 : PHA : PLB ; set data bank to $08
-				LDY.b #$03 : JSL.l Ancilla_CheckIfEntranceTriggered : BCS .permit ; turtle rock
+				LDY.b #$03 : JSL Ancilla_CheckIfEntranceTriggered : BCS .permit ; turtle rock
 			+
 	.done
 		PLY : PLX : PLB

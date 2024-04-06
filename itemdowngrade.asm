@@ -2,7 +2,7 @@
 ; Item Downgrade Fix
 ;--------------------------------------------------------------------------------
 ItemDowngradeFix:
-	JSL.l AddInventory
+	JSL AddInventory
 	BMI .dontWrite ; thing we wrote over part 1
 	
 	CPY.b #$1B : BEQ .isPowerGloves ; Power Gloves
@@ -36,8 +36,8 @@ RTL
 	.isBlueBoomerang
 	.isBow
 	.isBowAndArrows
-	CMP.b [$00] : !BGE .done ; finished if we're upgrading
-	LDA.b [$00] ; reload old value
+	CMP.b [Scrap00] : !BGE .done ; finished if we're upgrading
+	LDA.b [Scrap00] ; reload old value
 RTL
 	.isSilverArrowBow
 	.isRedBoomerang

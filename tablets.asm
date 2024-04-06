@@ -30,16 +30,16 @@ RTS
 ;--------------------------------------------------------------------------------
 SpawnTabletItem:
 	JSL HeartPieceGetPlayer : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
-	JSL.l LoadOutdoorValue
-        JSL.l AttemptItemSubstitution
-        JSL.l ResolveLootIDLong
+	JSL LoadOutdoorValue
+        JSL AttemptItemSubstitution
+        JSL ResolveLootIDLong
         PHA
         LDA.b #$EB : STA.l MiniGameTime
         JSL Sprite_SpawnDynamically
         PLA
         STA.w SpriteID,Y
         TYX
-	JSL.l PrepDynamicTile_loot_resolved
+	JSL PrepDynamicTile_loot_resolved
 
         LDA.b LinkPosX   : STA.w SpritePosXLow, Y
         LDA.b LinkPosX+1 : STA.w SpritePosXHigh, Y
@@ -51,7 +51,7 @@ RTL
 ;--------------------------------------------------------------------------------
 MaybeUnlockTabletAnimation:
 	PHA : PHP
-		JSL.l IsMedallion : BCC +
+		JSL IsMedallion : BCC +
                         JSR SetTabletItemFlag
 			STZ.w MedallionFlag ; disable falling-medallion mode
 			STZ.w ForceSwordUp ; release link from item-up pose
@@ -61,7 +61,7 @@ MaybeUnlockTabletAnimation:
 				LDA.b OverworldIndex : CMP.w #$0030 : BNE ++ ; Desert
 					SEP #$20 ; set 8-bit accumulator
 					LDA.b #$02 : STA.b LinkDirection ; face link forward
-					LDA.b #$3C : STA.b $46 ; lock link for 60f
+					LDA.b #$3C : STA.b LinkIncapacitatedTimer ; lock link for 60f
 				++
 			SEP #$20 ; set 8-bit accumulator
 		+
@@ -98,7 +98,7 @@ CheckTabletItem:
 ; Zero flag set = Item not collected
 ; Zero flag clear = Item  collected
 ;--------------------------------------------------------------------------------
-        JSL.l IsMedallion : BCS .tablet
+        JSL IsMedallion : BCS .tablet
                 LDA.l OverworldEventDataWRAM, X : AND.b #$40 ; What we wrote over
                 RTL
         .tablet

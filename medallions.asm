@@ -9,7 +9,7 @@ TryOpenMire:
     LDA.l OverworldEventDataWRAM+$70 : AND.b #$20 : BNE .untriggered
     
     ; You have to be in the trigger window.
-    LDY.b #$02 : JSL.l Ancilla_CheckIfEntranceTriggered : BCC .untriggered
+    LDY.b #$02 : JSL Ancilla_CheckIfEntranceTriggered : BCC .untriggered
     
     ; Do the 3rd animation for opening entrances
     LDA.b #$03 : STA.w OWEntranceCutscene
@@ -28,7 +28,7 @@ TryOpenTRock:
     LDA.l OverworldEventDataWRAM+$47 : AND.b #$20 : BNE .untriggered
     
     ; You have to be in the trigger window.
-    LDY.b #$03 : JSL.l Ancilla_CheckIfEntranceTriggered : BCC .untriggered
+    LDY.b #$03 : JSL Ancilla_CheckIfEntranceTriggered : BCC .untriggered
     
 	; Do the 4rd animation for opening entrances
     LDA.b #$04 : STA.w OWEntranceCutscene
@@ -40,14 +40,14 @@ TryOpenTRock:
 RTL
 ;--------------------------------------------------------------------------------
 MedallionTrigger_Bombos:
-    STZ.b Strafe ; stuff we wrote over
+    STZ.b LinkStrafe ; stuff we wrote over
     STZ.w FreezeSprites
 	
 	PHA
 	LDA.l MireRequiredMedallion : BNE +
-		JSL.l TryOpenMire
+		JSL TryOpenMire
 	+ LDA.l TRockRequiredMedallion : BNE +
-		JSL.l TryOpenTRock
+		JSL TryOpenTRock
 	+
 	PLA
 RTL
@@ -55,9 +55,9 @@ RTL
 MedallionTrigger_Ether:
 	PHA
 	LDA.l MireRequiredMedallion : CMP.b #$01 : BNE +
-		JSL.l TryOpenMire
+		JSL TryOpenMire
 	+ LDA.l TRockRequiredMedallion : CMP.b #$01 : BNE +
-		JSL.l TryOpenTRock
+		JSL TryOpenTRock
 	+
 	PLA
 RTL
@@ -65,9 +65,9 @@ RTL
 MedallionTrigger_Quake:
 	PHA
 	LDA.l MireRequiredMedallion : CMP.b #$02 : BNE +
-		JSL.l TryOpenMire
+		JSL TryOpenMire
 	+ LDA.l TRockRequiredMedallion : CMP.b #$02 : BNE +
-		JSL.l TryOpenTRock
+		JSL TryOpenTRock
 	+
 	PLA
 RTL

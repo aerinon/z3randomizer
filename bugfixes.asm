@@ -51,7 +51,7 @@ DecideIfBunnyByScreenIndex:
 	LDA.b OverworldIndex : AND.b #$40 : PHA
 	LDA.l InvertedMode : BNE .inverted
 	.normal
-		PLA : EOR #$40
+		PLA : EOR.b #$40
 		BRA .done
 	.inverted
 		PLA
@@ -60,7 +60,7 @@ RTL
 ;--------------------------------------------------------------------------------
 FixBunnyOnExitToLightWorld:
     LDA.w BunnyFlag : BEQ +
-        JSL.l DecideIfBunny : BEQ +
+        JSL DecideIfBunny : BEQ +
         STZ.b LinkState ; set player mode to Normal
         STZ.w BunnyFlag : STZ.b BunnyFlagDP ; return player graphics to normal
     +
@@ -183,7 +183,7 @@ RTL
 ;--------------------------------------------------------------------------------
 ; Fix pedestal pull overlay
 PedestalPullOverlayFix:
-LDA.b #$09 : STA.w AncillaGeneral, X ; the thing we wrote over
+LDA.b #$09 : STA.w AncillaGeneralF, X ; the thing we wrote over
 LDA.b IndoorsFlag : BNE +
         LDA.b OverworldIndex : CMP.b #$80 : BNE +
                 LDA.b OverlayID : CMP.b #$97
@@ -235,7 +235,7 @@ ParadoxCaveGfxFix:
     CPX.w #$1E00 : BEQ .uploadLine
 
 .uploadLine
-    LDA.b #$01 : STA.w MDMAEN
+    LDA.b #$01 : STA.w DMAENABLE
 
 .skipLine
     RTL
@@ -246,7 +246,7 @@ ParadoxCaveGfxFix:
     BRA .uploadLine
 ;--------------------------------------------------------------------------------
 SetItemRiseTimer:
-        LDA.w ItemReceiptMethod : CMP #$01 : BNE .not_from_chest
+        LDA.w ItemReceiptMethod : CMP.b #$01 : BNE .not_from_chest
                 LDA.b #$38 : STA.w AncillaTimer, X
                 RTL
         .not_from_chest

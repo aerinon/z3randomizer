@@ -68,7 +68,7 @@ CalculateTimer:
 			RTS
 		++ ; End Game
 			SEP #$30
-				JSL.l ActivateGoal
+				JSL ActivateGoal
 			REP #$30
 			RTS
 	+
@@ -110,7 +110,7 @@ dw #$003C, #$0000
 dw #$FFFF, #$7FFF
 ;--------------------------------------------------------------------------------
 DrawChallengeTimer:
-        JSR.w CheckOHKO : BCC ++
+        JSR CheckOHKO : BCC ++
 	        AND.w #$00FF : BEQ +
                         LDA.w #$2807 : STA.l HUDTileMapBuffer+$90
                         LDA.w #$280A : STA.l HUDTileMapBuffer+$92

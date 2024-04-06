@@ -67,7 +67,7 @@ jsl QuadrantLoadOrderAfterScroll
 org $82895d ; Bank 02 line 1812 (JSL Dungeon_LoadRoom : JSL Dungeon_InitStarTileChr : JSL $00D6F9 : INC $B0)
 Splicer:
 jsl GfxFixer
-lda $b1 : beq .done
+lda.b $b1 : beq .done
 rts
 nop #5
 .done
@@ -98,7 +98,7 @@ org $8ffd65 ;(PC: 07fd65)
 Dungeon_LoadCustomTileAttr:
 org $81feb0
 Dungeon_ApproachFixedColor:
-;org $01fec1
+;org $81fec1
 ;Dungeon_ApproachFixedColor_variable:
 ;org $a0f972 ; Rando version
 ;LoadRoomHook:
@@ -120,7 +120,7 @@ jsl MirrorCheckOverride
 org $85ef47
 Sprite_HeartContainer_Override: ;sprite_heart_upgrades.asm : 96-100 (LDA $040C : CMP.b #$1A : BNE .not_in_ganons_tower)
 jsl GtBossHeartCheckOverride : bcs .not_in_ganons_tower
-nop : stz $0dd0, X : rts
+nop : stz.w SpriteAITable, X : rts
 .not_in_ganons_tower
 
 
@@ -136,7 +136,7 @@ jsl EGFixOnMirror
 org $82b82a
 jsl FixShopCode
 
-org $9ddeea ; <- Bank1D.asm : 286 (JSL Sprite_LoadProperties)
+org $9ddeea ; <- Bank1D.asm : 286 (JSL SpritePrep_LoadProperties)
 jsl VitreousKeyReset
 
 org $9ed024 ;  f5024 sprite_guruguru_bar.asm : 27 (LDA $040C : CMP.b #$12 : INY #2
@@ -170,7 +170,7 @@ org $8799de ; <- Bank07.asm : 4088 (LDA.b #$15 : STA $5D)
 JSL StoreTempBunnyState
 ;
 org $88C450 ; <- ancilla_receive_item.asm : 146-148 (STY $5D : STZ $02D8)
-JSL RetrieveBunnyState : JMP.w $88C458 : NOP
+JSL RetrieveBunnyState : JMP.w + : NOP : +
 
 org $82d9ce ; <- Bank02.asm : Dungeon_LoadEntrance 10829 (STA $A0 : STA $048E)
 JSL CheckDarkWorldSpawn : NOP
@@ -188,7 +188,7 @@ Main_ShowTextMessage:
 
 ; Conditionally disable UW music changes in Door Rando
 org $828ADB ; <- Bank02.asm:2088-2095 (LDX.b #$14 : LDA $A0 ...)
-JSL.l Underworld_DoorDown_Entry : CPX #$FF
+JSL Underworld_DoorDown_Entry : CPX.b #$FF
 BEQ + : db $80, $1C ; BRA $028B04
 NOP #6 : +
 

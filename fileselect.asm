@@ -23,12 +23,12 @@ macro fs_draw16x8(screenrow,screencol)
 endmacro
 macro fs_draw8x16(screenrow,screencol)
 	%fs_draw8x8(<screenrow>,<screencol>)
-	!ADD #$0010
+	!ADD.w #$0010
 	%fs_draw8x8(<screenrow>+1,<screencol>)
 endmacro
 macro fs_draw16x16(screenrow,screencol)
 	%fs_draw16x8(<screenrow>,<screencol>)
-	!ADD #$000F
+	!ADD.w #$000F
 	%fs_draw16x8(<screenrow>+1,<screencol>)
 endmacro
 
@@ -385,7 +385,7 @@ DrawPlayerFileShared:
 	++
 
 	LDA.l EquipmentSRAM+$0130 : AND.w #$00FF
-	JSL.l HexToDec
+	JSL HexToDec
 	LDA.l HexToDecDigit4 : AND.w #$00FF : ORA.w #!FS_COLOR_BW|$02E0 : %fs_draw8x8(11,26)
 	LDA.l HexToDecDigit5 : AND.w #$00FF : ORA.w #!FS_COLOR_BW|$02E0 : %fs_draw8x8(11,27)
 
@@ -608,7 +608,7 @@ FileSelectItems:
 FileSelectDrawHudBar:
         LDA.w #$02DB|!FS_COLOR_GREEN : %fs_draw16x8(0,10)
         LDA.l DisplayRupeesSRAM
-        JSL.l HUDHex4Digit_Long
+        JSL HUDHex4Digit_Long
         LDA.b Scrap04 : AND.w #$00FF : !ADD.w #$0250+!FS_COLOR_BW : %fs_draw8x8(1,9)
         LDA.b Scrap05 : AND.w #$00FF : !ADD.w #$0250+!FS_COLOR_BW : %fs_draw8x8(1,10)
         LDA.b Scrap06 : AND.w #$00FF : !ADD.w #$0250+!FS_COLOR_BW : %fs_draw8x8(1,11)
@@ -616,7 +616,7 @@ FileSelectDrawHudBar:
 
         LDA.w #$02CB|!FS_COLOR_BLUE : %fs_draw16x8(0,14)
         LDA.l BombsEquipmentSRAM : AND.w #$00FF
-        JSL.l HUDHex2Digit_Long
+        JSL HUDHex2Digit_Long
         TYA : AND.w #$00FF : !ADD.w #$0250+!FS_COLOR_BW : %fs_draw8x8(1,14)
         TXA : AND.w #$00FF : !ADD.w #$0250+!FS_COLOR_BW : %fs_draw8x8(1,15)
 
@@ -627,7 +627,7 @@ FileSelectDrawHudBar:
         LDA.w #$02C9|!FS_COLOR_BROWN : %fs_draw16x8(0,17)
         ++
         LDA.l CurrentArrowsSRAM : AND.w #$00FF
-        JSL.l HUDHex2Digit_Long
+        JSL HUDHex2Digit_Long
         TYA : AND.w #$00FF : !ADD.w #$0250+!FS_COLOR_BW : %fs_draw8x8(1,17)
         TXA : AND.w #$00FF : !ADD.w #$0250+!FS_COLOR_BW : %fs_draw8x8(1,18)
 RTS
@@ -771,7 +771,7 @@ LoadFullItemTiles:
         LDA.b #FileSelectNewGraphics>>16 : STA.w A1B0
         LDX.w #FileSelectNewGraphics : STX.w A1T0L
         LDX.w #$0C00 : STX.w DAS0L
-        LDA.b #$01 : STA.w MDMAEN
+        LDA.b #$01 : STA.w DMAENABLE
 RTL
 ;--------------------------------------------------------------------------------
 ; z colon @
@@ -788,7 +788,7 @@ LoadLowerCaseLettersSymbols:
         LDX.w #NewFont+$400 : STX.w A1T0L
         LDX.w #$0400 : STX.w DAS0L
         LDX.w #$2D00 : STX.w VMADDL
-        LDA.b #$01 : STA.w MDMAEN
+        LDA.b #$01 : STA.w DMAENABLE
 
         ; : @ #
         LDA.b #NewFont>>16 : STA.w A1B0
@@ -798,9 +798,9 @@ LoadLowerCaseLettersSymbols:
         LDX.w #$0030 : STX.w DAS0L : STX.w DAS1L
 
         LDX.w #$2E50 : STX.w VMADDL
-        LDA.b #$01 : STA.w MDMAEN
+        LDA.b #$01 : STA.w DMAENABLE
         LDX.w #$2ED0 : STX.w VMADDL
-        LDA.b #$02 : STA.w MDMAEN
+        LDA.b #$02 : STA.w DMAENABLE
 RTL
 ;--------------------------------------------------------------------------------
 LoadFileSelectVanillaItems:
@@ -814,7 +814,7 @@ LoadFileSelectVanillaItems:
         LDX.w #DecompBuffer2 : STX.w A1T0L
         LDX.w #$0600 : STX.w DAS0L
         LDX.w #$2F00 : STX.w VMADDL
-        LDA.b #$01 : STA.w MDMAEN
+        LDA.b #$01 : STA.w DMAENABLE
 
         SEP #$10
 RTL
@@ -823,10 +823,10 @@ SetFileSelectPalette:
 	LDA.b GameMode : CMP.b #$04 : BNE +
 		; load the vanilla file select screen BG3 palette for naming screen
 		LDA.b #$01 : STA.w $0AB2
-		JSL.l Palette_Hud
+		JSL Palette_Hud
 		BRA .done
 	+
-	JSL.l LoadCustomHudPalette
+	JSL LoadCustomHudPalette
 	.done
 JML Palette_SelectScreen ; Jump to the subroutine whose call we wrote over
 
@@ -859,7 +859,7 @@ DrawPlayerFile_credits:
 	%fs_draw8x16(3,7)
 	LDA.l EquipmentSRAM+$9F : ORA.w #!FS_COLOR_BW
 	%fs_draw8x16(3,8)
- 
+
 	LDA.l EquipmentSRAM+$2C : AND.w #$00FF : LSR #3 : STA.b Scrap02
 	%fs_LDY_screenpos(0,20)
         LDA.l HUDHeartColors_index : ASL : TAX
@@ -944,8 +944,8 @@ MaybeForceFileName:
                 BRA -
         .done
                 SEP #$20
-                JML.l InitializeSaveFile
+                JML InitializeSaveFile
 
         +
-JML.l NameFile_MakeScreenVisible
+JML NameFile_MakeScreenVisible
 ;--------------------------------------------------------------------------------

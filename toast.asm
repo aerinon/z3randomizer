@@ -6,7 +6,7 @@
 DoToast:
         PHY : PHP
                 LDY.w ToastBuffer
-                JSL.l WriteVRAMBlock
+                JSL WriteVRAMBlock
         PLP : PLY
 RTL
 ;--------------------------------------------------------------------------------

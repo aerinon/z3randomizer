@@ -43,7 +43,7 @@ protectff:
 	BMI .special_overworld
 
 	AND.b #$3F
-	CMP.l $82A4E3,X
+	CMP.l Overworld_ActualScreenID,X
 	BEQ ++
 
 .protect

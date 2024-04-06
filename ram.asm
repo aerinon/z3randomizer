@@ -48,8 +48,6 @@ NMIHUD = $7E0016                  ; during NMI.
 NMIINCR = $7E0017                 ;
 NMIUP1100 = $7E0018               ;
 UPINCVH = $7E0019                 ; Incremental upload VRAM high byte
-LinkAbsoluteY = $7E0020           ; Link's absolute coordinates. Word length
-LinkAbsoluteX = $7E0022           ;
 FrameCounter = $7E001A            ; Increments every frame that the game isn't lagging
 IndoorsFlag = $7E001B             ; $00 = Outdoors | $01 = Indoors
 MAINDESQ = $7E001C                ; PPU register queues written during NMI
@@ -69,20 +67,25 @@ LinkDirection = $7E002F           ; $00 = Up | $02 = Down | $04 = Left | $06 = R
                                   ;
 OAMOffsetY = $7E0044              ;
 OAMOffsetX = $7E0045              ;
+LinkIncapacitatedTimer = $7E0046  ; Countdown when Link takes damage, not same as I-frames
+                                  ;
+ForceMove = $7E0049               ; Forces D-Pad inputs when written to
                                   ;
 CapeTimer = $7E004C               ; Countdown for cape sapping magic Countdown for cape sapping magic..
 LinkJumping = $7E004D             ; $00 = None | $01 = Bonk/damage/water | $02 = Ledge
                                   ;
-Strafe = $7E0050                  ; ???
+LinkStrafe = $7E0050              ; ???
                                   ;
 CapeOn = $7E0055                  ; Link invisible and untouchable when set.
 BunnyFlagDP = $7E0056             ; $00 = Link | $01 = Bunny
                                   ;
+PitTileActField = $7E0059         ; Tile action bitfield used by pits
 LinkSlipping = $7E005B            ; $00 = None | $01 = Near pit
                                   ; $02 = Falling | $03 = Falling "more"
 FallTimer = $7E005C               ; Timer for falling animation
 LinkState = $7E005D               ; Main Link state handler
 LinkSpeed = $7E005E               ; Main Link speed handler
+ManipTileField = $7E005F          ; Bitfield used by manipulable tiles
                                   ;
 LinkWalkDirection = $7E0067       ; - - - - u d l r
                                   ;
@@ -102,7 +105,7 @@ W34SELQ = $7E0097                 ;
 WOBJSELQ = $7E0098                ;
 CGWSELQ = $7E0099                 ;
 CGADSUBQ = $7E009A                ;
-HDMAENQ = $7E009B                 ; HDMA enable flags
+HDMAENABLEQ = $7E009B             ; HDMA enable flags
                                   ;
 RoomIndex = $7E00A0               ; Underworld room index. Word length. High byte: $00 = EG1 | $01 = EG2
                                   ; Not zeroed on exit to overworld.
@@ -110,6 +113,9 @@ PreviousRoom = $7E00A2            ; Stores previous value of RoomIndex
                                   ;
 CameraBoundH = $7E00A6            ; Which set of camera boundaries to use.
 CameraBoundV = $7E00A7            ;
+                                  ;
+LinkQuadrantH = $7E00A9           ; Which quadrant Link is in. 0 = left, 1 = right
+LinkQuadrantV = $7E00AA           ; 0 = top, 2 = bottom
                                   ;
 RoomTag = $7E00AE                 ; Room effects; e.g. kill room, shutter switch, etc. Word length.
                                   ;
@@ -159,6 +165,7 @@ EntranceIndex = $7E010E           ; Entrance ID into underworld. Word length.
                                   ;
 MedallionFlag = $7E0112           ; Medallion cutscene flag. $01 = Cutscene active.
                                   ;
+VRAMTileMapIndex = $7E0116        ; Index for high bytes for VRAM tile map uploads
 VRAMUploadAddress = $7E0118       ; Incremental VRAM upload address. Low byte always 0. Word length.
                                   ;
 BG1ShakeV = $7E011A               ; Applied to BG Scroll. Word Length.
@@ -225,13 +232,18 @@ TileActDig = $7E035B              ; Bitfield used by diggable ground. Word lengt
                                   ;
 LinkZap = $7E0360                 ; When set, recoil zaps Link.
                                   ;
+LinkDashing = $7E0372             ; Flags when Link is dashing, also spinspeed
 DamageReceived = $7E0373          ; Damage to deal to Link.
                                   ;
 UseY2 = $7E037A                   ; - - b n c h - s
                                   ; b = Book | n = Net | c = Canes | h = Hookshot | s = Shovel
 NoDamage = $7E037B                ; Prevents Link from receiving damage.
                                   ;
-AncillaGeneral = $7E039F          ; General use buffer for front slot ancillae. $0F bytes.
+AncillaGeneralA = $7E0385         ; General use buffer for front slot ancillae. $05 bytes.
+                                  ;
+AncillaGeneralD = $7E0394         ; General use buffer for front slot ancillae. $05 bytes.
+                                  ;
+AncillaGeneralF = $7E039F         ; General use buffer for front slot ancillae. $0F bytes.
                                   ;
 AncillaTimer = $7E03B1            ; Used as a timer for ancilla.
                                   ;
@@ -246,7 +258,12 @@ RoomItemsTaken = $7E0403          ; Items taken in a room: b k u t s e h c
                                   ; b = boss kill/item         | k = key/heart piece (prevents crystals)
                                   ; u = 2nd key/heart piece    | t = chest 4/rupees/swamp drain/bomb floor/mire wall
                                   ; s = chest 3/pod or dp wall | e, h, c = chest 2, 1, 0
+OverworldIndexMirror = $7E040A    ; Overworld Area Index. Mirrors $8A
 DungeonID = $7E040C               ; High byte mostly unused but sometimes read. Word length.
+                                  ;
+TransitionDirection = $7E0418     ; OW: 0=N 1=S 2=W 3=E  UW: 0=S 1=N 2=E 3=W
+                                  ;
+TrapDoorFlag = $7E0468            ; Flag that is set when trap doors are down. 2 bytes
                                   ;
 LayerAdjustment = $7E047A         ; Flags layer adjustments. Arms EG.
                                   ;
@@ -259,6 +276,10 @@ OWEntranceCutscene = $7E04C6      ;
                                   ;
 HeartBeepTimer = $7E04CA          ;
                                   ;
+CameraTargetN = $7E0610           ; Camera scroll target for directions NSEW
+CameraTargetS = $7E0612           ;
+CameraTargetW = $7E0614           ;
+CameraTargetE = $7E0616           ;
 CameraScrollN = $7E0618           ; Camera scroll trigger areas for directions NSEW
 CameraScrollS = $7E061A           ; The higher boundary should always be +2 from the lower in
 CameraScrollW = $7E061C           ; underworld and -2 in overworld.
@@ -270,9 +291,13 @@ SpriteRoomTag = $7E0642           ; Set high by sprites triggering room tags.
                                   ;
 SomariaSwitchFlag = $7E0646       ; Set by Somaria when on a switch.
                                   ;
+TileMapDoorPos = $7E068E          ; (Dungeon) ???? related to trap doors and if they are open ; possibly bomb doors too? Update: module 0x07.0x4 probably uses this to know whether it's a key door or big key door to open. Word length.
+DoorTimer = $7E0690               ; Timer for animating doors, like Sanc or HC overworld doors
+                                  ;
 TileMapEntranceDoors = $7E0696    ; Tilemap location of entrance doors. Word length.
 TileMapTile32 = $7E0698           ; Tilemap location of new tile32 objects, such as from graves/rocks. Word length.
                                   ;
+RandoOverworldTargetEdge = $7E06FA; Used to store target edge IDs
 SkipOAM = $7E0710                 ; Set to skip OAM updates. High byte written $FF with exploding walls
 OWScreenSize = $7E0712            ; Flags overworld screen size.
 
@@ -282,6 +307,8 @@ SpawnedItemIsMultiWorld = $7E0724 ; Multiworld World Flag. Word
 SpawnedItemFlag = $7E0726         ; 0x02 - one for pot, 2 for sprite drop
                                   ; (flag used as a bitmask in conjunction with StandingItemCounterMask)
 SpawnedItemMWPlayer = $7E0728     ; Player Id for spawned item if Multiworld item 0x02
+                                  ;
+EnemyDropIndicator = $7E072A      ; Used by HUD to indicate enemy drops remaining
 
 SprDropsItem = $7E0730            ; Array for whether a sprite drops an item 0x16
 SprItemReceipt = $7E0740          ; Array for item id for each sprite 0x16
@@ -331,12 +358,17 @@ AncillaVelocityX = $7E0C2C        ; $0A bytes.
                                   ;
 AncillaID = $7E0C4A               ; $0A bytes.
                                   ;
+AncillaGeneralN = $7E0C54         ; General use buffer for ancillae. $0A bytes.
+                                  ;
 AncillaGet = $7E0C5E              ; Used by varius ancilla in various ways. $0F bytes.
                                   ;
 AncillaLayer = $7E0C7C            ;
                                   ;
+SpriteForceDrop = $7E0CBA         ; Forces drops on sprite death. $10 bytes.
+                                  ;
 SpriteBump = $7E0CD2              ; See symbols_wram.asm. $10 bytes.
                                   ;
+BossSpecialAction = $7E0CF3       ; Indicates special action required for some bosses
 TreePullKills = $7E0CFB           ; Kills for tree pulls.
 TreePullHits = $7E0CFC            ; Hits taken for tree pulls.
                                   ;
@@ -365,11 +397,11 @@ SpriteOAMProperties = $7E0E40     ; h m w o o o o o | h = Harmless       | m = m
 SpriteHitPoints = $7E0E50         ; Set from $0DB173
 SpriteControl = $7E0E60           ; n i o s p p p t | n = Death animation? | i = Immune to attack/collion?
                                   ; o = Shadow      | p = OAM prop palette | t = OAM prop name table
-SpriteItemType = $7E0E80          ; Sprite Item Type. Also used for jump table local. $10 bytes.
-                                  ;
-SpriteSpawnStep = $7E0ED0         ; Related to enemies spawning other sprites (eg pikit, zirro)
+SpriteJumpIndex = $7E0E80         ; Sprite jump table local. $10 bytes.
                                   ;
 SpriteDirectionTable = $7E0EB0    ; Sprite direction. $10 bytes.
+                                  ;
+SpriteSpawnStep = $7E0ED0         ; Related to enemies spawning other sprites (eg pikit, zirro)
                                   ;
 SpriteHalt = $7E0F00              ;
 SpriteTimerE = $7E0F10            ; ?
@@ -426,6 +458,8 @@ ClockBuffer = $7E1E9C             ; Clock Temporary
 ScratchBufferNV = $7E1EA0         ; Non-volatile scratch buffer. Must preserve values through return.
 ScratchBufferV = $7E1EB0          ; Volatile scratch buffer. Can clobber at will.
 
+TileMapA = $7E2000
+TileMapB = $7E4000
 ;================================================================================
 ; UNMIRRORED WRAM
 ; Addresses from here on can only be accessed with long addressing
@@ -447,6 +481,7 @@ MosaicLevel = $7EC011             ; Word length. High byte unused
 RoomDarkness = $7EC017            ; Darkness level of a room. High byte unused. Word length.
                                   ;
 SpriteOAM = $7EC025               ;
+SpriteDynamicOAM = $7EC035        ;
                                   ;
 EN_OWSCR2 = $7EC140               ; $7EC140-$7EC171 Used for caching with entrances.
 EN_MAINDESQ = $7EC142             ; Copied from the JP disassembly.
@@ -485,6 +520,7 @@ LastBGSet = $7EC2F8               ; Lists loaded sheets to check for decompressi
 PaletteBufferAux = $7EC300        ; Secondary and main palette buffer. See symbols_wram.asm
 PaletteBuffer = $7EC500           ; in the disassembly.
 HUDTileMapBuffer = $7EC700        ; HUD tile map buffer. $100 bytes (?)
+HUDCurrentDungeonWorld = $7EC702  ;
 HUDKeyIcon = $7EC726              ;
 HUDGoalIndicator = $7EC72A        ;
 HUDPrizeIcon = $7EC742            ;
@@ -492,6 +528,10 @@ HUDRupees = $7EC750               ;
 HUDBombCount = $7EC75A            ;
 HUDArrowCount = $7EC760           ;
 HUDKeyDigits = $7EC764            ;
+HUDMultiIndicator = $7EC790       ;
+HUDKeysObtained = $7EC7A2         ;
+HUDKeysSlash = $7EC7A4            ;
+HUDKeysTotal = $7EC7A6            ;
                                   ;
 BigRAM = $7EC900                  ; Big buffer of free ram (0x1F00)
 ItemGFXStack = $7ECB00            ; Pointers to source of decompressed item tiles deferred to NMI loading.
@@ -527,7 +567,7 @@ TileUploadOffsetOverride: skip 2   ; Offset override for loading sprite gfx
 skip 3                             ;
 skip 8                             ;
                                    ; Shop Block $7F504F - $7F506F
-ShopEnableCount: skip 1			   ; Whether Shops Count for Location Checks
+ShopEnableCount: skip 1            ; Whether Shops Count for Location Checks
 ShopId: skip 1                     ; Shop ID. Used for indexing and loading inventory for custom shops
 ShopType: skip 1                   ; Shop type. $FF = vanilla shop
                                    ; t d a v - - q q
@@ -675,19 +715,23 @@ endmacro
 %assertRAM(LinkRecoilY, $7E0027)
 %assertRAM(LinkRecoilX, $7E0028)
 %assertRAM(LinkRecoilZ, $7E0029)
-%assertRAM(LinkDirection, $7E002F)
 %assertRAM(LinkAnimationStep, $7E002E)
+%assertRAM(LinkDirection, $7E002F)
 %assertRAM(OAMOffsetY, $7E0044)
 %assertRAM(OAMOffsetX, $7E0045)
+%assertRAM(LinkIncapacitatedTimer, $7E0046)
+%assertRAM(ForceMove, $7E0049)
 %assertRAM(CapeTimer, $7E004C)
 %assertRAM(LinkJumping, $7E004D)
-%assertRAM(Strafe, $7E0050)
+%assertRAM(LinkStrafe, $7E0050)
 %assertRAM(CapeOn, $7E0055)
 %assertRAM(BunnyFlagDP, $7E0056)
+%assertRAM(PitTileActField, $7E0059)
 %assertRAM(LinkSlipping, $7E005B)
 %assertRAM(FallTimer, $7E005C)
 %assertRAM(LinkState, $7E005D)
 %assertRAM(LinkSpeed, $7E005E)
+%assertRAM(ManipTileField, $7E005F)
 %assertRAM(LinkWalkDirection, $7E0067)
 %assertRAM(ScrapBuffer72, $7E0072)
 %assertRAM(WorldCache, $7E007B)
@@ -701,17 +745,19 @@ endmacro
 %assertRAM(WOBJSELQ, $7E0098)
 %assertRAM(CGWSELQ, $7E0099)
 %assertRAM(CGADSUBQ, $7E009A)
-%assertRAM(HDMAENQ, $7E009B)
+%assertRAM(HDMAENABLEQ, $7E009B)
 %assertRAM(RoomIndex, $7E00A0)
 %assertRAM(PreviousRoom, $7E00A2)
 %assertRAM(CameraBoundH, $7E00A6)
 %assertRAM(CameraBoundV, $7E00A7)
+%assertRAM(LinkQuadrantH, $7E00A9)
+%assertRAM(LinkQuadrantV, $7E00AA)
 %assertRAM(RoomTag, $7E00AE)
 %assertRAM(SubSubModule, $7E00B0)
 %assertRAM(ObjPtr, $7E00B7)
 %assertRAM(ObjPtrOffset, $7E00BA)
-%assertRAM(ScrapBufferBD, $7E00BD)
 %assertRAM(PlayerSpriteBank, $7E00BC)
+%assertRAM(ScrapBufferBD, $7E00BD)
 %assertRAM(FileSelectPosition, $7E00C8)
 %assertRAM(PasswordCodePosition, $7E00C8)
 %assertRAM(PasswordSelectPosition, $7E00C9)
@@ -728,12 +774,12 @@ endmacro
 %assertRAM(GameSubModeCache, $7E010D)
 %assertRAM(EntranceIndex, $7E010E)
 %assertRAM(MedallionFlag, $7E0112)
+%assertRAM(VRAMTileMapIndex, $7E0116)
 %assertRAM(VRAMUploadAddress, $7E0118)
 %assertRAM(BG1ShakeV, $7E011A)
 %assertRAM(BG1ShakeH, $7E011C)
 %assertRAM(CurrentVolume, $7E0127)
 %assertRAM(TargetVolume, $7E0129)
-%assertRAM(CurrentControlRequest, $7E0133)
 %assertRAM(MusicControl, $7E012B)
 %assertRAM(MusicControlRequest, $7E012C)
 %assertRAM(SFX1, $7E012D)
@@ -765,22 +811,32 @@ endmacro
 %assertRAM(TileActIce, $7E0348)
 %assertRAM(TileActDig, $7E035B)
 %assertRAM(LinkZap, $7E0360)
+%assertRAM(LinkDashing, $7E0372)
 %assertRAM(DamageReceived, $7E0373)
 %assertRAM(UseY2, $7E037A)
 %assertRAM(NoDamage, $7E037B)
-%assertRAM(AncillaGeneral, $7E039F)
+%assertRAM(AncillaGeneralA, $7E0385)
+%assertRAM(AncillaGeneralD, $7E0394)
+%assertRAM(AncillaGeneralF, $7E039F)
 %assertRAM(AncillaSearch, $7E03C4)
 %assertRAM(ForceSwordUp, $7E03EF)
 %assertRAM(FluteTimer, $7E03F0)
 %assertRAM(YButtonOverride, $7E03FC)
 %assertRAM(RoomItemsTaken, $7E0403)
+%assertRAM(OverworldIndexMirror, $7E040A)
 %assertRAM(DungeonID, $7E040C)
+%assertRAM(TransitionDirection, $7E0418)
+%assertRAM(TrapDoorFlag, $7E0468)
 %assertRAM(LayerAdjustment, $7E047A)
 %assertRAM(RoomIndexMirror, $7E048E)
 %assertRAM(RespawnFlag, $7E04AA)
 %assertRAM(Map16ChangeIndex, $7E04AC)
 %assertRAM(OWEntranceCutscene, $7E04C6)
 %assertRAM(HeartBeepTimer, $7E04CA)
+%assertRAM(CameraTargetN, $7E0610)
+%assertRAM(CameraTargetS, $7E0612)
+%assertRAM(CameraTargetW, $7E0614)
+%assertRAM(CameraTargetE, $7E0616)
 %assertRAM(CameraScrollN, $7E0618)
 %assertRAM(CameraScrollS, $7E061A)
 %assertRAM(CameraScrollW, $7E061C)
@@ -788,8 +844,11 @@ endmacro
 %assertRAM(NMIAux, $7E0632)
 %assertRAM(SpriteRoomTag, $7E0642)
 %assertRAM(SomariaSwitchFlag, $7E0646)
+%assertRAM(TileMapDoorPos, $7E068E)
+%assertRAM(DoorTimer, $7E0690)
 %assertRAM(TileMapEntranceDoors, $7E0696)
 %assertRAM(TileMapTile32, $7E0698)
+%assertRAM(RandoOverworldTargetEdge, $7E06FA)
 %assertRAM(SkipOAM, $7E0710)
 %assertRAM(OWScreenSize, $7E0712)
 %assertRAM(SpawnedItemID, $7E0720)
@@ -797,6 +856,7 @@ endmacro
 %assertRAM(SpawnedItemIsMultiWorld, $7E0724)
 %assertRAM(SpawnedItemFlag, $7E0726)
 %assertRAM(SpawnedItemMWPlayer, $7E0728)
+%assertRAM(EnemyDropIndicator, $7E072A)
 %assertRAM(SprDropsItem, $7E0730)
 %assertRAM(SprItemReceipt, $7E0740)
 %assertRAM(SprItemIndex, $7E0750)
@@ -808,8 +868,6 @@ endmacro
 %assertRAM(OAMBuffer2, $7E0A00)
 %assertRAM(TransparencyFlag, $7E0ABD)
 %assertRAM(OWTransitionFlag, $7E0ABF)
-%assertRAM(TreePullKills, $7E0CFB)
-%assertRAM(TreePullHits, $7E0CFC)
 %assertRAM(ArcVariable, $7E0B08)
 %assertRAM(OverlordXLow, $7E0B08)
 %assertRAM(OverlordXHigh, $7E0B10)
@@ -822,9 +880,14 @@ endmacro
 %assertRAM(AncillaVelocityY, $7E0C22)
 %assertRAM(AncillaVelocityX, $7E0C2C)
 %assertRAM(AncillaID, $7E0C4A)
+%assertRAM(AncillaGeneralN, $7E0C54)
 %assertRAM(AncillaGet, $7E0C5E)
 %assertRAM(AncillaLayer, $7E0C7C)
+%assertRAM(SpriteForceDrop, $7E0CBA)
 %assertRAM(SpriteBump, $7E0CD2)
+%assertRAM(BossSpecialAction, $7E0CF3)
+%assertRAM(TreePullKills, $7E0CFB)
+%assertRAM(TreePullHits, $7E0CFC)
 %assertRAM(SpritePosYLow, $7E0D00)
 %assertRAM(SpritePosXLow, $7E0D10)
 %assertRAM(SpritePosYHigh, $7E0D20)
@@ -845,40 +908,13 @@ endmacro
 %assertRAM(SpriteOAMProperties, $7E0E40)
 %assertRAM(SpriteHitPoints, $7E0E50)
 %assertRAM(SpriteControl, $7E0E60)
-%assertRAM(SpriteItemType, $7E0E80)
-%assertRAM(SpriteSpawnStep, $7E0ED0)
+%assertRAM(SpriteJumpIndex, $7E0E80)
 %assertRAM(SpriteDirectionTable, $7E0EB0)
+%assertRAM(SpriteSpawnStep, $7E0ED0)
 %assertRAM(SpriteHalt, $7E0F00)
 %assertRAM(SpriteTimerE, $7E0F10)
 %assertRAM(SpriteLayer, $7E0F20)
 %assertRAM(SpriteOAMProp, $7E0F50)
-%assertRAM(EN_OWSCR2, $7EC140)
-%assertRAM(EN_MAINDESQ, $7EC142)
-%assertRAM(EN_SUBDESQ, $7EC143)
-%assertRAM(EN_BG2VERT, $7EC144)
-%assertRAM(EN_BG2HORZ, $7EC146)
-%assertRAM(EN_POSY, $7EC148)
-%assertRAM(EN_POSX, $7EC14A)
-%assertRAM(EN_OWSCR, $7EC14C)
-%assertRAM(EN_OWTMAPI, $7EC14E)
-%assertRAM(EN_SCROLLATN, $7EC150)
-%assertRAM(EN_SCROLLATW, $7EC152)
-%assertRAM(EN_SCROLLAN, $7EC154)
-%assertRAM(EN_SCROLLBN, $7EC156)
-%assertRAM(EN_SCROLLAS, $7EC158)
-%assertRAM(EN_SCROLLBS, $7EC15A)
-%assertRAM(EN_OWTARGN, $7EC15C)
-%assertRAM(EN_OWTARGS, $7EC15E)
-%assertRAM(EN_OWTARGW, $7EC160)
-%assertRAM(EN_OWTARGE, $7EC162)
-%assertRAM(EN_AA0, $7EC164)
-%assertRAM(EN_BGSET1, $7EC165)
-%assertRAM(EN_BGSET2, $7EC166)
-%assertRAM(EN_SPRSET1, $7EC167)
-%assertRAM(EN_SCRMODYA, $7EC16A)
-%assertRAM(EN_SCRMODYB, $7EC16C)
-%assertRAM(EN_SCRMODXA, $7EC16E)
-%assertRAM(EN_SCRMODXB, $7EC170)
 %assertRAM(SpriteZCoord, $7E0F70)
 %assertRAM(SpriteVelocityZ, $7E0F80)
 %assertRAM(SpriteSubPixelZ, $7E0F90)
@@ -911,6 +947,8 @@ endmacro
 %assertRAM(ClockBuffer, $7E1E9C)
 %assertRAM(ScratchBufferNV, $7E1EA0)
 %assertRAM(ScratchBufferV, $7E1EB0)
+%assertRAM(TileMapA, $7E2000)
+%assertRAM(TileMapB, $7E4000)
 %assertRAM(TileUploadBuffer, $7EA180)
 %assertRAM(RoomFade, $7EC005)
 %assertRAM(FadeTimer, $7EC007)
@@ -919,12 +957,41 @@ endmacro
 %assertRAM(MosaicLevel, $7EC011)
 %assertRAM(RoomDarkness, $7EC017)
 %assertRAM(SpriteOAM, $7EC025)
+%assertRAM(SpriteDynamicOAM, $7EC035)
+%assertRAM(EN_OWSCR2, $7EC140)
+%assertRAM(EN_MAINDESQ, $7EC142)
+%assertRAM(EN_SUBDESQ, $7EC143)
+%assertRAM(EN_BG2VERT, $7EC144)
+%assertRAM(EN_BG2HORZ, $7EC146)
+%assertRAM(EN_POSY, $7EC148)
+%assertRAM(EN_POSX, $7EC14A)
+%assertRAM(EN_OWSCR, $7EC14C)
+%assertRAM(EN_OWTMAPI, $7EC14E)
+%assertRAM(EN_SCROLLATN, $7EC150)
+%assertRAM(EN_SCROLLATW, $7EC152)
+%assertRAM(EN_SCROLLAN, $7EC154)
+%assertRAM(EN_SCROLLBN, $7EC156)
+%assertRAM(EN_SCROLLAS, $7EC158)
+%assertRAM(EN_SCROLLBS, $7EC15A)
+%assertRAM(EN_OWTARGN, $7EC15C)
+%assertRAM(EN_OWTARGS, $7EC15E)
+%assertRAM(EN_OWTARGW, $7EC160)
+%assertRAM(EN_OWTARGE, $7EC162)
+%assertRAM(EN_AA0, $7EC164)
+%assertRAM(EN_BGSET1, $7EC165)
+%assertRAM(EN_BGSET2, $7EC166)
+%assertRAM(EN_SPRSET1, $7EC167)
+%assertRAM(EN_SCRMODYA, $7EC16A)
+%assertRAM(EN_SCRMODYB, $7EC16C)
+%assertRAM(EN_SCRMODXA, $7EC16E)
+%assertRAM(EN_SCRMODXB, $7EC170)
 %assertRAM(PegColor, $7EC172)
 %assertRAM(GameOverSongCache, $7EC227)
 %assertRAM(LastBGSet, $7EC2F8)
 %assertRAM(PaletteBufferAux, $7EC300)
 %assertRAM(PaletteBuffer, $7EC500)
 %assertRAM(HUDTileMapBuffer, $7EC700)
+%assertRAM(HUDCurrentDungeonWorld, $7EC702)
 %assertRAM(HUDKeyIcon, $7EC726)
 %assertRAM(HUDGoalIndicator, $7EC72A)
 %assertRAM(HUDPrizeIcon, $7EC742)
@@ -932,6 +999,10 @@ endmacro
 %assertRAM(HUDBombCount, $7EC75A)
 %assertRAM(HUDArrowCount, $7EC760)
 %assertRAM(HUDKeyDigits, $7EC764)
+%assertRAM(HUDMultiIndicator, $7EC790)
+%assertRAM(HUDKeysObtained, $7EC7A2)
+%assertRAM(HUDKeysSlash, $7EC7A4)
+%assertRAM(HUDKeysTotal, $7EC7A6)
 %assertRAM(BigRAM, $7EC900)
 
 %assertRAM(DecompressionBuffer, $7F0000)
