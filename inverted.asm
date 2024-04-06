@@ -138,8 +138,8 @@ RTL
 
 
 GanonTowerAnimation:
-        LDA.l InvertedMode : BEQ .done
-                LDA.b #$1B : STA.w SFX3
+    LDA.l InvertedMode : BEQ .done
+        LDA.b #$1B : STA.w SFX3
         STZ.w OWEntranceCutscene
         STZ.b SubSubModule
         STZ.w SkipOAM
@@ -155,10 +155,10 @@ GanonTowerAnimation:
         LDA.b #$09 : STA.w SFX1
         RTL
 
-        .done
-        LDA.b #$05 : STA.w OWEntranceCutscene ; what we wrote over
-        STZ.b SubSubModule ; (continued)
-        STZ.b ScrapBufferBD+$0B ; (continued)
+    .done
+    LDA.b #$05 : STA.w OWEntranceCutscene ; what we wrote over
+    STZ.b SubSubModule ; (continued)
+    STZ.b ScrapBufferBD+$0B ; (continued)
 RTL
 
 GanonTowerInvertedCheck:
@@ -195,44 +195,44 @@ TurtleRockPegSolved:
 RTL
 
 MirrorBonk:
-        ; must preserve X/Y, and must preserve $00-$0F
-        LDA.l InvertedMode : BEQ .normal
+    ; must preserve X/Y, and must preserve $00-$0F
+    LDA.l InvertedMode : BEQ .normal
 
-        ; Goal: use $20 and $22 to decide to force a bonk
-        ; if we want to bonk branch to .forceBonk
-        ; otherwise fall through to .normal
-		PHX : PHP
-		PHB : PHK : PLB
-		LDA.b OverworldIndex : AND.b #$40 : BEQ .endLoop ;World we're in? branch if we are in LW we don't want bonks
-		REP #$30
-		LDX.w #$0000
-		.loop
-			LDA.l .bonkRectanglesTable, X ;Load X1
-			CMP.b LinkPosX : !BGE ++
-			;IF X > X1
-			LDA.l .bonkRectanglesTable+2, X ; Load X2
-			CMP.b LinkPosX : !BLT ++ 
-			;IF X < X2
-			LDA.l .bonkRectanglesTable+4, X ;Load Y1
-			CMP.b LinkPosY : !BGE ++
-			;IF Y > Y1
-			LDA.l .bonkRectanglesTable+6, X ; Load Y2
-			CMP.b LinkPosY : !BLT ++ 
-			;IF Y < Y2
-			;Bonk Here
-			PLB : PLP : PLX
-			BRA .forceBonk
-                ++
-                TAX
-                BRA .loop
-                .endbonkRectanglesTable
-
-        .endLoop
-        PLB : PLP : PLX
-.normal
-        ;Not forcing a bonk, so the vanilla bonk detection run.
-        LDA.b Scrap0C : ORA.b Scrap0E
+    ; Goal: use $20 and $22 to decide to force a bonk
+    ; if we want to bonk branch to .forceBonk
+    ; otherwise fall through to .normal
+	PHX : PHP
+	PHB : PHK : PLB
+	LDA.b OverworldIndex : AND.b #$40 : BEQ .endLoop ;World we're in? branch if we are in LW we don't want bonks
+	REP #$30
+	LDX.w #$0000
+	.loop
+		LDA.l .bonkRectanglesTable, X ;Load X1
+		CMP.b LinkPosX : !BGE ++
+		;IF X > X1
+		LDA.l .bonkRectanglesTable+2, X ; Load X2
+		CMP.b LinkPosX : !BLT ++ 
+		;IF X < X2
+		LDA.l .bonkRectanglesTable+4, X ;Load Y1
+		CMP.b LinkPosY : !BGE ++
+		;IF Y > Y1
+		LDA.l .bonkRectanglesTable+6, X ; Load Y2
+		CMP.b LinkPosY : !BLT ++ 
+		;IF Y < Y2
+		;Bonk Here
+		PLB : PLP : PLX
+		BRA .forceBonk
+            ++
             TXA : !ADD.w #$0008 : CMP.w #.tableEnd-.bonkRectanglesTable : BEQ .endLoop
+            TAX
+            BRA .loop
+            .endbonkRectanglesTable
+
+    .endLoop
+    PLB : PLP : PLX
+    .normal
+    ;Not forcing a bonk, so the vanilla bonk detection run.
+    LDA.b Scrap0C : ORA.b Scrap0E
 JML MirrorBonk_NormalReturn
 .forceBonk
 JML MirrorBonk_BranchGamma

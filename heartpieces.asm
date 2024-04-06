@@ -2,65 +2,65 @@
 ; Randomize Heart Pieces
 ;--------------------------------------------------------------------------------
 HeartPieceGet:
-        PHX : PHY
-        TAY
-        .skipLoad
-        JSL HeartPieceGetPlayer : STA.l !MULTIWORLD_ITEM_PLAYER_ID
-        CPY.b #$26 : BNE .not_heart ; don't add a 1/4 heart if it's not a heart piece
-        		LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BNE .not_heart
-                LDA.l HeartPieceQuarter : INC A : AND.b #$03 : STA.l HeartPieceQuarter
-        .not_heart
-        STZ.w ItemReceiptMethod ; 0 = Receiving item from an NPC or message
-        JSL MaybeUnlockTabletAnimation
+    PHX : PHY
     JSL LoadHeartPieceRoomValue
     JSL AttemptItemSubstitution
     JSL ResolveLootIDLong
+    TAY
     JSL MaybeMarkDigSpotCollected
+    .skipLoad
+    JSL HeartPieceGetPlayer : STA.l !MULTIWORLD_ITEM_PLAYER_ID
+    CPY.b #$26 : BNE .not_heart ; don't add a 1/4 heart if it's not a heart piece
+        LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BNE .not_heart
+        LDA.l HeartPieceQuarter : INC A : AND.b #$03 : STA.l HeartPieceQuarter
+    .not_heart
     JSL Player_HaltDashAttackLong
+    STZ.w ItemReceiptMethod ; 0 = Receiving item from an NPC or message
     JSL Link_ReceiveItem
+    JSL MaybeUnlockTabletAnimation
 
-        PLY : PLX
+    PLY : PLX
 RTL
 ;--------------------------------------------------------------------------------
 HeartContainerGet:
-	PHX : PHY
-	LDY.w SpriteID, X : BNE +
-	+
-	BRA HeartPieceGet_skipLoad
+    PHX : PHY
     JSL IncrementBossSword
+    LDY.w SpriteID, X : BNE +
         JSL LoadHeartContainerRoomValue : TAY
+    +
+    BRA HeartPieceGet_skipLoad
 ;--------------------------------------------------------------------------------
 DrawHeartPieceGFX:
-        PHP
-                PHA : PHY
-                LDA.l RedrawFlag : BEQ .skipInit ; skip init if already ready
-                        JMP .done ; don't draw on the init frame
-                .skipInit
-                LDA.w SpriteID, X ; Retrieve stored item type
-                .skipLoad
-                PHA : PHX
-                TAX
-                LDA.l SpriteProperties_standing_width,X : BNE +
-                        PLX
-                        LDA.w SpriteControl, X : ORA.b #$20 : STA.w SpriteControl, X
-                        PLA
-                        LDA.b Scrap00
-                        CLC : ADC.b #$04
-                        STA.b Scrap00
-                        BRA .done
-                +
-                PLX
-                PLA
-                .done
-                PLY : PLA
-        .offscreen
-        PLP
+    PHP
     JSL Sprite_IsOnscreen : BCC .offscreen
+        PHA : PHY
+        LDA.l RedrawFlag : BEQ .skipInit ; skip init if already ready
             JSL HeartPieceSpritePrep
+            JMP .done ; don't draw on the init frame
+        .skipInit
+        LDA.w SpriteID, X ; Retrieve stored item type
+        .skipLoad
+        PHA : PHX
+        TAX
+        LDA.l SpriteProperties_standing_width,X : BNE +
+            PLX
+            LDA.w SpriteControl, X : ORA.b #$20 : STA.w SpriteControl, X
+            PLA
             JSL DrawDynamicTile
+            LDA.b Scrap00
+            CLC : ADC.b #$04
+            STA.b Scrap00
             JSL Sprite_DrawShadowLong
+            BRA .done
+        +
+        PLX
+        PLA
         JSL DrawDynamicTile
         JSL Sprite_DrawShadowLong
+        .done
+        PLY : PLA
+    .offscreen
+    PLP
 RTL
 ;--------------------------------------------------------------------------------
 DrawHeartContainerGFX:
@@ -78,119 +78,118 @@ DrawHeartContainerGFX:
 	BRA DrawHeartPieceGFX_skipLoad
 ;--------------------------------------------------------------------------------
 HeartContainerSound:
-		LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BNE +
-        LDA.w ItemReceiptMethod : CMP.b #$03 : BEQ +
-                LDA.b #$2E
-                SEC
-                RTL
-	+
-	CLC
+    LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BNE +
+    LDA.w ItemReceiptMethod : CMP.b #$03 : BEQ +
     JSL CheckIfBossRoom : BCC + ; Skip if not in a boss room
+        LDA.b #$2E
+        SEC
+        RTL
+    +
+    CLC
 RTL
 ;--------------------------------------------------------------------------------
 NormalItemSkipSound:
 ; Out: c - skip sounds if set
-		LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BNE .skip
-        JSL.l CheckIfBossRoom : BCS .boss_room
-                TDC
-                CPY #$17 : BEQ .skip
-                CLC
-RTL
-        .boss_room
-        LDA.w ItemReceiptMethod : CMP.b #$03 : BEQ +
-                .skip
-                SEC
-                RTL
-        +
-        LDA.b #$20
-        .dont_skip
+    LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BNE .skip
+    JSL CheckIfBossRoom : BCS .boss_room
+        TDC
+        CPY.b #$17 : BEQ .skip
         CLC
+RTL
+    .boss_room
+    LDA.w ItemReceiptMethod : CMP.b #$03 : BEQ +
+        .skip
+        SEC
+        RTL
+    +
+    LDA.b #$20
+    .dont_skip
+    CLC
 RTL
 ;--------------------------------------------------------------------------------
 HeartPieceSpritePrep:
-	PHA
+    PHA
 	
-	LDA.l ServerRequestMode : BEQ + :  : +
+    LDA.l ServerRequestMode : BEQ + :  : +
 	
-	LDA.b #$01 : STA.l RedrawFlag
-	LDA.b LinkState : CMP.b #$14 : BEQ .skip ; skip if we're mid-mirror
+    LDA.b #$01 : STA.l RedrawFlag
+    LDA.b LinkState : CMP.b #$14 : BEQ .skip ; skip if we're mid-mirror
 
-	LDA.b #$00 : STA.l RedrawFlag
-	JSL HeartPieceGetPlayer : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
-	STA.w SpriteID, X
+    LDA.b #$00 : STA.l RedrawFlag
+    JSL HeartPieceGetPlayer : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
     JSL LoadHeartPieceRoomValue
     JSL AttemptItemSubstitution
     JSL ResolveLootIDLong
+    STA.w SpriteID, X
     JSL PrepDynamicTile_loot_resolved
 	
-	.skip
-	PLA
+    .skip
+    PLA
 RTL
 ;--------------------------------------------------------------------------------
 HeartContainerSpritePrep:
-	PHA
+    PHA
 	
-	LDA.b #$00 : STA.l RedrawFlag
-	JSL HeartPieceGetPlayer : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
-	STA.w SpriteID, X
+    LDA.b #$00 : STA.l RedrawFlag
+    JSL HeartPieceGetPlayer : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
     JSL LoadHeartContainerRoomValue ; load item type
     JSL AttemptItemSubstitution
     JSL ResolveLootIDLong
+    STA.w SpriteID, X
     JSL PrepDynamicTile_loot_resolved
 	
-	PLA
+    PLA
 RTL
 ;--------------------------------------------------------------------------------
 LoadHeartPieceRoomValue:
-	LDA.b IndoorsFlag : BEQ .outdoors ; check if we're indoors or outdoors
-	.indoors
-	JMP .done
-	.outdoors
-	.done
+    LDA.b IndoorsFlag : BEQ .outdoors ; check if we're indoors or outdoors
+    .indoors
     JSL LoadIndoorValue
+    JMP .done
+    .outdoors
     JSL LoadOutdoorValue
+    .done
 RTL
 ;--------------------------------------------------------------------------------
 HPItemReset:
-	PHA
-	LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BNE .skip
-		PLA
-		BRA .done
-	.skip
-	PLA
-	.done
-	PHA : LDA.b #$01 : STA.l RedrawFlag : PLA
+    PHA
+    LDA.l !MULTIWORLD_ITEM_PLAYER_ID : BNE .skip
+        PLA
         JSL GiveRupeeGift ; thing we wrote over
+        BRA .done
+    .skip
+    PLA
+    .done
+    PHA : LDA.b #$01 : STA.l RedrawFlag : PLA
 RTL
 ;--------------------------------------------------------------------------------
 MaybeMarkDigSpotCollected:
-	PHA : PHP
-		LDA.b IndoorsFlag : BNE +
-		REP #$20 ; set 16-bit accumulator
-		LDA.b OverworldIndex
-		CMP.w #$2A : BNE +
-			LDA.l HasGroveItem : ORA.w #$0001 : STA.l HasGroveItem
-		+
-	PLP : PLA
+    PHA : PHP
+        LDA.b IndoorsFlag : BNE +
+        REP #$20 ; set 16-bit accumulator
+        LDA.b OverworldIndex : CMP.w #$002A : BNE +
+            LDA.l HasGroveItem : ORA.w #$0001 : STA.l HasGroveItem
+        +
+    PLP : PLA
 RTL
 ;--------------------------------------------------------------------------------
 macro GetPossiblyEncryptedItem(ItemLabel,TableLabel)
-	LDA.l IsEncrypted : BNE ?encrypted
-		LDA.l <ItemLabel>
-		BRA ?done
-	?encrypted:
-	PHX : PHP
-		REP #$30 ; set 16-bit accumulator & index registers
-		LDA.b Scrap00 : PHA : LDA.b Scrap02 : PHA
+    LDA.l IsEncrypted : BNE ?encrypted
+        LDA.l <ItemLabel>
+        BRA ?done
+    ?encrypted:
+    PHX : PHP
+        REP #$30 ; set 16-bit accumulator & index registers
+        LDA.b Scrap00 : PHA : LDA.b Scrap02 : PHA
 
-		LDA.w #<TableLabel> : STA.b Scrap00
-		LDA.w #<TableLabel>>>16 : STA.b Scrap02
-		LDA.w #<ItemLabel>-<TableLabel>
-		JSL RetrieveValueFromEncryptedTable
+        LDA.w #<TableLabel> : STA.b Scrap00
+        LDA.w #<TableLabel>>>16 : STA.b Scrap02
+        LDA.w #<ItemLabel>-<TableLabel>
+        JSL RetrieveValueFromEncryptedTable
 
-		PLX : STX.b Scrap02 : PLX : STX.b Scrap01
-	PLP : PLX
-	?done:
+        PLX : STX.b Scrap02 : PLX : STX.b Scrap01
+    PLP : PLX
+    ?done:
 endmacro
 
 LoadIndoorValue:
@@ -224,10 +223,10 @@ LoadIndoorValue:
 		LDA.l StandingKey_Hera
 		JMP .done
 	+
-        PHX
-        LDX.w CurrentSpriteSlot ; If we're on a different screen ID via glitches load the sprite
-        LDA.w SpriteID,X        ; we can see and are interacting with
-        PLX
+	PHX
+	LDX.w CurrentSpriteSlot ; If we're on a different screen ID via glitches load the sprite
+	LDA.w SpriteID,X        ; we can see and are interacting with
+	PLX
 	.done
 	AND.w #$00FF ; the loads are words but the values are 1-byte so we need to clear the top half of the accumulator - no guarantee it was 8-bit before
 	PLP
@@ -290,10 +289,10 @@ LoadOutdoorValue:
 		%GetPossiblyEncryptedItem(HeartPiece_Zora, HeartPieceOutdoorValues)
 		JMP .done
 	+
-        PHX
-        LDX.w CurrentSpriteSlot ; If we're on a different screen ID via glitches load the sprite
-        LDA.w SpriteID,X        ; we can see and are interacting with.
-        PLX
+	PHX
+	LDX.w CurrentSpriteSlot ; If we're on a different screen ID via glitches load the sprite
+	LDA.w SpriteID,X        ; we can see and are interacting with.
+	PLX
 	.done
 	AND.w #$00FF ; the loads are words but the values are 1-byte so we need to clear the top half of the accumulator - no guarantee it was 8-bit before
 	PLP

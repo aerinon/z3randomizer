@@ -211,14 +211,14 @@ LoadCatfishItemGFX:
     JML PrepDynamicTile_loot_resolved
 ;--------------------------------------------------------------------------------
 DrawThrownItem:
-        LDA.b OverworldIndex : CMP.b #$81 : BNE .catfish
-                .zora
-                LDA.b #$01 : STA.l RedrawFlag
-                BRA .draw
-                .catfish
-                .draw
-                LDA.w SpriteID,X
-                JML DrawDynamicTile
+    LDA.b OverworldIndex : CMP.b #$81 : BNE .catfish
+        .zora
+        LDA.b #$01 : STA.l RedrawFlag
+        BRA .draw
+    .catfish
+    .draw
+    LDA.w SpriteID,X
+    JML DrawDynamicTile
 ;--------------------------------------------------------------------------------
 MarkThrownItem:
 	PHA

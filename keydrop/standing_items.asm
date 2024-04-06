@@ -23,7 +23,7 @@ org $86E3C4
 	JSL RevealSpriteDrop2 : NOP
 
 org $86F933
-	 JSL PikitOverride
+	JSL PikitOverride
 
 org $86926e ; <- 3126e - sprite_prep.asm : 2664 (LDA $0B9B : STA $0CBA, X)
 	JSL SpriteKeyPrep : NOP #2
