@@ -433,7 +433,7 @@ HandleSpecialDoorLanding: {
     HandleIncomingDoorState:
     PHA
         LDA.l DRMode : BEQ .noDoor
-        PLA : PHA : AND.b #$FA : CMP.b #$80 : bne .noDoor
+        LDA.b 1,S : AND.b #$FA : CMP.b #$80 : bne .noDoor
 
         .setDoorState
         LDA.w TransitionDirection : AND.b #$02 : BNE + : INC

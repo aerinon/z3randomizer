@@ -103,7 +103,7 @@ NewHUD_DrawGoal:
 
 ;================================================================================
 NewHUD_DrawKeys:
-        LDA.l CurrentSmallKeys
+        LDA.w CurrentSmallKeys
         CMP.b #$FF
         BNE .in_dungeon
 
@@ -172,7 +172,7 @@ NewHUD_DrawPrizeIcon:
 	REP #$30
         BEQ .prize
 
-	LDA.l MapField
+	LDA.w MapField
 	AND.l DungeonItemMasks,X
 	BEQ .no_prize
 
@@ -302,7 +302,7 @@ DrawCompassCounts:
         BIT.b #$02 : BNE .draw_compass_count
         TYX : LDA.l ExistsTransfer, X : TAX : LDA.l CompassExists, X : BEQ .draw_compass_count
         REP #$20
-        LDX.w DungeonID : LDA.l CompassField : AND.l DungeonItemMasks,X : BEQ .early_exit
+        LDX.w DungeonID : LDA.w CompassField : AND.l DungeonItemMasks,X : BEQ .early_exit
 
 		.draw_compass_count
 		LDX.w DungeonID
@@ -311,7 +311,7 @@ DrawCompassCounts:
 
 		.not_sewers
 		REP #$20
-        LDA.l DungeonLocationsChecked, X
+        LDA.w DungeonLocationsChecked, X
         PHA
 
 		LDA.w #!SlashTile : STA.w HUDTileMapBuffer+$98  ; always slash
@@ -361,7 +361,7 @@ DrawMapCounts:
         ; no map needed if this bit is set
         BIT.b #$02 : BNE .draw_map_count
         REP #$20
-        LDA.l MapField : AND.l DungeonItemMasks,X : BEQ .done
+        LDA.w MapField : AND.l DungeonItemMasks,X : BEQ .done
 
 .draw_map_count
         SEP #$20
@@ -369,7 +369,7 @@ DrawMapCounts:
         INX
 
 .not_sewers
-        LDA.l DungeonCollectedKeys, X
+        LDA.w DungeonCollectedKeys, X
         PHA
 
         LDA.l MapTotalsWRAM,X

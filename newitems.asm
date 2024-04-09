@@ -129,7 +129,7 @@ AddReceivedItemExpanded:
 			STZ.w ItemReceiptID : STZ.w ItemReceiptID+1 : STZ.w ItemReceiptMethod
 			PHY : LDY.b #$00 : JSL AddInventory : PLY
 			PLX : PLA : RTL
-		+ PLX : PLA
+	+ PLX : PLA
 	JSR ResolveReceipt
 	PHB : PHK
 JML AddReceivedItem+2
@@ -151,7 +151,7 @@ RTL
 
 ItemBehavior:
         REP #$30
-        AND.w #$00FF : ASL :  TAX
+        AND.w #$00FF : ASL : TAX
         SEP #$20
         JMP (ItemReceipts_behavior,X)
 

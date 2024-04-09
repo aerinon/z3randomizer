@@ -29,24 +29,24 @@ SetTabletItemFlag:
 RTS
 ;--------------------------------------------------------------------------------
 SpawnTabletItem:
-	JSL HeartPieceGetPlayer : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
-	JSL LoadOutdoorValue
-        JSL AttemptItemSubstitution
-        JSL ResolveLootIDLong
-        PHA
-        LDA.b #$EB : STA.l MiniGameTime
-        JSL Sprite_SpawnDynamically
-        PLA
-        STA.w SpriteID,Y
-        TYX
-	JSL PrepDynamicTile_loot_resolved
+    JSL HeartPieceGetPlayer : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
+    JSL LoadOutdoorValue
+    JSL AttemptItemSubstitution
+    JSL ResolveLootIDLong
+    PHA
+    LDA.b #$EB : STA.l MiniGameTime
+    JSL Sprite_SpawnDynamically
+    PLA
+    STA.w SpriteID,Y
+    TYX
+    JSL PrepDynamicTile_loot_resolved
 
-        LDA.b LinkPosX   : STA.w SpritePosXLow, Y
-        LDA.b LinkPosX+1 : STA.w SpritePosXHigh, Y
-        LDA.b LinkPosY   : STA.w SpritePosYLow, Y
-        LDA.b LinkPosY+1 : STA.w SpritePosYHigh, Y
-        LDA.b #$00 : STA.w SpriteLayer, Y
-        LDA.b #$7F : STA.w SpriteZCoord, Y ; spawn WAY up high
+    LDA.b LinkPosX   : STA.w SpritePosXLow, Y
+    LDA.b LinkPosX+1 : STA.w SpritePosXHigh, Y
+    LDA.b LinkPosY   : STA.w SpritePosYLow, Y
+    LDA.b LinkPosY+1 : STA.w SpritePosYHigh, Y
+    LDA.b #$00 : STA.w SpriteLayer, Y
+    LDA.b #$7F : STA.w SpriteZCoord, Y ; spawn WAY up high
 RTL
 ;--------------------------------------------------------------------------------
 MaybeUnlockTabletAnimation:
@@ -98,9 +98,9 @@ CheckTabletItem:
 ; Zero flag set = Item not collected
 ; Zero flag clear = Item  collected
 ;--------------------------------------------------------------------------------
-        JSL IsMedallion : BCS .tablet
-                LDA.l OverworldEventDataWRAM, X : AND.b #$40 ; What we wrote over
-                RTL
-        .tablet
-        TDC
+    JSL IsMedallion : BCS .tablet
+        LDA.l OverworldEventDataWRAM, X : AND.b #$40 ; What we wrote over
+        RTL
+    .tablet
+    TDC
 RTL

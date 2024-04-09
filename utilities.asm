@@ -51,15 +51,15 @@ RTL
 PrepDynamicTile:
 	PHX : PHY : PHB
 	LDA.l RemoteItems : BEQ .notRemote
-		LDA.l SpriteID, X : CMP.l !MULTIWORLD_SCOUTREPLY_LOCATION : BNE ++
+		LDA.w SpriteID, X : CMP.l !MULTIWORLD_SCOUTREPLY_LOCATION : BNE ++
 			LDA.l !MULTIWORLD_SCOUTREPLY_PLAYER : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
 			LDA.l !MULTIWORLD_SCOUTREPLY_ITEM
-			STA.l SpriteID, X
+			STA.w SpriteID, X
 			BRA .notRemote
 		++
 		STA.l !MULTIWORLD_SCOUT_LOCATION
 		LDA.b #$00 : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
-		LDA.b #$6B : STA.l SpriteID, X ; make it a power star, I guess
+		LDA.b #$6B : STA.w SpriteID, X ; make it a power star, I guess
 	.notRemote
 	JSR ResolveLootID
         -
@@ -219,7 +219,7 @@ PrepDrawRemoteItemSprite:
 		CMP.l !MULTIWORLD_SCOUTREPLY_LOCATION : BNE ++
 			LDA.l !MULTIWORLD_SCOUT_LOCATION : BEQ +++
 				LDA.l !MULTIWORLD_SCOUTREPLY_LOCATION
-				STA.l SpriteID, X
+				STA.w SpriteID, X
 				JSL PrepDynamicTile
 				LDA.b #$00
 				BRA ++
@@ -229,7 +229,7 @@ PrepDrawRemoteItemSprite:
 			RTS
 		++
 		STA.l !MULTIWORLD_SCOUT_LOCATION
-		LDA.b #$00 : STA.b !MULTIWORLD_SPRITEITEM_PLAYER_ID
+		LDA.b #$00 : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
 		LDA.b #$6B
 		RTS
 	+
@@ -502,8 +502,8 @@ AuxPaletteCheck:
         PHX
         SEP #$30
         LDA.w ItemReceiptMethod : BNE .main_buffer     ; Never use aux if we're actually receiving an item
-        LDA.w RoomIndex : CMP.b #$8C : BEQ .aux_buffer ; GT torch/Hope room
-        LDA.w RoomIndex : CMP.b #$87 : BEQ .aux_buffer ; Hera cage/basement
+        LDA.b RoomIndex : CMP.b #$8C : BEQ .aux_buffer ; GT torch/Hope room
+        CMP.b #$87 : BEQ .aux_buffer ; Hera cage/basement
                 .main_buffer
                 REP #$31
                 PLX

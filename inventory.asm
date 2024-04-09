@@ -353,7 +353,7 @@ IncrementBossSword:
 IncrementFinalSword:
         PHX
         REP #$20
-        LDA.w RoomIndex : BNE .done
+        LDA.b RoomIndex : BNE .done
                 SEP #$20
                 LDA.l SwordEquipment : CMP.b #$FF : BNE +
                         BRA IncrementBossSword_none
@@ -820,7 +820,7 @@ LDA.b #$0F : JML Ancilla_SFX3_Near ; what we wrote over
 
 ; A = item id being collected
 ItemGetOverworldAlternateSFX:
-CMP.b #$4A : BNE +
+CPY.b #$4A : BNE +
 	JSL Sound_SetSfxPanWithPlayerCoords : ORA.b #$13 : STA.w SFX2
 	RTL
 + ; normal itemget sfx

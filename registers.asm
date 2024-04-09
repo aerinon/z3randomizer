@@ -628,6 +628,7 @@ VTIMEH = $00420A
 ; f - DMA channel 5 (0: disabled | 1: enabled)
 ; g - DMA channel 6 (0: disabled | 1: enabled)
 ; h - DMA channel 7 (0: disabled | 1: enabled)
+MDMAEN = $00420B
 DMAENABLE = $00420B
 
 ; H-BLANK DIRECT MEMORY ACCESS CHANNEL DESIGNATION
@@ -641,6 +642,7 @@ DMAENABLE = $00420B
 ; f - HDMA channel 5 (0: disabled | 1: enabled)
 ; g - HDMA channel 6 (0: disabled | 1: enabled)
 ; h - HDMA channel 7 (0: disabled | 1: enabled)
+HDMAEN = $00420C
 HDMAENABLE = $00420C
 
 ; ACCESS CYCLE DESIGNATION

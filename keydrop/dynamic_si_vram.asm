@@ -1,6 +1,6 @@
 ; Come in with
 ;   A = item receipt ID
-;   X = slot
+;   X = sprite slot
 RequestStandingItemVRAMSlot:
 	PHA
 
@@ -83,21 +83,21 @@ DrawPotItem:
     .draw
 	PHB : PHK : PLB
 
-	STA.b $08
+	STA.b Scrap08
 	LDA.w SprItemGFX,X
 	AND.w #$00FF
 	ASL : ASL : ASL : ASL
-	ADC.b $08
-	STA.b $08
+	ADC.b Scrap08
+	STA.b Scrap08
 	SEP #$20
-	STZ.b $07
+	STZ.b Scrap07
 
 	LDA.b #$00 : STA.l SpriteSkipEOR
 	JSL Sprite_DrawMultiple_quantity_preset
 
-	LDA.b $90 : CLC : ADC.b #$08 : STA.b $90
-	INC.b $92
-	INC.b $92
+	LDA.b OAMPtr : CLC : ADC.b #$08 : STA.b OAMPtr
+	INC.b OAMPtr+2
+	INC.b OAMPtr+2
 
 	PLB
 	PLA

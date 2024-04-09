@@ -235,7 +235,7 @@ CheckMusicLoadRequest:
 .dungeon
             LDA.w DungeonID : CMP.b #$1A : BNE +
                 PHA : LDA.l DRMode : BEQ ++
-                    LDA.w BigKeyField : AND.b #$04 : BEQ ++
+                    LDA.l BigKeyField : AND.b #$04 : BEQ ++
                         ; if door rando and entering GT with BK
                         PLA : LDA.b #59 : BRA .check_fallback-3
                 ++ PLA
@@ -497,8 +497,8 @@ PHA : XBA : PHA
         ; dont save if we already saved recently
         REP #$20
         LDA.w MSUResumeTrack : AND.w #$00FF : BEQ ++
-            LDA.l NMIFrames : !SUB.l MSUResumeTime : PHA
-            LDA.l NMIFrames+2 : SBC.l MSUResumeTime+2 : BNE +++
+            LDA.l NMIFrames : !SUB.w MSUResumeTime : PHA
+            LDA.l NMIFrames+2 : SBC.w MSUResumeTime+2 : BNE +++
                 PLA : CMP.l MSUResumeTimer : !BLT .too_early
                 BRA ++
             +++
@@ -663,8 +663,8 @@ MSUMain:
     PLX
     TXA : CMP.w MSUResumeTrack : BNE + ; dont resume if too late
         REP #$20
-            LDA.l NMIFrames : !SUB.l MSUResumeTime : PHA
-            LDA.l NMIFrames+2 : SBC.l MSUResumeTime+2 : BNE ++
+            LDA.l NMIFrames : !SUB.w MSUResumeTime : PHA
+            LDA.l NMIFrames+2 : SBC.w MSUResumeTime+2 : BNE ++
                 PLA : CMP.l MSUResumeTimer : !BGE +++
                 SEP #$20
                 LDA.b #!FLAG_RESUME_FADEIN : BRA .done_resume
@@ -677,7 +677,7 @@ MSUMain:
         STA.w MSUResumeControl
         LDA.b #$00 : STA.w MSUResumeTrack
     +
-    CPX.b #07 : BNE + ; Kakariko Village
+    CPX.b #$07 : BNE + ; Kakariko Village
         LDA.b GameMode : CMP.b #$07 : BNE +
         ; we're in link's house -> ignore
         LDA.b #$00

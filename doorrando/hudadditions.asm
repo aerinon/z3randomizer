@@ -74,7 +74,7 @@ DRHUD_DrawKeyCounter:
     LDA.w MapField : AND.l DungeonMask, X : BEQ DRHUD_Finished
 	TXA : LSR : TAX
 	LDA.l GenericKeys : AND.w #$00FF : BNE .total_only
-	LDA.l DungeonCollectedKeys, X : JSR ConvertToDisplay : STA.w HUDKeysObtained
+	LDA.w DungeonCollectedKeys, X : JSR ConvertToDisplay : STA.w HUDKeysObtained
 	LDA.w #!SlashTile : STA.w HUDKeysSlash
 .total_only
 	LDA.l ChestKeys, x : JSR ConvertToDisplay : STA.w HUDKeysTotal

@@ -98,7 +98,7 @@ IncrementSmallKeysNoPrimary:
                 PHP : REP #$20 ; set 16-bit accumulator
                 LDA.b RoomIndex : CMP.w #$0087 : BNE ++ ; hera basement
                 LDA.b $A8 : AND.w #$0003 : CMP.w #$0002 : BNE ++ ; must be quadrant 2
-                LDA.l SprDropsItem, X : AND.w #$00FF : BNE ++ ; must not be a standing item
+                LDA.w SprDropsItem, X : AND.w #$00FF : BNE ++ ; must not be a standing item
                         PLP : PHY
                         LDY.b #$24
                         JSL AddInventory
@@ -320,9 +320,9 @@ IndoorTileTransitionCounter:
 JMP StatTransitionCounter
 ;--------------------------------------------------------------------------------
 IndoorSubtileTransitionCounter:
-        LDA.b #$01 : STA.l RedrawFlag ; set redraw flag for items
-        STZ.w SomariaSwitchFlag ; stuff we wrote over
-        STZ.w SpriteRoomTag
+    LDA.b #$01 : STA.l RedrawFlag ; set redraw flag for items
+    STZ.w SomariaSwitchFlag ; stuff we wrote over
+    STZ.w SpriteRoomTag
 JMP StatTransitionCounter
 ;--------------------------------------------------------------------------------
 StatsFinalPrep:

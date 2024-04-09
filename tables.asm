@@ -75,7 +75,6 @@ org $B08028 ; PC 0x180028
 FairySword:
 db $03 ; #$03 = Golden Sword (default)
 
-PedestalMusicCheck:
 ;org $88C435 ; <- 44435 - ancilla_receive_item.asm : 125
 ;db $01 ; #$01 = Master Sword (default)
 org $8589B0 ; PC 0x289B0 ; sprite_master_sword.asm : 179
@@ -164,7 +163,7 @@ org $B08045 ; PC 0x180045
 HUDDungeonItems:
 db $00
 ;--------------------------------------------------------------------------------
-; 0x180046 (unused)
+; 0x180046 - 0x180047 (unused)
 ;--------------------------------------------------------------------------------
 org $B08048 ; PC 0x180048
 MenuSpeed:

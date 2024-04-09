@@ -1,7 +1,7 @@
 OnMenuLoad:
-	LDA.b #UploadMenuOnlyIcons>>0 : STA.l NMIAux
-	LDA.b #UploadMenuOnlyIcons>>8 : STA.l NMIAux+1
-	LDA.b #UploadMenuOnlyIcons>>16 : STA.l NMIAux+2
+	LDA.b #UploadMenuOnlyIcons>>0 : STA.w NMIAux
+	LDA.b #UploadMenuOnlyIcons>>8 : STA.w NMIAux+1
+	LDA.b #UploadMenuOnlyIcons>>16 : STA.w NMIAux+2
 	LDA.b #$0E : STA.b GameMode ; what we overwrote
 RTL
 

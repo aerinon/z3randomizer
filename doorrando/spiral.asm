@@ -202,7 +202,7 @@ InroomStairsWarp: {
             lda.w InroomStairsX,y : sta.b LinkPosX
             lda.w InroomStairsY,y
             ldy.b Scrap07 : beq +
-                !ADD #$07
+                !ADD.b #$07
             +
             sta.b LinkPosY
             inc.b Scrap07

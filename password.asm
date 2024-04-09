@@ -240,8 +240,8 @@ PasswordToKey:
 RTS
 
 LoadPasswordStripeTemplate:
-	LDA.w DMAP0 : PHA : LDA.w BBAD0 : PHA : LDA.w A1T0L : PHA ; preserve DMA parameters
-	LDA.w A1T0H : PHA : LDA.w A1B0 : PHA : LDA.w DAS0L : PHA ; preserve DMA parameters
+	LDA.w DMAP0 : PHA : LDA.w BBAD0 : PHA :	LDA.w A1T0L : PHA ; preserve DMA parameters
+	LDA.w A1T0H : PHA : LDA.w A1B0 : PHA :	LDA.w DAS0L : PHA ; preserve DMA parameters
 	LDA.w DAS0H : PHA ; preserve DMA parameters  
   
 	LDA.b #$00 : STA.w DMAP0 ; set DMA transfer direction A -> B, bus A auto increment, single-byte mode

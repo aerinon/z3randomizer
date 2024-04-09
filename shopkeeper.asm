@@ -128,11 +128,11 @@ SpritePrep_ShopKeeper:
 			LDA.l ShopContentsTable+2, X : PHX : TYX : STA.l ShopInventory+1, X : PLX
 			LDA.l ShopContentsTable+3, X : PHX : TYX : STA.l ShopInventory+2, X : PLX
 			LDA.l ShopContentsTable+8, X : PHX : PHA : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
-			LDA.b #0 : XBA : TYA : LSR #2 : TAX ; This will convert the value back to the slot number (in 8-bit accumulator mode)
-            PLA : STA.l ShopInventoryPlayer, X : LDA.b #00 : STA.l ShopInventoryDisguise, X : PLX
+			LDA.b #$00 : XBA : TYA : LSR #2 : TAX ; This will convert the value back to the slot number (in 8-bit accumulator mode)
+            PLA : STA.l ShopInventoryPlayer, X : LDA.b #$00 : STA.l ShopInventoryDisguise, X : PLX
 			PHY
 				PHX
-					LDA.b #0 : XBA : TYA : LSR #2 : !ADD.l ShopSRAMIndex : TAX
+					LDA.b #$00 : XBA : TYA : LSR #2 : !ADD.l ShopSRAMIndex : TAX
 					LDA.l PurchaseCounts, X : TYX : STA.l ShopInventory+3, X : TAY
 				PLX
 				
@@ -143,8 +143,8 @@ SpritePrep_ShopKeeper:
 					LDA.l ShopContentsTable+6, X : PHX : TYX : STA.l ShopInventory+1, X : PLX
 					LDA.l ShopContentsTable+7, X : PHX : TYX : STA.l ShopInventory+2, X : PLX
 					LDA.b #$40 : PHX : TYX : STA.l ShopInventory+3, X : PLX
-					PHX : LDA.b #0 : XBA : TYA : LSR #2 : TAX ; This will convert the value back to the slot number (in 8-bit accumulator mode)
-					LDA.b #0 : STA.l ShopInventoryPlayer, X : PLX
+					PHX : LDA.b #$00 : XBA : TYA : LSR #2 : TAX ; This will convert the value back to the slot number (in 8-bit accumulator mode)
+					LDA.b #$00 : STA.l ShopInventoryPlayer, X : PLX
 					BRA +++
 					+ : PLY : LDA.b #$40 : PHX : TYX : STA.l ShopInventory+3, X : PLX : BRA +++
 				++
@@ -156,7 +156,7 @@ SpritePrep_ShopKeeper:
 				JSL AttemptItemSubstitution
 				JSL ResolveLootIDLong
 				CMP.b #$D0 : BNE +
-					PHX : LDA.b #0 : XBA : TYA : LSR #2 : TAX ; This will convert the value back to the slot number (in 8-bit accumulator mode)
+					PHX : LDA.b #$00 : XBA : TYA : LSR #2 : TAX ; This will convert the value back to the slot number (in 8-bit accumulator mode)
 					JSL GetRandomInt : AND.b #$3F
 					BNE ++ : LDA.b #$49 : ++ : CMP.b #$26 : BNE ++ : LDA.b #$6A : ++ ; if 0 (fighter's sword + shield), set to just sword, if filled container (bugged palette), switch to triforce piece
 					STA.l ShopInventoryDisguise, X : PLX
@@ -425,80 +425,80 @@ Shopkeeper_SetupHitboxes:
 RTS
 
 Shopkeeper_BuyItem:
-        PHX : PHY
-        TYX
+    PHX : PHY
+    TYX
 
-        LDA.l ShopInventory, X
-        CMP.b #$0E : BEQ .refill ; Bee Refill
-        CMP.b #$2E : BEQ .refill ; Red Potion Refill
-        CMP.b #$2F : BEQ .refill ; Green Potion Refill
-        CMP.b #$30 : BEQ .refill ; Blue Potion Refill
-                BRA +
-        .refill
-        	JSL Sprite_GetEmptyBottleIndex : BMI .full_bottles
-        	LDA.b #$1 : STA.l ShopkeeperRefill ; If this is on, don't toggle bit to remove from shop
-		+
+    LDA.l ShopInventory, X
+    CMP.b #$0E : BEQ .refill ; Bee Refill
+    CMP.b #$2E : BEQ .refill ; Red Potion Refill
+    CMP.b #$2F : BEQ .refill ; Green Potion Refill
+    CMP.b #$30 : BEQ .refill ; Blue Potion Refill
+        BRA +
+    .refill
+        JSL Sprite_GetEmptyBottleIndex : BMI .full_bottles
+        LDA.b #$1 : STA.l ShopkeeperRefill ; If this is on, don't toggle bit to remove from shop
+    +
 
-                LDA.l ShopType : AND.b #$80 : BNE .buy ; don't charge if this is a take-any
-                        REP #$20 : LDA.l CurrentRupees : CMP.l ShopInventory+1, X : SEP #$20 : !BGE .buy
+        LDA.l ShopType : AND.b #$80 : BNE .buy ; don't charge if this is a take-any
+            REP #$20 : LDA.l CurrentRupees : CMP.l ShopInventory+1, X : SEP #$20 : !BGE .buy
 
-                .cant_afford
-                LDA.b #$7A
-                LDY.b #$01
-                JSL Sprite_ShowMessageUnconditional
-                LDA.b #$3C : STA.w SFX2 ; error sound
-                JMP .done
-        .full_bottles
-        LDA.b #$6B : LDY.b #$01
+        .cant_afford
+        LDA.b #$7A
+        LDY.b #$01
         JSL Sprite_ShowMessageUnconditional
         LDA.b #$3C : STA.w SFX2 ; error sound
         JMP .done
-        .buy
-        LDA.l ShopType : AND.b #$80 : BNE ++ ; don't charge if this is a take-any
-                REP #$20 : LDA.l CurrentRupees : !SUB.l ShopInventory+1, X : STA.l CurrentRupees : SEP #$20 ; Take price away
-        ++
+    .full_bottles
+    LDA.b #$6B : LDY.b #$01
+    JSL Sprite_ShowMessageUnconditional
+    LDA.b #$3C : STA.w SFX2 ; error sound
+    JMP .done
+    .buy
+    LDA.l ShopType : AND.b #$80 : BNE ++ ; don't charge if this is a take-any
+        REP #$20 : LDA.l CurrentRupees : !SUB.l ShopInventory+1, X : STA.l CurrentRupees : SEP #$20 ; Take price away
+    ++
+    PHX
+        LDA.b #$00 : XBA : TXA : LSR #2 : TAX
+        LDA.l ShopInventoryPlayer, X : STA.l !MULTIWORLD_ITEM_PLAYER_ID
+        TXA : !ADD.l ShopSRAMIndex : TAX
+        LDA.l PurchaseCounts, X : BNE +++	;Is this the first time buying this slot?
+            LDA.l EnableShopItemCount, X : STA.l ShopEnableCount ; If so, store the permission to count the item here.
+        +++
+    PLX
+    LDA.l ShopInventory, X
+    JSL AttemptItemSubstitution
+    JSL ResolveLootIDLong
+    TAY : JSL Link_ReceiveItem
+    LDA.l ShopInventory+3, X : INC : STA.l ShopInventory+3, X
+    LDA.b #$00 : STA.l ShopEnableCount
+    TXA : LSR #2 : TAX
+    LDA.l ShopType : BIT.b #$80 : BNE +
+        LDA.l ShopkeeperRefill : BNE +++
+            LDA.l ShopState : ORA.w Shopkeeper_ItemMasks, X : STA.l ShopState
+        +++ PHX
+        TXA : !ADD.l ShopSRAMIndex : TAX
+        LDA.l PurchaseCounts, X : INC : BEQ +++ : STA.l PurchaseCounts, X : +++
+        PLX
+        BRA ++
+    + ; Take-any
+    BIT.b #$20 : BNE .takeAll
+        .takeAny
+        LDA.l ShopState : ORA.b #$07 : STA.l ShopState
         PHX
-			LDA.b #0 : XBA : TXA : LSR #2 : TAX : LDA.l ShopInventoryPlayer, X : STA.l !MULTIWORLD_ITEM_PLAYER_ID
-			TXA : !ADD.l ShopSRAMIndex : TAX
-			LDA.l PurchaseCounts, X : BNE +++	;Is this the first time buying this slot?
-				LDA.l EnableShopItemCount, X : STA.l ShopEnableCount ; If so, store the permission to count the item here.
-			+++
-		PLX
-        LDA.l ShopInventory, X
-				JSL AttemptItemSubstitution
-        JSL ResolveLootIDLong
-				TAY
-				JSL Link_ReceiveItem
-        LDA.l ShopInventory+3, X : INC : STA.l ShopInventory+3, X
-        LDA.b #0 : STA.l ShopEnableCount
-        TXA : LSR #2 : TAX
-        LDA.l ShopType : BIT.b #$80 : BNE +
-        		LDA.l ShopkeeperRefill : BNE +++
-                	LDA.l ShopState : ORA.w Shopkeeper_ItemMasks, X : STA.l ShopState
-                +++ PHX
-                TXA : !ADD.l ShopSRAMIndex : TAX
-                LDA.l PurchaseCounts, X : INC : BEQ +++ : STA.l PurchaseCounts, X : +++
-                PLX
-                BRA ++
-        + ; Take-any
-        BIT.b #$20 : BNE .takeAll
-                .takeAny
-                LDA.l ShopState : ORA.b #$07 : STA.l ShopState
-                PHX
-                	LDA.l ShopSRAMIndex : TAX : LDA.b #$01 : STA.l PurchaseCounts, X
-                	LDA.l EnableShopItemCount, X : STA.l ShopEnableCount
-				PLX
-                BRA ++
-                .takeAll
-                LDA.l ShopState : ORA.w Shopkeeper_ItemMasks, X : STA.l ShopState
-                PHX
-                	LDA.l ShopSRAMIndex : TAX : LDA.l ShopState : STA.l PurchaseCounts, X
-                	LDA.l EnableShopItemCount, X : STA.l ShopEnableCount
-                PLX
-	++
-	.done
-	LDA.b #$00 : STA.l ShopkeeperRefill
-	PLY : PLX
+            LDA.l ShopSRAMIndex : TAX : LDA.b #$01 : STA.l PurchaseCounts, X
+            LDA.l EnableShopItemCount, X : STA.l ShopEnableCount
+        PLX
+        BRA ++
+        .takeAll
+        LDA.l ShopState : ORA.w Shopkeeper_ItemMasks, X : STA.l ShopState
+        PHX
+            LDA.l ShopSRAMIndex : TAX : LDA.l ShopState : STA.l PurchaseCounts, X
+            LDA.l EnableShopItemCount, X : STA.l ShopEnableCount
+        PLX
+    ++
+    .done
+    LDA.b #$00 : STA.l ShopkeeperRefill
+    PLY : PLX
 RTS
 Shopkeeper_ItemMasks:
 db #$01, #$02, #$04, #$08
@@ -645,7 +645,7 @@ Shopkeeper_DrawNextItem:
 	SEP #$20 ; set 8-bit accumulator
 	PLY
 
-	PHX : LDA.b #0 : XBA : TXA : LSR #2 : TAX : LDA.l ShopInventoryDisguise, X : PLX : CMP.b #$0 : BNE ++
+	PHX : LDA.b #$00 : XBA : TXA : LSR #2 : TAX : LDA.l ShopInventoryDisguise, X : PLX : CMP.b #$00 : BNE ++
 		CPX.b #$0C : BCC .not_powder
 	    	LDA.l PowderFlag : BRA .resolve
 	    .not_powder LDA.l ShopInventory, X ; get item id
@@ -671,10 +671,10 @@ Shopkeeper_DrawNextItem:
 
 	STA.l SpriteOAM+4
 
-	PHX : LDA.b #0 : XBA : TXA : LSR #2 : TAX : LDA.l ShopInventoryDisguise, X : PLX : CMP.b #$0 : BNE ++
+	PHX : LDA.b #$00 : XBA : TXA : LSR #2 : TAX : LDA.l ShopInventoryDisguise, X : PLX : CMP.b #$00 : BNE ++
 		LDA.b Scrap0D
 	++
-        PHX
+	PHX
 	JSL GetSpritePalette_resolved
 	PLX : CPX.b #$0C : BCC + ; if this is powder item
 		ORA.b #$01
@@ -682,20 +682,20 @@ Shopkeeper_DrawNextItem:
 
 	LDA.b #$00 : STA.l SpriteOAM+6
 
-	PHX : LDA.b #0 : XBA : TXA : LSR #2 : TAX : LDA.l ShopInventoryDisguise, X : PLX : CMP.b #$0 : BNE ++
+	PHX : LDA.b #$00 : XBA : TXA : LSR #2 : TAX : LDA.l ShopInventoryDisguise, X : PLX : CMP.b #$00 : BNE ++
 		LDA.b Scrap0D
 	++
-        PHX
-        TAX
-        LDA.l SpriteProperties_standing_width,X : BEQ .narrow
+	PHX
+	TAX
+	LDA.l SpriteProperties_standing_width,X : BEQ .narrow
 	.full
-                PLX
+		PLX
 		LDA.b #$02
 		STA.l SpriteOAM+7
 		LDA.b #$01
 		BRA ++
 	.narrow
-                PLX
+		PLX
 		LDA.b #$00
 		STA.l SpriteOAM+7
 		JSR PrepNarrowLower
@@ -774,9 +774,9 @@ Shopkeeper_DrawNextPrice:
 		PHX : PHA : LDA.l ShopScratch : TAX : PLA : JSL Sprite_DrawMultiple_quantity_preset : PLX
 
 		LDA.b 1,s
-		ASL #2 : !ADD.l OAMPtr : STA.b OAMPtr ; increment oam pointer
+		ASL #2 : !ADD.b OAMPtr : STA.b OAMPtr ; increment oam pointer
                 PLA
-                !ADD.l OAMPtr+2 : STA.b OAMPtr+2
+                !ADD.b OAMPtr+2 : STA.b OAMPtr+2
         .free
         PLP : PLY : PLX
         PLB

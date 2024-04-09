@@ -327,8 +327,8 @@ ClearSpriteData:
 	PHX
 		LDA.b #$00 : LDX.b #$00
 		.loop
-			STA.l SprDropsItem, X :  STA.l SprItemReceipt, X : STA.l SprItemIndex, X
-			STA.l SprItemMWPlayer, X : STA.l SprItemFlags, X
+			STA.w SprDropsItem, X :  STA.w SprItemReceipt, X : STA.w SprItemIndex, X
+			STA.w SprItemMWPlayer, X : STA.w SprItemFlags, X
 			INX : CPX.b #$10 : BCC .loop
 		JSR SetupEnemyDropIndicator
 	PLX
@@ -393,23 +393,23 @@ LoadSpriteData:
 			DEC.b Scrap03 ; standing items shouldn't consume a sprite slot
 			LDX.b Scrap03 ; these were changed to $03, for moved sprites
 			CMP.b #$F9 : BNE .not_multiworld
-				DEY : LDA.b [Scrap00], Y : STA.l SprItemMWPlayer, X
-				LDA.b #$02 : STA.l SprDropsItem, X : BRA .common
+				DEY : LDA.b [Scrap00], Y : STA.w SprItemMWPlayer, X
+				LDA.b #$02 : STA.w SprDropsItem, X : BRA .common
 			.not_multiworld
-			LDA.b #$00 : STA.l SprItemMWPlayer, X
-			LDA.b #$01 : STA.l SprDropsItem, X
+			LDA.b #$00 : STA.w SprItemMWPlayer, X
+			LDA.b #$01 : STA.w SprDropsItem, X
 			DEY
 			.common
-			DEY : LDA.b [Scrap00], Y : STA.l SprItemReceipt, X
+			DEY : LDA.b [Scrap00], Y : STA.w SprItemReceipt, X
 			STA.b Scrap0E
-			LDA.l SprItemMWPlayer, X : BNE +  ; skip if multiworld
+			LDA.w SprItemMWPlayer, X : BNE +  ; skip if multiworld
 				PHX
  					LDX.b #$00 ; see if the item should be replaced by an absorbable
                 	- CPX.b #$1A : BCS .done
                 		LDA.l MinorForcedDrops, X
                 		CMP.b Scrap0E : BEQ ++
                 			INX #2 : BRA -
-                		++ PLX : LDA.l SprItemFlags, X : ORA.b #$80 : STA.l SprItemFlags, X : PHX
+                		++ PLX : LDA.w SprItemFlags, X : ORA.b #$80 : STA.w SprItemFlags, X : PHX
                 .done PLX
 			+
 		INY : INY
@@ -422,23 +422,23 @@ LoadSpriteData:
 
 ; Run when a sprite dies ... Sets Flag to #$02 and Index to sprite slot for
 RevealSpriteDrop:
-	LDA.l SprDropsItem, X : BNE CheckIfDropValid
+	LDA.w SprDropsItem, X : BNE CheckIfDropValid
 	JMP DoNormalDrop
 
 CheckIfDropValid:
 	JSR CheckIfDropsInThisLocation : BCC DoNormalDrop
 	;This section sets up the drop
-		LDA.b #$02 : STA.l SpawnedItemFlag
+		LDA.b #$02 : STA.w SpawnedItemFlag
 		STX.w SpawnedItemIndex
-		LDA.l SprItemReceipt, X : STA.l SpawnedItemID
-		LDA.l SprItemMWPlayer, X : STA.l SpawnedItemMWPlayer
+		LDA.w SprItemReceipt, X : STA.w SpawnedItemID
+		LDA.w SprItemMWPlayer, X : STA.w SpawnedItemMWPlayer
 		LDY.b #$01 ; trigger the small key routines
 		LDA.w SpawnedItemID : STA.b Scrap00 : CMP.b #$32 : BNE +
 		LDA.l StandingItemsOn : BNE +
 			INY ; big key routine
 		+
 		PHX
-	    LDA.l SpawnedItemMWPlayer : BNE .done ; abort check for absorbables it belong to someone else
+	    LDA.w SpawnedItemMWPlayer : BNE .done ; abort check for absorbables it belong to someone else
 	    LDX.b #$00 ; see if the item should be replaced by an absorbable
 		- CPX.b #$1A : BCS .done
 			LDA.l MinorForcedDrops, X
@@ -475,7 +475,7 @@ PikitOverride:
 	CMP.b #$AA : BNE .no_pikit_drop
 	LDY.w $0E90,X : BEQ .no_pikit_drop
 	CPY.b #$04 : BEQ .normal_pikit
-	LDA.l SprDropsItem, X : BEQ .normal_pikit
+	LDA.w SprDropsItem, X : BEQ .normal_pikit
 	JSR CheckIfDropsInThisLocation : BCC .normal_pikit
 .no_pikit_drop
 	PLA : PLA : PEA.w Sprite_DoTheDeath_NotAPikitDrop-1
@@ -597,7 +597,7 @@ MarkSRAMForItem:
 				LDA.w RoomItemsTaken : ORA.w KeyRoomFlagMasks, Y : RTL
 	+ PHX : PHY : REP #$30
 		LDA.b RoomIndex : ASL : TAY
-		LDA.l SpawnedItemIndex : ASL
+		LDA.w SpawnedItemIndex : ASL
 		TAX : LDA.l BitFieldMasks, X : STA.b Scrap00
 		TYX
 		LDA.w SpawnedItemFlag : CMP.w #$0001 : BEQ +
@@ -616,20 +616,20 @@ SpriteKeyPrep:
 		LDA.b RoomIndex : CMP.b #$87 : BNE .continue
 			CPX.b #$0A : BNE .continue  ; the hera basement key is always sprite 0x0A
 				LDA.b LinkQuadrantH : ORA.b LinkQuadrantV : AND.b #$03 : CMP.b #$02 : BNE .continue
-					LDA.b #$00 : STA.w SpawnedItemFlag : STA.l SprItemFlags, X
+					LDA.b #$00 : STA.w SpawnedItemFlag : STA.w SprItemFlags, X
 					LDA.b #$24 : STA.w $0E80, X
 					BRA +
 		.continue
-		LDA.w SpawnedItemIndex : STA.l SprItemIndex, X
-		LDA.w SpawnedItemMWPlayer : STA.l SprItemMWPlayer, X : STA.w !MULTIWORLD_SPRITEITEM_PLAYER_ID
-		LDA.w SpawnedItemFlag : STA.l SprItemFlags, X : BEQ +
-		LDA.l SpawnedItemID : STA.w $0E80, X
+		LDA.w SpawnedItemIndex : STA.w SprItemIndex, X
+		LDA.w SpawnedItemMWPlayer : STA.w SprItemMWPlayer, X : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
+		LDA.w SpawnedItemFlag : STA.w SprItemFlags, X : BEQ +
+		LDA.w SpawnedItemID : STA.w $0E80, X
 		PHA : PHY : PHX
 			JSL GetSpritePalette : PLX : STA.w SpriteOAMProp, X ; setup the palette
 		PLY : PLA
 		CMP.b #$24 : BNE ++ ;
 			LDA.b RoomIndex : CMP.b #$80 : BNE +
-			LDA.l SpawnedItemFlag : BNE +
+			LDA.w SpawnedItemFlag : BNE +
 				LDA.b #$24  ; it's the big key drop?
 		++ JSL RequestStandingItemVRAMSlot
 	+ PLA
@@ -638,11 +638,11 @@ SpriteKeyPrep:
 SpriteKeyDrawGFX:
     JSL Sprite_DrawRippleIfInWater
     PHA
-    LDA.l SprItemMWPlayer, X : STA.w !MULTIWORLD_SPRITEITEM_PLAYER_ID
+    LDA.w SprItemMWPlayer, X : STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID
     LDA.w $0E80, X
    	CMP.b #$24 : BNE +
    		LDA.b RoomIndex : CMP.b #$80 : BNE ++
-   		LDA.l SpawnedItemFlag : BNE ++
+   		LDA.w SpawnedItemFlag : BNE ++
     		LDA.b #$24 : BRA +
     	++ PLA
 		   PHK : PEA.w .jslrtsreturn-1
@@ -659,38 +659,38 @@ SpriteKeyDrawGFX:
 KeyGet:
     LDA.l CurrentSmallKeys ; what we wrote over
     PHA
-    	LDA.l StandingItemsOn : BNE +
-    		PLA : RTL
-    	+ LDY.w $0E80, X
-    	LDA.l SprItemIndex, X : STA.l SpawnedItemIndex
-    	LDA.l SprItemFlags, X : STA.l SpawnedItemFlag
-    	LDA.b RoomIndex : CMP.b #$87 : BNE + ;check for hera cage
-    	LDA.l SpawnedItemFlag : BNE + ; if it came from a pot, it's fine
-    		JSR ShouldKeyBeCountedForDungeon : BCC ++
-			JSL CountChestKeyLong
-    		++ PLA : RTL
-    	+ STY.b Scrap00
-    	LDA.l SprItemMWPlayer, X : STA.l !MULTIWORLD_ITEM_PLAYER_ID
-			STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID : BNE .receive
-    	PHX
-			LDA.w DungeonID : CMP.b #$FF : BNE +
-				LDA.b Scrap00 : CMP.b #$AF : BNE .skip
-				LDA.l CurrentGenericKeys : INC : STA.l CurrentGenericKeys
-				LDA.b Scrap00 : BRA .countIt
-			+ LSR : TAX
-			LDA.b Scrap00 : CMP.l KeyTable, X : BNE +
-				.countIt
-				LDA.l StandingItemCounterMask : AND SpawnedItemFlag : BEQ ++
-					JSL AddInventory
-				++ PLX : PLA : RTL
-			+ CMP.b #$AF : beq .countIt ; universal key
-			CMP.b #$24 : beq .countIt   ; small key for this dungeon
-		.skip PLX
-		.receive
-		JSL Player_HaltDashAttackLong
-		TYA : JSL AttemptItemSubstitution : JSL ResolveLootIDLong : TAY
-		JSL Link_ReceiveItem
-	PLA : DEC : RTL
+        LDA.l StandingItemsOn : BNE +
+            PLA : RTL
+        + LDY.w $0E80, X
+        LDA.w SprItemIndex, X : STA.w SpawnedItemIndex
+        LDA.w SprItemFlags, X : STA.w SpawnedItemFlag
+        LDA.b RoomIndex : CMP.b #$87 : BNE + ;check for hera cage
+        LDA.w SpawnedItemFlag : BNE + ; if it came from a pot, it's fine
+            JSR ShouldKeyBeCountedForDungeon : BCC ++
+            JSL CountChestKeyLong
+            ++ PLA : RTL
+        + STY.b Scrap00
+        LDA.w SprItemMWPlayer, X : STA.l !MULTIWORLD_ITEM_PLAYER_ID
+        STA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID : BNE .receive
+        PHX
+            LDA.w DungeonID : CMP.b #$FF : BNE +
+                LDA.b Scrap00 : CMP.b #$AF : BNE .skip
+                LDA.l CurrentGenericKeys : INC : STA.l CurrentGenericKeys
+                LDA.b Scrap00 : BRA .countIt
+            + LSR : TAX
+            LDA.b Scrap00 : CMP.l KeyTable, X : BNE +
+                .countIt
+                LDA.l StandingItemCounterMask : AND SpawnedItemFlag : BEQ ++
+                    JSL AddInventory
+                ++ PLX : PLA : RTL
+            + CMP.b #$AF : beq .countIt ; universal key
+            CMP.b #$24 : beq .countIt   ; small key for this dungeon
+        .skip PLX
+        .receive
+        JSL Player_HaltDashAttackLong
+        TYA : JSL AttemptItemSubstitution : JSL ResolveLootIDLong : TAY
+        JSL Link_ReceiveItem
+    PLA : DEC : RTL
 
 KeyTable:
 db $A0, $A0, $A2, $A3, $A4, $A5, $A6, $A7, $A8, $A9, $AA, $AB, $AC, $AD
