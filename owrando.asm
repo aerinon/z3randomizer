@@ -11,13 +11,11 @@ OWVersionInfo:
 dw $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000
 
 ;Hooks
-org $82a929
-OWDetectTransitionReturn:
+org $82a92C
+JSL OWDetectEdgeTransition ; JSL Link_CheckForEdgeScreenTransition
 
-org $82a939
-OverworldHandleTransitions_SpecialTrigger:
-JSL OWDetectEdgeTransition
-BCS OWDetectTransitionReturn
+org $82a936
+OverworldHandleTransitions_PerformEdgeTransition:
 
 org $82a999
 jsl OWEdgeTransition : nop #4 ;LDA $02A4E3,X : ORA $7EF3CA
@@ -734,20 +732,29 @@ OWBonkSpritePrep:
 org $aa9000
 OWDetectEdgeTransition:
 {
-    JSL OWDestroyItemSprites
+    JSL Link_CheckForEdgeScreenTransition ; what we wrote over
+    BCS .return
     STZ.w RandoOverworldWalkDist
     LDA.l OWMode : ORA.l OWMode+1 : BEQ .vanilla
+        PHY
         JSR OWShuffle
-        LDA.w RandoOverworldTargetEdge : BMI .special
+        PLY
+        LDA.w RandoOverworldTargetEdge : BMI .specialOrDisabled
     .vanilla
-    REP #$31 : LDX.b Scrap02 : LDA.b OverworldMap16Buffer ; what we wrote over
+    CLC ; allow transition
     RTL
+    .specialOrDisabled
+    CMP.b #$FF : BNE .special
+    STZ.w RandoOverworldTargetEdge
+    PHB
+    JML Link_CheckForEdgeScreenTransition_prevent_transition
     .special
     REP #$30
     AND.w #$0003 : TAY : ASL : TAX
     LDA.w #$007F : STA.w RandoOverworldTargetEdge
     JSR OWLoadSpecialArea
     SEC
+    .return
     RTL
 }
 OWDetectSpecialTransition:
@@ -757,17 +764,23 @@ OWDetectSpecialTransition:
     TXA : AND.w #$0002 : LSR
     STA.w RandoOverworldTerrain
     LDA.l OWSpecialDestIndex,X : BIT.w #$0080 : BEQ .switch_to_edge
+    AND.w #$00FF : CMP.w #$00FF : BEQ .disabled
     AND.w #$0003 : TAY : ASL : TAX
     .normal
     JSR OWLoadSpecialArea
     .return
     RTL
 
+    .disabled
+    SEP #$30
+    STZ.w RandoOverworldTargetEdge
+    RTL
+
     .switch_to_edge
     STA.w RandoOverworldTargetEdge
     LDA.l OWEdgeDataOffset,X : STA.w RandoOverworldEdgeAddr
     PLA : SEP #$30 : PLA ; delete 3 bytes from stack
-    JSL Link_CheckForEdgeScreenTransition : BCS .return ; Link_CheckForEdgeScreenTransition
+    JSL Link_CheckForEdgeScreenTransition : BCS .return
     LDA.l Overworld_CheckForSpecialOverworldTrigger_Direction,X : STA.b Scrap00 : CMP.b #$08 : BNE .hobo
         LSR : STA.b LinkPosY : STZ.b BG2V ; move Link and camera to edge
         LDA.b #$06 : STA.b Scrap02
@@ -786,16 +799,15 @@ OWDetectSpecialTransition:
         LDA.b #$FF : STA.b LinkRecoilZ : STA.b $C7
         STZ.b $3D : STZ.b LinkSpeed : STZ.w $032B : STZ.w LinkDashing : STZ.b LinkState
     .not_dashing
-    PLA : REP #$31 : PLA ; delete 3 bytes from stack
-    LDX.b Scrap02
-    LDA.b OverworldMap16Buffer
-    JML OverworldHandleTransitions_SpecialTrigger+6
+    PLA : PLA : PLA ; delete 3 bytes from stack
+    JML OverworldHandleTransitions_PerformEdgeTransition
 }
 OWEdgeTransition:
 {
     LDA.l OWMode : ORA.l OWMode+1 : BEQ .unshuffled
     LDY.w RandoOverworldTargetEdge : STZ.w RandoOverworldTargetEdge
     CPY.b #$7F : BEQ .unshuffled
+        JSL OWDestroyItemSprites
         REP #$10
         LDX.w RandoOverworldEdgeAddr
         PHB : PHK : PLB

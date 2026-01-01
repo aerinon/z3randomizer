@@ -99,6 +99,7 @@ HandleFollowersAfterMirroring                              = $87AA8B
 LinkHop_FindArbitraryLandingSpot                           = $87E359
 Link_HandleMovingAnimation_FullLongEntry                   = $87E68F
 Link_CheckForEdgeScreenTransition                          = $87F413
+Link_CheckForEdgeScreenTransition_prevent_transition       = $87F42C
 Sprite_CheckIfPlayerPreoccupied                            = $87F4AA
 FlashGanonTowerPalette_next_thunder                        = $87FA81
 FlashGanonTowerPalette_bright_white                        = $87FAAC
