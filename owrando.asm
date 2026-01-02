@@ -104,17 +104,17 @@ jsl OWOldManSpeed
 org $8aba6c  ; < ? - Bank0a.asm:474 ()
 jsl OWMapWorldCheck16 : nop
 
-; Mixed Overworld Map
+; Custom Overworld Map
 org $8ABA99
 WorldMap_LoadDarkWorldMap:
 LDA.b GameMode : CMP.b #$14 ; attract module
 BEQ .vanilla_light
-    LDA.l OWMode+1 : AND.b #!FLAG_OW_MIXED : BNE .mixed
+    LDA.l OWFlags : AND.b #!FLAG_OW_CUSTOM_MAP : BNE .custom
         LDA.b OverworldIndex : AND.b #$40
         BEQ .vanilla_light
-    .mixed
+    .custom
     PHB : PHK : PLB
-        JSL LoadMapDarkOrMixed
+        JSL LoadMapDarkOrCustom
     PLB
 .vanilla_light ; $0ABAB5
 
@@ -382,32 +382,49 @@ OWMarkVisited:
     RTL
 }
 
-LoadMapDarkOrMixed:
+LoadMapDarkOrCustom:
 {
-    CMP.b #!FLAG_OW_MIXED : REP #$30 : BEQ .mixed
+    CMP.b #!FLAG_OW_CUSTOM_MAP : REP #$30 : BEQ .custom
         LDX.w #$03FE ; draw vanilla Dark World (what we wrote over)
         .copy_next
             LDA.w WorldMap_DarkWorldTilemap,X : STA.w GFXStripes,X
             DEX : DEX : BPL .copy_next
         BRL .end
-    .mixed
+    .custom
         LDX.b OverworldIndex
         LDA.l OWTileWorldAssoc,X
+        AND.w #$0040
+        BEQ .draw_lw
+            LDA.w #OWMapGridDark
+            BRA .draw_dw
+        .draw_lw
+            LDA.w #OWMapGridLight
+        .draw_dw
         STA.b Scrap00
-        LDY.w #$139C
-        LDX.w #$003F
-        .next_screen
-            PHX
-            LDA.l OWTileWorldAssoc,X
-            EOR.b Scrap00
-            AND.w #$0040
+        LDA.w #$00AA ; current program bank
+        STA.b Scrap02
+        LDX.w #$139C
+        LDY.w #$003F
+        .next_cell
+            PHY
+            LDA.b [Scrap00],Y : AND.w #$0038 : ASL : ASL : ASL : ASL
+            STA.b Scrap03
+            LDA.b [Scrap00],Y
+            BIT.w #$0040
             BEQ .light
-                TYX : BRA .copy_screen
+                AND.w #$0007
+                ASL : ASL : ADC.w #$1000 : ADC.b Scrap03
+                BRA .copy_cell
             .light
-                TXA : AND.w #$0024 : LSR : TAX
-                TYA : SEC : SBC.l LWQuadrantOffsets,X
-                TYX : TAY
-            .copy_screen ; more efficient to have X on the right side
+                PHX
+                AND.w #$0024 : LSR : TAX
+                LDA.b [Scrap00],Y
+                AND.w #$0007
+                ASL : ASL : ADC.w #$1000 : ADC.b Scrap03
+                SEC : SBC.l LWQuadrantOffsets,X
+                PLX
+            .copy_cell ; more efficient to have X on the right side
+            TAY
             LDA.w $C739+$00,Y : STA.b $00,X
             LDA.w $C739+$02,Y : STA.b $02,X
             LDA.w $C739+$20,Y : STA.b $20,X
@@ -416,13 +433,13 @@ LoadMapDarkOrMixed:
             LDA.w $C739+$42,Y : STA.b $42,X
             LDA.w $C739+$60,Y : STA.b $60,X
             LDA.w $C739+$62,Y : STA.b $62,X
-            TXY : PLX
-            DEY : DEY : DEY : DEY ; move one screen left
-            TXA : AND.w #$0007 : BNE .same_row
-                TYA : SEC : SBC.w #$0060 : TAY ; move one screen row up
+            PLY
+            DEX : DEX : DEX : DEX ; move one screen left
+            TYA : AND.w #$0007 : BNE .same_row
+                TXA : SEC : SBC.w #$0060 : TAX ; move one screen row up
             .same_row
-            DEX
-        BPL .next_screen
+            DEY
+        BPL .next_cell
     .end
     SEP #$30
     LDA.b #$15 : STA.b NMIINCR ; what we wrote over
@@ -1834,6 +1851,26 @@ db $6e, $a4, $04, $b1, $00, $10
 db $74, $4e, $10, $b1, $00, $1c
 UWBonkPrizeData:
 db $ff, $00, $02, $b5, $00, $08
+
+org $AABC80 ;PC 153C80
+OWMapGridLight:
+db $00, $01, $02, $03, $04, $05, $06, $07
+db $08, $09, $0A, $0B, $0C, $0D, $0E, $0F
+db $10, $11, $12, $13, $14, $15, $16, $17
+db $18, $19, $1A, $1B, $1C, $1D, $1E, $1F
+db $20, $21, $22, $23, $24, $25, $26, $27
+db $28, $29, $2A, $2B, $2C, $2D, $2E, $2F
+db $30, $31, $32, $33, $34, $35, $36, $37
+db $38, $39, $3A, $3B, $3C, $3D, $3E, $3F
+OWMapGridDark:
+db $40, $41, $42, $43, $44, $45, $46, $47
+db $48, $49, $4A, $4B, $4C, $4D, $4E, $4F
+db $50, $51, $52, $53, $54, $55, $56, $57
+db $58, $59, $5A, $5B, $5C, $5D, $5E, $5F
+db $60, $61, $62, $63, $64, $65, $66, $67
+db $68, $69, $6A, $6B, $6C, $6D, $6E, $6F
+db $70, $71, $72, $73, $74, $75, $76, $77
+db $78, $79, $7A, $7B, $7C, $7D, $7E, $7F
 
 ; temporary fix - murahdahla replaces one of the bonk tree prizes
 ;    so we copy the sprite table here and update the pointer
