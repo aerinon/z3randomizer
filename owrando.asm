@@ -6,6 +6,8 @@ OWFlags:
 dw 0
 OWReserved:
 dw 0
+OWFog:
+db 0 ; 0: disabled - 1: fog clears after visiting either world version of a screen - 2: fog clears after visiting the current world version of a screen
 org $aa8010
 OWVersionInfo:
 dw $0000, $0000, $0000, $0000, $0000, $0000, $0000, $0000
@@ -407,22 +409,7 @@ LoadMapDarkOrCustom:
         LDY.w #$003F
         .next_cell
             PHY
-            LDA.b [Scrap00],Y : AND.w #$0038 : ASL : ASL : ASL : ASL
-            STA.b Scrap03
-            LDA.b [Scrap00],Y
-            BIT.w #$0040
-            BEQ .light
-                AND.w #$0007
-                ASL : ASL : ADC.w #$1000 : ADC.b Scrap03
-                BRA .copy_cell
-            .light
-                PHX
-                AND.w #$0024 : LSR : TAX
-                LDA.b [Scrap00],Y
-                AND.w #$0007
-                ASL : ASL : ADC.w #$1000 : ADC.b Scrap03
-                SEC : SBC.l LWQuadrantOffsets,X
-                PLX
+            JSR GetOWMapTilemapOffsetToCopy
             .copy_cell ; more efficient to have X on the right side
             TAY
             LDA.w $C739+$00,Y : STA.b $00,X
@@ -444,6 +431,62 @@ LoadMapDarkOrCustom:
     SEP #$30
     LDA.b #$15 : STA.b NMIINCR ; what we wrote over
     RTL
+}
+
+GetOWMapTilemapOffsetToCopy:
+{
+    LDA.l OWFog : AND.w #$00FF
+    CMP.w #$0001 : BEQ .parallel_fog
+    CMP.w #$0002 : BNE .no_fog
+
+    LDA.b [Scrap00],Y : AND.w #$00FF
+    PHX
+    TAX
+    BIT.w #$0040
+    BEQ .light_fog
+        LDA.l Overworld_ActualScreenID-$40,X : ORA.w #$0040
+        BRA .dark_fog
+    .light_fog
+        LDA.l Overworld_ActualScreenID,X
+    .dark_fog
+    AND.w #$00FF
+    TAX
+    LDA.l OverworldEventDataWRAM,X
+    .check_visited_flag
+    PLX
+    AND.w #$0080 : BNE .no_fog
+    LDA.w #($D350-$C739)
+    RTS
+
+    .parallel_fog
+    LDA.b [Scrap00],Y : AND.w #$003F
+    PHX
+    TAX
+    LDA.l Overworld_ActualScreenID,X
+    AND.w #$00FF
+    TAX
+    LDA.l OverworldEventDataWRAM,X
+    ORA.l OverworldEventDataWRAM+$40,X
+    BRA .check_visited_flag
+
+    .no_fog
+    LDA.b [Scrap00],Y : AND.w #$0038 : ASL : ASL : ASL : ASL
+    STA.b Scrap03
+    LDA.b [Scrap00],Y
+    BIT.w #$0040
+    BEQ .light
+        AND.w #$0007
+        ASL : ASL : ADC.w #$1000 : ADC.b Scrap03
+        RTS
+    .light
+    PHX
+    AND.w #$0024 : LSR : TAX
+    LDA.b [Scrap00],Y
+    AND.w #$0007
+    ASL : ASL : ADC.w #$1000 : ADC.b Scrap03
+    SEC : SBC.l LWQuadrantOffsets,X
+    PLX
+    RTS
 
     LWQuadrantOffsets:
     dw $1000-$0210 ; top left
