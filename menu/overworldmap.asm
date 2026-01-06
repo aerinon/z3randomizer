@@ -327,7 +327,9 @@ WorldMap_DrawTile:
 	REP #$20
 	LDA.l $7EC10A : BIT.w #$4000 : SEP #$20 : BNE .raw_coords ; use raw OAM coordinates
 		JSR WorldMap_CalculateOAMCoordinates
-		BRA .apply_offsets
+		BCS .apply_offsets
+		REP #$20
+		BRA .exit
 	.raw_coords
 		STA.b Scrap0E
 		LDA.l $7EC108 : STA.b Scrap0F
@@ -344,11 +346,12 @@ WorldMap_DrawTile:
 	LDA.b Scrap0F : SBC.b #$04 : STA.b Scrap0F
 .aligned
 	REP #$20
-	PLA : STA.b Scrap00
 	LDA.b Scrap0E : STA.b (OAMPtr)
 	INC.b OAMPtr : INC.b OAMPtr
 	LDA.b Scrap0C : STA.b (OAMPtr)
 	INC.b OAMPtr : INC.b OAMPtr
+.exit
+	PLA : STA.b Scrap00
 RTS
 
 ; Y - dungeon index
