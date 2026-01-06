@@ -120,6 +120,13 @@ BEQ .vanilla_light
     PLB
 .vanilla_light ; $0ABAB5
 
+org $8ABA22
+JSL MoveLinkMapSprite
+
+org $8ABFF0
+JSL MoveMirrorPortalMapSprite
+; Could insert similar hooks at $8AB860 and $8AB8AC for flute spots
+
 ;(replacing -> LDA $8A : AND.b #$40)
 org $80d8c4  ; < ? - Bank00.asm:4068 ()
 jsl OWWorldCheck
@@ -494,6 +501,52 @@ GetOWMapTilemapOffsetToCopy:
     dw 0,0,0,0,0,0
     dw $0800+$01F0 ; bottom left
     dw $0400+$0210 ; bottom right
+}
+
+MoveLinkMapSprite:
+{
+    STA.l $7EC10A ; what we overwrote
+    SEP #$20
+    JSR MoveMapSprite
+    REP #$20
+    RTL
+}
+
+MoveMirrorPortalMapSprite:
+{
+    STA.l $7EC109 ; what we overwrote
+    JSR MoveMapSprite
+    RTL
+}
+
+MoveMapSprite:
+{
+    LDA.l OWFlags : AND.b #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .return
+    LDA.l $7EC10B : AND.b #$0E : LSR
+    STA.b Scrap00
+    LDA.l $7EC109 : AND.b #$0E : ASL : ASL
+    ADC.b Scrap00
+    STA.b Scrap00
+    LDX.b OverworldIndex
+    LDA.l OWTileWorldAssoc,X
+    LDX.b Scrap00
+    AND.b #$40
+    BEQ .light
+        LDA.l OWMapGridDarkPositionByAbsolutePosition,X
+        BRA .dark
+    .light
+        LDA.l OWMapGridLightPositionByAbsolutePosition,X
+    .dark
+    TAX
+    AND.b #$07 : ASL
+    STA.b Scrap00
+    LDA.l $7EC10B : AND.b #$01 : ORA.b Scrap00 : STA.l $7EC10B
+    TXA
+    AND.b #$38 : LSR : LSR
+    STA.b Scrap00
+    LDA.l $7EC109 : AND.b #$01 : ORA.b Scrap00 : STA.l $7EC109
+    .return
+    RTS
 }
 
 OWBonkDropPrepSprite:
@@ -1914,6 +1967,26 @@ db $60, $61, $62, $63, $64, $65, $66, $67
 db $68, $69, $6A, $6B, $6C, $6D, $6E, $6F
 db $70, $71, $72, $73, $74, $75, $76, $77
 db $78, $79, $7A, $7B, $7C, $7D, $7E, $7F
+
+org $AABD00 ;PC 153D00
+OWMapGridLightPositionByAbsolutePosition:
+db $00, $01, $02, $03, $04, $05, $06, $07
+db $08, $09, $0A, $0B, $0C, $0D, $0E, $0F
+db $10, $11, $12, $13, $14, $15, $16, $17
+db $18, $19, $1A, $1B, $1C, $1D, $1E, $1F
+db $20, $21, $22, $23, $24, $25, $26, $27
+db $28, $29, $2A, $2B, $2C, $2D, $2E, $2F
+db $30, $31, $32, $33, $34, $35, $36, $37
+db $38, $39, $3A, $3B, $3C, $3D, $3E, $3F
+OWMapGridDarkPositionByAbsolutePosition:
+db $00, $01, $02, $03, $04, $05, $06, $07
+db $08, $09, $0A, $0B, $0C, $0D, $0E, $0F
+db $10, $11, $12, $13, $14, $15, $16, $17
+db $18, $19, $1A, $1B, $1C, $1D, $1E, $1F
+db $20, $21, $22, $23, $24, $25, $26, $27
+db $28, $29, $2A, $2B, $2C, $2D, $2E, $2F
+db $30, $31, $32, $33, $34, $35, $36, $37
+db $38, $39, $3A, $3B, $3C, $3D, $3E, $3F
 
 ; temporary fix - murahdahla replaces one of the bonk tree prizes
 ;    so we copy the sprite table here and update the pointer

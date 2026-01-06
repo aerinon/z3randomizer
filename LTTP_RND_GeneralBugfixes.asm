@@ -74,6 +74,7 @@ function hexto555(h) = ((((h&$FF)/8)<<10)|(((h>>8&$FF)/8)<<5)|(((h>>16&$FF)/8)<<
 !FLAG_OW_CROSSED = $02
 !FLAG_OW_BONKDROP = $02
 !FLAG_OW_CUSTOM_MAP = $02
+!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION = $04
 
 incsrc hooks.asm
 incsrc spriteswap.asm
