@@ -40,7 +40,7 @@ dw $0000
 
 warnpc $8ABE2E
 org $8ABE2E
-; located posx/posy, dislocated posx/posy, prize pox/posy
+; located posx/posy, dislocated posx/posy, prize posx/posy
 ; located = proper location of icon (default: if you have map)
 ; dislocated = location of icon if proper location is hidden from player
 ; highest bit on first posx indicates which world it should show in
@@ -49,27 +49,27 @@ WorldMapIcon_pos:
 .hc
 dw $FF00, $FF00, $FF00, $FF00, $FF00, $FF00
 .ep
-dw $0F31, $0620, $FF00, $FF00, $0F31, $0620
+dw $0F30, $06E0, $FF00, $FF00, $0F30, $06E0
 .dp
-dw $0108, $0D70, $FF00, $FF00, $0108, $0D70
+dw $0170, $0E50, $FF00, $FF00, $0170, $0E50
 .at
 dw $FF00, $FF00, $FF00, $FF00, $FF00, $FF00
 .sp
-dw $8759, $0ED0, $FF00, $FF00, $8759, $0ED0
+dw $8790, $0FD0, $FF00, $FF00, $8790, $0FD0
 .pod
-dw $8F40, $0620, $FF00, $FF00, $8F40, $0620
+dw $8F30, $06E0, $FF00, $FF00, $8F30, $06E0
 .mm
-dw $8100, $0CA0, $FF00, $FF00, $8100, $0CA0
+dw $8160, $0D80, $FF00, $FF00, $8160, $0D80
 .sw
-dw $8082, $00B0, $FF00, $FF00, $8082, $00B0
+dw $80F0, $0160, $FF00, $FF00, $80F0, $0160
 .ip
-dw $8CA0, $0DA0, $FF00, $FF00, $8CA0, $0DA0
+dw $8CB0, $0E80, $FF00, $FF00, $8CB0, $0E80
 .toh
-dw $08D0, $0080, $FF00, $FF00, $08D0, $0080
+dw $0900, $0130, $FF00, $FF00, $0900, $0130
 .tt
-dw $81D0, $0780, $FF00, $FF00, $81D0, $0780
+dw $8240, $0840, $FF00, $FF00, $8240, $0840
 .tr
-dw $8F11, $0103, $FF00, $FF00, $8F11, $0103
+dw $8F30, $01B0, $FF00, $FF00, $8F30, $01B0
 .gt
 dw $FF00, $FF00, $FF00, $FF00, $FF00, $FF00
 
@@ -324,15 +324,25 @@ WorldMap_DrawTile:
 	SEP #$20
 	LDX.b Scrap0B : TXA : STA.b (OAMPtr+2)
 	INC.b OAMPtr+2
-	JSR WorldMap_CalculateOAMCoordinates
-	LDX.b Scrap0A : BEQ +
-		LDA.b Scrap0E : CLC : ADC.b #$04 : STA.b Scrap0E
-		LDA.b Scrap0F : CLC : ADC.b #$04 : STA.b Scrap0F
-	+
+	REP #$20
+	LDA.l $7EC10A : BIT.w #$4000 : SEP #$20 : BNE .raw_coords ; use raw OAM coordinates
+		JSR WorldMap_CalculateOAMCoordinates
+		BRA .apply_offsets
+	.raw_coords
+		STA.b Scrap0E
+		LDA.l $7EC108 : STA.b Scrap0F
+.apply_offsets
+	LDX.b Scrap0A : BNE .aligned ; prize number/overlay: no offset
 	LDX.b Scrap0B : BEQ +
-		LDA.b Scrap0E : SEC : SBC.b #$04 : STA.b Scrap0E
-		LDA.b Scrap0F : SEC : SBC.b #$04 : STA.b Scrap0F
-    +
+		; 16x16 sprite: -8 pixels
+		LDA.b Scrap0E : SEC : SBC.b #$08 : STA.b Scrap0E
+		LDA.b Scrap0F : SBC.b #$08 : STA.b Scrap0F
+		BRA .aligned
+	+
+	; 8x8 sprite: -4 pixels
+	LDA.b Scrap0E : SEC : SBC.b #$04 : STA.b Scrap0E
+	LDA.b Scrap0F : SBC.b #$04 : STA.b Scrap0F
+.aligned
 	REP #$20
 	PLA : STA.b Scrap00
 	LDA.b Scrap0E : STA.b (OAMPtr)
@@ -423,6 +433,78 @@ WorldMap_CheckPrizeCollected:
 RTS
 
 warnpc $8AC3B1
+
+org $8AC3B6
+; ---------------------------------------------------------------------------------------------------
+; Y coordinate calculation: Quadratic approximation
+; Formula: Y_oam = 0x16 + (Y * 118 >> 12) + ((Y>>4)^2 * 49 >> 8)
+; Accurate to within ±1.5 pixels across entire range
+; ---------------------------------------------------------------------------------------------------
+	REP #$20
+	LDA.l $7EC108 : ASL #4 ; world Y coordinate
+	PHA
+		; calculate linear term: (Y * 118) >> 12
+		SEP #$20
+		LDA.b #$76
+		JSR WorldMap_MultiplyAxB ; (Y>>4) * 118
+		REP #$20
+		STA.b Scrap00 ; linear term stored at high byte (Scrap01)
+
+		; calculate quadratic term: ((Y>>4)^2 * 49) >> 8
+		LDA.b 1,S
+		SEP #$20
+		XBA : TAX : XBA : TXA
+		JSR WorldMap_MultiplyAxB ; (Y>>4) ^ 2
+		LDA.b #$31
+		JSR WorldMap_MultiplyAxB ; multiply by 49
+		XBA ; quadratic term
+
+		; combine: 0x16 + linear_term + quadratic_term
+		CLC : ADC.b Scrap01 ; add linear term
+		ADC.b #$16 ; add fixed offset
+		STA.b Scrap0F
+		REP #$20
+	PLA ; world Y coordinate
+
+; ---------------------------------------------------------------------------------------------------
+; Calculate half_width for perspective: 91 + (Y_shifted * 28 / 256)
+; The world map appears wider at the bottom than at the top, simulating perspective
+; Top (Y=0): X range 0x26-0xDC (half-width: 91), Bottom (Y=FFF): X range 0x08-0xF6 (half-width: 119)
+; ---------------------------------------------------------------------------------------------------
+	SEP #$20
+	LDA.b #$1C ; width increase factor
+	JSR WorldMap_MultiplyAxB
+	XBA : CLC : ADC.b #$5B ; add fixed half-width
+	STA.b Scrap00
+
+; ---------------------------------------------------------------------------------------------------
+; Calculate X offset: X_offset = (X_from_center * half_width * 2) / 256
+; where X_from_center = (world_X >> 4) - 128
+; The center X is at 129 (0x81)
+; ---------------------------------------------------------------------------------------------------
+	REP #$20
+	LDA.l $7EC10A : LSR #4 ; world X coordinate
+	SEP #$20
+	SEC : SBC.b #$80 ; subtract 128 (center point)
+	PHP ; preserve carry
+		BPL + : EOR.b #$FF : INC : + ; absolute value
+		PHA
+			LDA.b Scrap00 : ASL : XBA ; half-width x 2
+		PLA
+		JSR WorldMap_MultiplyAxB
+		XBA
+	PLP : BCS +
+		STA.b Scrap00
+		LDA.b #$81 : SEC : SBC.b Scrap00 ; center X position - offset
+		BRA .store_and_exit
+	+ CLC : ADC.b #$81 ; center X position + offset
+
+.store_and_exit
+	STA.b Scrap0E
+	SEP #$30
+	JMP WorldMap_CalculateOAMCoordinates_exit_successfully
+
+warnpc $8AC433
 pullpc
 
 WorldMap_LoadChrHalfSlot:
