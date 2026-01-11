@@ -604,20 +604,21 @@ OWBonkDrops:
     
     .sprite_transform
     JSL OWBonkSpritePrep
+    BRA .mark_collected
 
+        - JMP .return
     .mark_collected ; S = Collected, FlagBitmask, X (row + 2)
-    PLA : BNE + ; S = FlagBitmask, X (row + 2)
-    TYX : JSL Sprite_IsOnscreen : BCC +
-        LDA.b IndoorsFlag : BEQ ++
+    PLA : BNE - ; S = FlagBitmask, X (row + 2)
+    TYX : JSL Sprite_IsOnscreen : BCC -
+        LDA.b IndoorsFlag : BEQ +
             LDA.l RoomDataWRAM[$0120].high : ORA.b 1,S : STA.l RoomDataWRAM[$0120].high
             LDA.w $0400 : ORA.b 1,S : STA.w $0400
             BRA .increment_collection
-        ++
+        +
         LDA.b OverworldIndex
-        BIT.b #$40 : BEQ + 
-                LDA.l ProgressIndicator : CMP.b #$02
-                LDA.b OverworldIndex : BCS ++ : AND.b #$BF
-            ++
+        BIT.b #$40 : BEQ +
+            LDA.l ProgressIndicator : CMP.b #$02
+            LDA.b OverworldIndex : BCS + : AND.b #$BF
         +
         TAX : LDA.l OverworldEventDataWRAM,X : ORA.b 1,S : STA.l OverworldEventDataWRAM,X
         
@@ -626,7 +627,7 @@ OWBonkDrops:
             LDA.l TotalItemCounter : INC : STA.l TotalItemCounter
             INC.w UpdateHUDFlag
         SEP #$20
-    + BRA .return
+        BRA .return
 
     ; spawn itemget item
     .spawn_item ; A = item id ; Y = bonk sprite slot ; S = Collected, FlagBitmask, X (row + 2)
