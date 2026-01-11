@@ -604,11 +604,9 @@ OWBonkDrops:
     
     .sprite_transform
     JSL OWBonkSpritePrep
-    BRA .mark_collected
 
-        - JMP .return
     .mark_collected ; S = Collected, FlagBitmask, X (row + 2)
-    PLA : BNE - ; S = FlagBitmask, X (row + 2)
+    PLA : BEQ + : - : JMP .return : + ; S = FlagBitmask, X (row + 2)
     TYX : JSL Sprite_IsOnscreen : BCC -
         LDA.b IndoorsFlag : BEQ +
             LDA.l RoomDataWRAM[$0120].high : ORA.b 1,S : STA.l RoomDataWRAM[$0120].high
