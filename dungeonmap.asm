@@ -17,10 +17,14 @@ DoDungeonMapBossIcon:
 	ASL
 	TAX
 
+	; get sprite pointer table
+	LDA.l $89C298 : STA.b Scrap00
+	LDA.w #$0089 : STA.b Scrap02
+	TXY
 	; get sprite pointer for room
-	LDA.l UWSpritesPointers,X
+	LDA.b [Scrap00], Y
 	STA.b Scrap00                ; pointer in $00
-	LDA.w #$0028 : STA.b Scrap02 ; set the bank to 28 for now
+	LDA.w #UWSpritesData>>16 : STA.b Scrap02 ; set the bank to 28 for now
 	LDY.w #$0001 ; to skip the "sort"
 
 	; get first byte to make sure it isn't an empty room
