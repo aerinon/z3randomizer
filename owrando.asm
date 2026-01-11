@@ -625,8 +625,8 @@ OWBonkDrops:
         .increment_collection
         REP #$20
             LDA.l TotalItemCounter : INC : STA.l TotalItemCounter
-            INC.w UpdateHUDFlag
         SEP #$20
+        LDA.b #$01 : STA.l UpdateHUDFlag
         BRA .return
 
     ; spawn itemget item
