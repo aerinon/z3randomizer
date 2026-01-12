@@ -120,6 +120,12 @@ BEQ .vanilla_light
     PLB
 .vanilla_light ; $0ABAB5
 
+org $8ABB32
+JSL LoadMapOppositeWorld
+
+org $8ABF78
+JSL WorldMap_SkipHandleSprites
+
 org $8ABA22
 JSL MoveLinkMapSprite
 
@@ -410,7 +416,7 @@ LoadMapDarkOrCustom:
             LDA.w #OWMapGridLight
         .draw_dw
         STA.b Scrap00
-        LDA.w #$00AA ; current program bank
+        LDA.w #OWMapGridLight>>16 ; current program bank
         STA.b Scrap02
         LDX.w #$139C
         LDY.w #$003F
@@ -501,6 +507,47 @@ GetOWMapTilemapOffsetToCopy:
     dw 0,0,0,0,0,0
     dw $0800+$01F0 ; bottom left
     dw $0400+$0210 ; bottom right
+}
+
+LoadMapSwapTiles:
+{
+    PHB : LDA.b #WorldMap_DarkWorldTilemap>>16 : PHA : PLB
+        LDA.l OWFlags : AND.b #!FLAG_OW_CUSTOM_MAP
+        JSL LoadMapDarkOrCustom
+    PLB
+    RTL
+}
+LoadMapOppositeWorld:
+{
+    LDA.l OWFlags : AND.b #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .vanilla
+    LDA.b ScrapBuffer72 : BEQ +
+        LDA.b Joy1B_All : AND.b #$30 : BNE .vanilla
+            STZ.b ScrapBuffer72
+            BRA .new_tiles
+    + LDA.b Joy1B_New : AND.b #$30 : BEQ .vanilla
+        LDA.b #$40 : STA.b ScrapBuffer72
+.new_tiles
+    EOR.b OverworldIndex : STA.b OverworldIndex
+        JSL OverworldMap_InitGfx+$10 ; load palette
+            DEC.w SubModuleInterface
+            LDA.b #$0F : STA.b INIDISPQ
+        JSL LoadMapSwapTiles
+    LDA.w OverworldIndexMirror : STA.b OverworldIndex
+    LDA.b #$24 : STA.w SFX3
+    PLA : PLA : PEA.w $BBAF ; skip everything upon return
+.vanilla
+    LDA.b Joy1B_New : AND.b #$70 ; what we wrote over
+    RTL
+}
+WorldMap_SkipHandleSprites:
+{
+    LDA.l OWFlags : AND.b #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .vanilla
+    LDA.b ScrapBuffer72 : BEQ .vanilla
+        PLA : PLA : PEA.w $C3AF ; exit without drawing sprites
+    RTL 
+.vanilla
+    LDA.b FrameCounter : AND.b #$10 ; what we wrote over
+    RTL
 }
 
 MoveLinkMapSprite:
