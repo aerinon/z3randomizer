@@ -2034,17 +2034,3 @@ db $20, $21, $22, $23, $24, $25, $26, $27
 db $28, $29, $2A, $2B, $2C, $2D, $2E, $2F
 db $30, $31, $32, $33, $34, $35, $36, $37
 db $38, $39, $3A, $3B, $3C, $3D, $3E, $3F
-
-; temporary fix - murahdahla replaces one of the bonk tree prizes
-;    so we copy the sprite table here and update the pointer
-;    longterm solution should be to spawn in murahdahla separately
-org $89AE2A
-Overworld_Sprites_Screen1A_2:
-db $08, $0F, $41 ; yx:{ 0x080, 0x0F0 }
-db $0E, $0C, $41 ; yx:{ 0x0E0, 0x0C0 }
-db $11, $0D, $E3 ; yx:{ 0x110, 0x0D0 }
-db $18, $0A, $D8 ; yx:{ 0x180, 0x0A0 }
-db $18, $0F, $45 ; yx:{ 0x180, 0x0F0 }
-db $FF ; END
-org $89CA55
-dw Overworld_Sprites_Screen1A_2&$FFFF
