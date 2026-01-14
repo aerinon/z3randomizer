@@ -425,14 +425,14 @@ LoadMapDarkOrCustom:
             JSR GetOWMapTilemapOffsetToCopy
             .copy_cell ; more efficient to have X on the right side
             TAY
-            LDA.w $C739+$00,Y : STA.b $00,X
-            LDA.w $C739+$02,Y : STA.b $02,X
-            LDA.w $C739+$20,Y : STA.b $20,X
-            LDA.w $C739+$22,Y : STA.b $22,X
-            LDA.w $C739+$40,Y : STA.b $40,X
-            LDA.w $C739+$42,Y : STA.b $42,X
-            LDA.w $C739+$60,Y : STA.b $60,X
-            LDA.w $C739+$62,Y : STA.b $62,X
+            LDA.w WorldMap_LightWorldTilemap+$00,Y : STA.b $00,X
+            LDA.w WorldMap_LightWorldTilemap+$02,Y : STA.b $02,X
+            LDA.w WorldMap_LightWorldTilemap+$20,Y : STA.b $20,X
+            LDA.w WorldMap_LightWorldTilemap+$22,Y : STA.b $22,X
+            LDA.w WorldMap_LightWorldTilemap+$40,Y : STA.b $40,X
+            LDA.w WorldMap_LightWorldTilemap+$42,Y : STA.b $42,X
+            LDA.w WorldMap_LightWorldTilemap+$60,Y : STA.b $60,X
+            LDA.w WorldMap_LightWorldTilemap+$62,Y : STA.b $62,X
             PLY
             DEX : DEX : DEX : DEX ; move one screen left
             TYA : AND.w #$0007 : BNE .same_row

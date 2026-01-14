@@ -290,6 +290,7 @@ WorldMap_RedXChars                                         = $8ABF70
 WorldMap_CalculateOAMCoordinates                           = $8AC3B1
 WorldMap_HandleSpriteBlink                                 = $8AC52E
 WorldMapIcon_AdjustCoordinate                              = $8AC59B
+WorldMap_LightWorldTilemap                                 = $8AC739
 WorldMap_DarkWorldTilemap                                  = $8AD739
 DungeonMapBossRooms                                        = $8AE817
 DamageSubclassValue                                        = $8DB8F1
