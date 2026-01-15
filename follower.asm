@@ -83,6 +83,8 @@ org $9EE4F7
 JSL Kiki_FixTeleportOnExit
 org $89A1B2
 JSL Kiki_DontScareTheMonke : NOP #3
+org $89A69D
+JSL Kiki_ActivateEntranceOpening
 
 org $868D63
 JSL SpritePrep_Locksmith : NOP #2 : db $90 ; BCC
@@ -855,6 +857,17 @@ Kiki_DontScareTheMonke:
 .no_spook
     LDA.b #$00
 .return
+    RTL
+
+Kiki_ActivateEntranceOpening:
+    PHA
+        LDA.b LinkDirection : CMP.b #$02 : BNE .continue
+        LDA.b LinkStrafe : BEQ .exit
+.continue
+    PLA
+    JML Kiki_RevertToSprite ; what we wrote over
+.exit
+    PLA
     RTL
 
 SpritePrep_Locksmith:

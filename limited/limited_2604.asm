@@ -2,6 +2,10 @@
 !PedestalCollectedFlags = LimitedRunStore+1
 !FortuneRead = LimitedRunStore+3
 !ScreenSequenceIndex = LimitedRunStore+4 ; 16-bit, screen temporary
+!BananaFlags = LimitedRunStore+4 ; 16-bit, screen temporary
+
+!BananaXPos = LimitedRunData
+!BananaYPos = LimitedRunData+10
 
 ; --------------------------------------------------------------------------------
 
@@ -31,6 +35,13 @@ Limited_OverworldPedestalTileChanges:
             INC : STA.w $2312
             INC : STA.w $2390
             INC : STA.w $2392
+        ++ RTL
+    + CMP.w #$005E : BNE +
+        LDA.l OverworldEventDataWRAM+$5E : AND.w #$0040 : BEQ ++
+		LDA.w #$0912 : STA.w $2B74
+            INC : STA.w $2B76
+            INC : STA.w $2BF4
+            INC : STA.w $2BF6
         ++ RTL
     + CMP.w #$007A : BNE +
         LDA.l OverworldEventDataWRAM+$7A : AND.w #$0020 : BEQ ++
@@ -198,6 +209,9 @@ Limited_HandlePedestalEntrances:
     + CMP.w #$005B : BNE +
         LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$06E8 : BNE .exit
         LDA.w #$0008 : BRA .load_pedestal
+    + CMP.w #$005E : BNE +
+        LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0FA8 : BNE .exit
+        LDA.w #$0002 : BRA .load_pedestal
     + CMP.w #$007A : BNE .exit
         LDA.w #$0007 : BRA .load_pedestal
 .load_pedestal
@@ -304,3 +318,158 @@ FortuneTeller_TakeMoney_Additional:
     LDA.b #$01 : STA.l !FortuneRead
     RTL
 
+; Kiki Banana Fetch Game
+pushpc
+org $9EE516
+JSL Kiki_VerifyPurchaseCheckBanana
+pullpc
+
+SpritePrep_KikiBanana:
+    LDA.l OverworldEventDataWRAM+$5E : AND.b #$60 : CMP.b #$60 : BEQ .despawn
+    ; despawn if one exists already
+    LDY.b #$0F
+    STX.b Scrap00
+    - CPY.b Scrap00 : BEQ +
+        LDA.w SpriteTypeTable, Y : CMP.b #$03 : BNE +
+            .despawn
+            STZ.w SpriteAITable, X
+            RTL
+    + DEY : BPL -
+
+    LDA.b #$00 : STA.l !BananaFlags : STA.l !BananaFlags+1
+    STA.w SpriteAux, X : STA.w SpriteSpawnStep, X : STA.w SpriteTimer, X
+
+    PHX
+        REP #$20
+        LDA.w #$1160 ; banana gfx
+        LDX.w ItemStackPtr : STA.l ItemGFXStack,X
+        LDA.w #$B840>>1 : STA.l ItemTargetStack,X
+        TXA : INC #2 : STA.w ItemStackPtr
+        SEP #$20
+    PLX
+    RTL
+
+Sprite_03_KikiBanana:
+    STZ.w SpriteAux, X : STZ.w SpriteDirectionTable, X
+    LDY.b #$00
+.next_instance
+    PHY
+        REP #$20
+        INY : LDA.l !BananaFlags
+        - ROR : DEY : BNE -
+        SEP #$20
+    PLY
+    BCS .collected
+    JSL KikiBanana_SetCoords
+    JSL Sprite_Get16BitCoords_long
+    PHY
+        JSL Sprite_PrepOAMCoordLong
+    PLY
+    LDA.w SpriteDirectionTable, X : BNE +
+        TYA : INC : STA.w SpriteDirectionTable, X
+    + BCS .skip_instance ; offscreen
+    REP #$20
+        ; check if link is close to banana
+        LDA.w SpriteTimer, X : BNE ++
+            LDA.w SpriteCoordCacheX : SEC : SBC.w LinkPosX : BPL +
+                EOR.w #$FFFF : INC
+            + CMP.w #$0018 : BCS ++
+                LDA.w SpriteCoordCacheY : SEC : SBC.w LinkPosY : BPL +
+                    EOR.w #$FFFF : INC
+                + CMP.w #$0018 : BCS ++
+                    SEP #$20
+                    TYA : INC : ASL #4
+                    ORA.w SpriteAux, X : STA.w SpriteAux, X ; set sprite coords to this index later
+        ++
+    SEP #$20
+    PHY
+        JSL SpriteDraw_KikiBanana
+    PLY
+.skip_instance
+    INC.w SpriteAux, X
+.collected
+    INY : CPY.b #(!BananaYPos-!BananaXPos) : BCC .next_instance
+    LDA.w SpriteTimer, X : DEC : BNE +
+        LDA.b #$FF : STA.w HUDTimer
+    +
+    LDA.w SpriteAux, X : LSR #4 : BEQ .exit
+    TAY : DEY
+    JSL KikiBanana_SetCoords
+    JSL Sprite_CheckDamageToPlayerSameLayerLong : BCC .exit
+        JML KikiBanana_Collect
+.exit
+    RTL
+
+; X = sprite index
+; Y = banana index
+KikiBanana_Collect:
+    INC.w SpriteSpawnStep, X
+    LDA.b #$0A : STA.w SFX3
+    TYA : INC : CMP.w SpriteDirectionTable, X : BNE +
+        INC.w SpriteSpawnStep, X
+        LDA.b #$2D : STA.w SFX3
+    +
+    REP #$20
+        SEC : INY : LDA.w #$0000
+        - ROL : DEY : BNE -
+        ORA.l !BananaFlags : STA.l !BananaFlags
+    SEP #$20
+    LDA.b #$10 : STA.w SpriteTimer, X
+    LDA.b #$FF : STA.w HUDTimerDelay
+    LDA.w SpriteSpawnStep, X : STA.w HUDTimer
+    CMP.b #((!BananaYPos-!BananaXPos)<<1) : BNE +
+        ; reveal entrance
+        LDA.b #$1A : STA.w SFX3
+        LDA.l OverworldEventDataWRAM+$5E : ORA.b #$40
+        STA.l OverworldEventDataWRAM+$5E
+        REP #$30
+            LDA.w #$0912 : LDX.w #$0B74 : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0914 : LDX.w #$0BF4 : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0913 : LDX.w #$0B76 : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0915 : LDX.w #$0BF6 : JSL Overworld_DrawPersistentMap16
+        SEP #$30
+        LDA.b #$01 : STA.b NMISTRIPES
+    +
+    RTL
+
+; X = sprite index
+; Y = banana index
+SpriteDraw_KikiBanana:
+    PHY
+        LDA.b #$08 : JSL OAM_AllocateFromRegionA
+        JSL Sprite_PrepAndDrawSingleLargeLong  ; draws gfx at current coord
+    PLY
+    TYA : INC : CMP.w SpriteDirectionTable, X : BNE .exit
+        LDA.w SpritePosYLow, X : CLC : ADC.b #$10 : STA.w SpritePosYLow, X
+        LDA.w SpritePosYHigh, X : ADC.b #$00 : STA.w SpritePosYHigh, X
+        JSL Sprite_SpawnSparkleGarnish
+.exit
+    RTL
+
+KikiBanana_SetCoords:
+    PHX : TYX : PLY
+        REP #$20
+            LDA.l !BananaXPos, X : AND.w #$007F
+            ASL #4 : CLC : ADC.w $0604
+        SEP #$20
+        STA.w SpritePosXLow, Y : XBA : STA.w SpritePosXHigh, Y
+        REP #$20
+            LDA.l !BananaYPos, X : AND.w #$007F
+            ASL #4 : CLC : ADC.w $0600
+        SEP #$20
+        STA.w SpritePosYLow, Y : XBA : STA.w SpritePosYHigh, Y
+    PHX : TYX : PLY
+    RTL
+
+Kiki_VerifyPurchaseCheckBanana:
+    LDY.b #$0F
+    - LDA.w SpriteTypeTable, Y : CMP.b #$03 : BNE +
+        LDA.w SpriteSpawnStep, Y : CMP.b #(!BananaYPos-!BananaXPos) : BCS .checkrupees
+        BRA .fail
+    + DEY : BPL -
+.fail
+    CLC : PLA : LDA.b #$1C : PHA ; overwrite return address to fail rupee check
+    RTL
+.checkrupees
+    LDA.b #$64 : LDY.b #$00 ; what we wrote over
+    RTL

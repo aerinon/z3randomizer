@@ -87,6 +87,7 @@ Sprite_PrepOAMCoordLong                                    = $86E41C
 Sprite_CheckTileCollisionLong                              = $86E49C
 Sprite_ApplySpeedTowardsPlayerLong                         = $86EA18
 Sprite_DirectionToFacePlayerLong                           = $86EAA6
+Sprite_CheckDamageToPlayerLong                             = $86F127
 Sprite_CheckDamageToPlayerSameLayerLong                    = $86F12F
 Sprite_AttemptDamageToPlayerPlusRecoilLong                 = $86F425
 OAM_AllocateDeferToPlayerLong                              = $86F86A
@@ -183,6 +184,7 @@ Sprite_SpawnDynamically_arbitrary                          = $9DF65F
 DiggingGameGuy_AttemptPrizeSpawn                           = $9DFD4B
 CrystalCutscene_Initialize_skip_palette                    = $9ECD39
 Sprite_GetEmptyBottleIndex                                 = $9EDE28
+Kiki_RevertToSprite                                        = $9EE665
 Sprite_PlayerCantPassThrough                               = $9EF4E7
 Sprite_DrawRippleIfInWater                                 = $9EFF81
 

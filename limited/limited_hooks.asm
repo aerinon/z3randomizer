@@ -87,10 +87,16 @@ ShowAwaitingMessage:
     RTL
 
 SpritePrep_CustomSprite:
+    if !FEATURE_LIMITED_RUN == 2604
+        JML SpritePrep_KikiBanana
+    endif
 .exit
     RTL
 
 Sprite_03_CustomSprite:
+    if !FEATURE_LIMITED_RUN == 2604
+        JML Sprite_03_KikiBanana
+    endif
 .exit
     RTL
 

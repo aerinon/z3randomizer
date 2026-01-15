@@ -284,6 +284,9 @@ RoomIndexMirror = $7E048E         ; Mirrors RoomIndex
 RespawnFlag = $7E04AA             ; If set, entrance loading is treated as a respawn. Word length.
 Map16ChangeIndex = $7E04AC        ; Word length.
                                   ;
+HUDTimer = $7E04B4                ; General purpose timer for HUD
+HUDTimerDelay = $7E04B5           ; Countdown until next HUD timer decrement
+                                  ;
 OWEntranceCutscene = $7E04C6      ;
                                   ;
 HammerPegCounter = $7E04C8        ; Counts pegs hammered in overworld
@@ -889,6 +892,8 @@ endmacro
 %assertRAM(RoomIndexMirror, $7E048E)
 %assertRAM(RespawnFlag, $7E04AA)
 %assertRAM(Map16ChangeIndex, $7E04AC)
+%assertRAM(HUDTimer, $7E04B4)
+%assertRAM(HUDTimerDelay, $7E04B5)
 %assertRAM(OWEntranceCutscene, $7E04C6)
 %assertRAM(HammerPegCounter, $7E04C8)
 %assertRAM(HeartBeepTimer, $7E04CA)

@@ -98,7 +98,7 @@ OverworldMapChangePointers2:
 	dw .map5B     ; 5B
 	dw $0000      ; 5C
 	dw $0000      ; 5D
-	dw $0000      ; 5E
+	dw .map5E     ; 5E
 	dw $0000      ; 5F
 	dw $0000      ; 60
 	dw $0000      ; 61
@@ -1036,6 +1036,13 @@ OverworldMapChangePointers2:
 ++	STA.l $7E3BBE
 
 	RTS
+
+;---------------------------------------------------------------------------------------------------
+
+.map5E
+	dw !OWW_CustomCommand, Overworld_OtherTileChanges
+
+	dw !OWW_END
 
 ;---------------------------------------------------------------------------------------------------
 
