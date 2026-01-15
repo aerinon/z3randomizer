@@ -118,6 +118,62 @@ Limited_OverworldPedestalTileChanges:
             LDA.w #$00F8 : STA.w $2992
         ++ RTL
 
+Limited_PedestalBeeSecrets_noreveal:
+    CLC
+    RTL
+Limited_PedestalBeeSecrets:
+    LDA.b IndoorsFlag : BNE .noreveal
+    LDA.b OverworldIndex : CMP.b #$15 : BNE +
+        LDA.b #$04 : BRA .set_secret
+    + CMP.b #$11 : BNE +
+        LDA.b #$06 : BRA .set_secret
+    + CMP.b #$43 : BNE +
+        LDA.b #$08 : BRA .set_secret
+    + CMP.b #$12 : BNE +
+        LDA.b #$0A : BRA .set_secret
+    + CMP.b #$7A : BNE +
+        LDA.b #$0C : BRA .set_secret
+    + CMP.b #$5B : BNE +
+        LDA.b #$0E : BRA .set_secret
+    + CMP.b #$5E : BNE +
+        LDA.b #$02 : BRA .set_secret
+    + CMP.b #$00 : BNE +
+        LDA.b #$10 : BRA .set_secret
+    +
+    BRA .noreveal
+.set_secret
+    STA.b Scrap02
+    PHX
+        JSL GetRandomInt : AND.b #$03 : PHA
+        JSL GetRandomInt : AND.b #$03 : PHA
+        REP #$20
+        LDX.b Scrap02
+        LDA.l .secret_xpos,X
+        STA.b Scrap00
+        PLX
+        LDA.l Bee_BounceBoundaries,X : AND.w #$00FF
+        CLC : ADC.b Scrap00
+        STA.b Scrap04
+        LDX.b Scrap02
+        LDA.l .secret_ypos,X
+        STA.b Scrap02
+        PLX
+        LDA.l Bee_BounceBoundaries,X : AND.w #$00FF
+        CLC : ADC.b Scrap02
+        STA.b Scrap06
+        SEP #$20
+    PLX 
+    SEC 
+    RTL
+
+.secret_xpos
+dw $0000, $0FA8, $0B40, $02F8, $0688, $04A0, $0460, $06E8 ; pedestals
+dw $0280, $0000, $0000, $0000
+
+.secret_ypos
+dw $0000, $0770, $0418, $0520, $0068, $05F0, $0F10, $07C8 ; pedestals
+dw $0060, $0000, $0000, $0000
+
 pushpc
 org $82AE8E
 JSL MasterSword_ConditionalLoadOverlay

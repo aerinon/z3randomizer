@@ -308,4 +308,5 @@ SwordPaletteOffsets                                        = $9BEBB4
 ShieldPaletteOffsets                                       = $9BEBC1
 LinkMailPalettesOffsets                                    = $9BEC06
 Sprite_ReducedTileInteractionTable                         = $9DF6CF
+Bee_BounceBoundaries                                       = $9EDD3B
 RoomData_ObjectDataPointers                                = $9F8000

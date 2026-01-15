@@ -47,6 +47,9 @@ if !FEATURE_LIMITED_RUN
 
     PlayerBee_FindSecrets:
         TXA : ASL : ASL : AND #$0F : TAY ; what we wrote over
+        if !FEATURE_LIMITED_RUN == 2604
+            JML Limited_PedestalBeeSecrets
+        endif
     .vanilla
         CLC
         RTL
