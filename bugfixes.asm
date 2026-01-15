@@ -245,6 +245,9 @@ pushpc
 pullpc
 ;--------------------------------------------------------------------------------
 SetOverworldTransitionFlags:
+	if !FEATURE_LIMITED_RUN == 2604
+		JSL Limited_ResetOnOWTransition
+	endif
 	LDA.b #$01
 	STA.w OWTransitionFlag
 	STA.w RaceGameFlag

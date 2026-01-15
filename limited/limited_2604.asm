@@ -1,5 +1,6 @@
 !LoadedPedestalNumber = LimitedRunStore
 !PedestalCollectedFlags = LimitedRunStore+1
+!ScreenSequenceIndex = LimitedRunStore+4 ; 16-bit, screen temporary
 
 ; --------------------------------------------------------------------------------
 
@@ -129,4 +130,38 @@ MasterSword_ConditionalLoadOverlay:
 .vanilla
     LDA.l OverworldEventDataWRAM,X ; what we wrote over
     RTL
+
+Limited_ResetOnOWTransition:
+    LDA.b #$00 : STA.l !LoadedPedestalNumber
+.exit
+    RTL
+
+Limited_OverworldTransitionPedestal:
+    TXY : LDA.l !ScreenSequenceIndex : TAX
+    TYA : CMP.l .lookupid, X : BNE .reset
+    LDA.w TransitionDirection : CMP.l .direction, X : BNE .reset
+        LDA.l .override, X : STA.w RandoOverworldTargetEdge
+        CPX.w #$000A : BNE +
+            SEP #$20
+            LDA.b #$06 : STA.l !LoadedPedestalNumber
+            LDA.b #$00 : STA.l !ScreenSequenceIndex
+            REP #$20
+            LDA.w #$1B00 : STA.w SFX2
+            RTL
+        +
+        LDA.w #$2D00 : STA.w SFX2
+        INX : INX : TXA
+        BRA .increment
+.reset
+    LDA.w #$0000
+.increment
+    STA.l !ScreenSequenceIndex
+    RTL
+
+.lookupid
+dw $0090, $0050, $00A0, $0070, $0040, $0060
+.direction
+dw $0001, $0002, $0001, $0003, $0002, $0000
+.override
+dw $0006, $0007, $0006, $0005, $0006, $B080
 

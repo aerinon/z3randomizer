@@ -26,6 +26,7 @@ org $82aa07
 JSL OWMarkVisited : NOP
 
 org $84e8ae
+Overworld_DoSpecialOverworldTrigger:
 JSL OWDetectSpecialTransition
 RTL : NOP
 
@@ -1060,6 +1061,7 @@ OWSearchTransition:
         cmp.b LinkPosX : !BGE .exitloop
         lda.l OWNorthEdges+2,x : cmp.b LinkPosX : !BLT .exitloop
             ;MATCH
+            phx
             lda.l OWNorthEdges+14,x : tay ;y = record id of dest
             lda.l OWNorthEdges+12,x ;a = current terrain
             ldx.w #OWSouthEdges ;x = address of table
@@ -1069,6 +1071,7 @@ OWSearchTransition:
         cmp.b LinkPosX : !BGE .exitloop
         lda.l OWSouthEdges+2,x : cmp.b LinkPosX : !BLT .exitloop
             ;MATCH
+            phx
             lda.l OWSouthEdges+14,x : tay ;y = record id of dest
             lda.l OWSouthEdges+12,x ;a = current terrain
             ldx.w #OWNorthEdges ;x = address of table
@@ -1078,6 +1081,7 @@ OWSearchTransition:
         cmp.b LinkPosY : !BGE .exitloop
         lda.l OWWestEdges+2,x : cmp.b LinkPosY : !BLT .exitloop
             ;MATCH
+            phx
             lda.l OWWestEdges+14,x : tay ;y = record id of dest
             lda.l OWWestEdges+12,x ;a = current terrain
             ldx.w #OWEastEdges ;x = address of table
@@ -1086,14 +1090,22 @@ OWSearchTransition:
         cmp.b LinkPosY : !BGE .exitloop
         lda.l OWEastEdges+2,x : cmp.b LinkPosY : !BLT .exitloop
             ;MATCH
+            phx
             lda.l OWEastEdges+14,x : tay ;y = record id of dest
             lda.l OWEastEdges+12,x ;a = current terrain
             ldx.w #OWWestEdges ;x = address of table
 
     .matchfound
-    stx.w RandoOverworldEdgeAddr : sty.w RandoOverworldTargetEdge : sta.w RandoOverworldTerrain : sec : rts
-    plx : pla : pea.w $0001 : phx
+    stx.w RandoOverworldEdgeAddr : sty.w RandoOverworldTargetEdge : sta.w RandoOverworldTerrain
+    plx : jsr OWInterruptTransition
     sec : rts
+}
+OWInterruptTransition:
+{
+    if !FEATURE_LIMITED_RUN == 2604
+        JSL Limited_OverworldTransitionPedestal
+    endif
+    RTS
 }
 OWNewDestination:
 {
