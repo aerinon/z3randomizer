@@ -9,8 +9,8 @@ org $81E6B0
 org $829C25
 	JSL SetTheSceneFix
 
-org $89C2BB
-	JSL ClearSpriteData
+org $89C2B7
+JSL Underworld_LoadSpritesOverride : BEQ $17 : NOP #2
 
 org $89C327
 	JSL LoadSpriteData
@@ -334,10 +334,18 @@ IncrementCountsForSubstitute:
 	SEP #$30 : PLX
 RTS
 
-ClearSpriteData:
-	STZ.b Scrap03 ; what we overrode  # we no longer need STZ $02 see underworld_sprite_hooks
-	.shared:
+Underworld_LoadSpritesOverride:
+	JSL ClearSpriteData
+	if !FEATURE_LIMITED_RUN == 2604
+		JSL Limited_UnderworldPrepWallmasterKickOut : BNE .vanilla
+		RTL
+	endif
+.vanilla
+	LDA.b #$01
+	STA.b $04 : STZ.b $03 ; what we wrote over
+	RTL
 
+ClearSpriteData:
 	PHX
 		LDX.b #$0F
 		.loop

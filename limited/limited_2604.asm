@@ -1,5 +1,6 @@
 !LoadedPedestalNumber = LimitedRunStore
 !PedestalCollectedFlags = LimitedRunStore+1
+!KickedOutMessage = LimitedRunStore+2
 !FortuneRead = LimitedRunStore+3
 !ScreenSequenceIndex = LimitedRunStore+4 ; 16-bit, screen temporary
 !BananaFlags = LimitedRunStore+4 ; 16-bit, screen temporary
@@ -372,6 +373,82 @@ pullpc
 FortuneTeller_TakeMoney_Additional:
     STA.l HeartsFiller ; what we wrote over
     LDA.b #$01 : STA.l !FortuneRead
+    RTL
+
+; Lost Woods Fake Master Sword Gimmick
+pushpc
+org $86E091
+JSL ThrownSprite_FakeMasterSwordDeath : NOP
+pullpc
+
+Limited_InitializeWallmasterTileset:
+    LDA.b LinkFallPose : BEQ .exit
+    LDA.b IndoorsFlag : BEQ .exit
+    LDA.w OverworldIndexMirror : BNE .exit ; came in from lost woods
+    LDA.w OWTransitionFlag : BEQ .exit
+        LDA.b #$23 : STA.l LastSpriteSet+2 : STA.b Scrap07 ; wallmaster gfx
+.exit
+    RTL
+
+Limited_UnderworldPrepWallmasterKickOut:
+    LDA.b LinkFallPose : BEQ .vanilla
+    LDA.b IndoorsFlag : BEQ .vanilla
+    LDA.w OverworldIndexMirror : BNE .vanilla ; came in from lost woods
+    LDA.w OWTransitionFlag : BEQ .vanilla
+        LDA.b #$90 : LDY.b #$09 : JSL Sprite_SpawnDynamically
+        LDA.b LinkPosX : STA.w SpritePosXLow,Y
+        LDA.b LinkPosX+1 : STA.w SpritePosXHigh,Y
+        LDA.b LinkTargetPosY : STA.w SpritePosYLow,Y
+        LDA.b LinkTargetPosY+1 : STA.w SpritePosYHigh,Y
+        LDA.b #$80 : STA.w SpriteZCoord,Y
+        LDA.b #$01 : STA.w SpriteAuxTable, Y
+            STA.w CutsceneFlag
+            STA.l !KickedOutMessage
+        LDA.b #$20 : STA.w SFX2
+        LDA.b #$00
+        RTL
+.vanilla
+    LDA.b #$01
+    RTL
+
+Limited_LoadOverworldFromUnderworld:
+    LDA.l !KickedOutMessage : BEQ .exit
+    PLA : PLA : PLA : PLA : PLA : PLA
+    LDA.b #$08 : STA.b GameMode
+    STZ.b SubSubModule
+    REP #$20
+    LDA.w #$0100 : STA.b RoomIndex
+    LDA.w #$0208 : STA.l EN_POSY
+    LDA.w #$0320 : STA.l EN_POSX
+    SEP #$20
+    JML $82E337 ; some RTS in bank 02
+.exit
+    RTL
+
+Limited_ShowAwaitingMessage:
+    LDA.l !KickedOutMessage : BEQ .exit
+    LDA.b #$98 : LDY.b #$01 : JSL Sprite_ShowMessageUnconditional
+    LDA.b #$00 : STA.l !KickedOutMessage
+.exit
+    RTL
+
+Limited_ModifyFakeSwordOverPit:
+    LDA.w OWTransitionFlag : BEQ .exit
+    CPY.b #$20 : BNE .exit ; over pit
+    LDA.w SpriteTypeTable,X : CMP.b #$E8 : BNE .exit
+        LDA.w SpriteVelocityY,X : JSL DivideByTwoPreserveSign : STA.w SpriteVelocityY,X
+        LDA.w SpriteVelocityX,X : JSL DivideByTwoPreserveSign : STA.w SpriteVelocityX,X
+        LDA.w SpriteVelocityZ,X : SEC : SBC.b #$02 : STA.w SpriteVelocityZ,X
+.exit
+    RTL
+
+ThrownSprite_FakeMasterSwordDeath:
+    LDA.b #$06 : STA.w SpriteAITable,X ; what we wrote over
+    LDA.w CurrentSpriteTile : CMP.b #$20 : BNE .exit ; over pit
+    LDA.l OWTransitionFlag : BEQ .exit
+        STZ.w OWTransitionFlag
+        LDA.b #$09 : STA.w SFX3
+.exit
     RTL
 
 ; Kiki Banana Fetch Game

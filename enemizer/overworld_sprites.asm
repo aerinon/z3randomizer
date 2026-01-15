@@ -10,7 +10,7 @@ RTL
 ; return A = $03 for post-aga enemies, $02 for pre-aga enemies, else rain state enemies
 Overworld_LoadSprites_Decision:
     PHY : SEP #$10
-    JSL ClearSpriteData_shared
+    JSL ClearSpriteData
     REP #$10 : PLY
     LDA.l ProgressIndicator ; what we wrote over
 RTL

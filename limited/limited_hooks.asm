@@ -72,12 +72,18 @@ if !FEATURE_LIMITED_RUN
         JML Sprite_ResetAll ; what we wrote over
 
     InitializeTilesets_Override:
+        if !FEATURE_LIMITED_RUN == 2604
+            JSL Limited_InitializeWallmasterTileset
+        endif
     .exit
         LDY.b Scrap09 : LDA.b #$7E ; what we wrote over
         RTL
 
     Sprite_ModifyBehaviorOverTile:
         TAY ; part of what we wrote over
+        if !FEATURE_LIMITED_RUN == 2604
+            JSL Limited_ModifyFakeSwordOverPit
+        endif
     .exit
         LDA.w $0CAA,X ; part of what we wrote over
         RTL
@@ -86,6 +92,9 @@ endif
 
 ; this might be better implemented as a general message framework elsewhere
 ShowAwaitingMessage:
+    if !FEATURE_LIMITED_RUN == 2604
+        JML Limited_ShowAwaitingMessage
+    endif
 .exit
     RTL
 

@@ -36,6 +36,9 @@ DungeonHoleWarpTransition:
 	BRA StatTransitionCounter
 DungeonHoleEntranceTransition:
 	JSL EnableForceBlank
+	if !FEATURE_LIMITED_RUN == 2604
+		JSL Limited_LoadOverworldFromUnderworld
+	endif
 	
 	LDA.l SilverArrowsAutoEquip : AND.b #$02 : BEQ +
 	LDA.w EntranceIndex : CMP.b #$7B : BNE + ; skip unless falling to ganon's room

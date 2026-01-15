@@ -200,6 +200,7 @@ Underworld_SetBossOrSancMusicUponEntry                     = $828AD9
 ResetThenCacheRoomEntryProperties                          = $828C73
 RecoverPositionAfterDrowning                               = $829485
 OverworldHandleTransitions_change_palettes                 = $82A9F3
+LoadOverworldFromUnderworld                                = $82E207
 Palette_RestoreFixedColor                                  = $82FF58
 Sprite_EA_HeartContainer_main                              = $85EF47
 MagicShopAssistant_SpawnPowder                             = $85F539

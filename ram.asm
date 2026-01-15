@@ -76,11 +76,14 @@ CapeTimer = $7E004C               ; Countdown for cape sapping magic Countdown f
 LinkJumping = $7E004D             ; $00 = None | $01 = Bonk/damage/water | $02 = Ledge
                                   ;
 LinkStrafe = $7E0050              ; ???
+LinkTargetPosY = $7E0051          ; Target Y coordinate Link should fall to
+LinkTargetPosX = $7E0053          ; Target X coordinate Link
                                   ;
 CapeOn = $7E0055                  ; Link invisible and untouchable when set.
 BunnyFlagDP = $7E0056             ; $00 = Link | $01 = Bunny
                                   ;
 PitTileActField = $7E0059         ; Tile action bitfield used by pits
+LinkFallPose = $7E005A            ; Pose when falling
 LinkSlipping = $7E005B            ; $00 = None | $01 = Near pit
                                   ; $02 = Falling | $03 = Falling "more"
 FallTimer = $7E005C               ; Timer for falling animation
@@ -399,6 +402,7 @@ AncillaGet = $7E0C5E              ; Used by various ancilla in various ways. $0A
 AncillaDirection = $7E0C72        ; Used by various ancilla to track its direction. $0A bytes
 AncillaLayer = $7E0C7C            ;
                                   ;
+SpriteDeflection = $7E0CAA        ; Various flags relating to death and deflection. $10 bytes.
 SpriteForceDrop = $7E0CBA         ; Forces drops on sprite death. $10 bytes.
                                   ;
 SpriteBump = $7E0CD2              ; See symbols_wram.asm. $10 bytes.
@@ -450,6 +454,8 @@ SpriteVelocityZ = $7E0F80         ;
 SpriteSubPixelZ = $7E0F90         ;
                                   ;
 CurrentSpriteSlot = $7E0FA0       ; Holds the current sprite/ancilla's index
+                                  ;
+CurrentSpriteTile = $7E0FA5       ; Holds the current sprite/ancilla's tile type
                                   ;
 FreezeSprites = $7E0FC1           ; "Seems to freeze sprites"
 LinkPosXCache = $7E0FC2           ; Cache of Link's coordinates
@@ -567,7 +573,7 @@ PegColor = $7EC172                ;
 GameOverSongCache = $7EC227       ;
                                   ;
 LastBGSet = $7EC2F8               ; Lists loaded sheets to check for decompression. 4 bytes.
-                                  ;
+LastSpriteSet = $7EC2FC           ; Lists loaded sprite sheets to check for decompression. 4 bytes.
 PaletteBufferAux = $7EC300        ; Secondary and main palette buffer. See symbols_wram.asm
 PaletteBuffer = $7EC500           ; in the disassembly.
 HUDTileMapBuffer = $7EC700        ; HUD tile map buffer. $100 bytes (?)
@@ -776,9 +782,12 @@ endmacro
 %assertRAM(CapeTimer, $7E004C)
 %assertRAM(LinkJumping, $7E004D)
 %assertRAM(LinkStrafe, $7E0050)
+%assertRAM(LinkTargetPosY, $7E0051)
+%assertRAM(LinkTargetPosX, $7E0053)
 %assertRAM(CapeOn, $7E0055)
 %assertRAM(BunnyFlagDP, $7E0056)
 %assertRAM(PitTileActField, $7E0059)
+%assertRAM(LinkFallPose, $7E005A)
 %assertRAM(LinkSlipping, $7E005B)
 %assertRAM(FallTimer, $7E005C)
 %assertRAM(LinkState, $7E005D)
@@ -959,6 +968,7 @@ endmacro
 %assertRAM(AncillaGet, $7E0C5E)
 %assertRAM(AncillaDirection, $7E0C72)
 %assertRAM(AncillaLayer, $7E0C7C)
+%assertRAM(SpriteDeflection, $7E0CAA)
 %assertRAM(SpriteForceDrop, $7E0CBA)
 %assertRAM(SpriteBump, $7E0CD2)
 %assertRAM(BossSpecialAction, $7E0CF3)
@@ -995,6 +1005,7 @@ endmacro
 %assertRAM(SpriteVelocityZ, $7E0F80)
 %assertRAM(SpriteSubPixelZ, $7E0F90)
 %assertRAM(CurrentSpriteSlot, $7E0FA0)
+%assertRAM(CurrentSpriteTile, $7E0FA5)
 %assertRAM(FreezeSprites, $7E0FC1)
 %assertRAM(GfxChrHalfSlotVerify, $7E0FC6)
 %assertRAM(PrizePackIndexes, $7E0FC7)
@@ -1051,6 +1062,7 @@ endmacro
 %assertRAM(PegColor, $7EC172)
 %assertRAM(GameOverSongCache, $7EC227)
 %assertRAM(LastBGSet, $7EC2F8)
+%assertRAM(LastSpriteSet, $7EC2FC)
 %assertRAM(PaletteBufferAux, $7EC300)
 %assertRAM(PaletteBuffer, $7EC500)
 %assertRAM(HUDTileMapBuffer, $7EC700)
