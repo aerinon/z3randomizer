@@ -28,16 +28,19 @@ AddBonkTremors:
     JSL AddDashTremor : JSL Player_ApplyRumbleToSprites ; things we wrote over
 RTL
 ;--------------------------------------------------------------------------------
-BonkBreakableWall:
-    PHX : PHP
-        SEP #$30 ; set 8-bit accumulator and index registers
+ValidDashCheck:
+    PHP
+        SEP #$20
         LDA.l BootsModifier : CMP.b #$01 : BEQ +
-        LDA.l BootsEquipment : BNE + ; Check for Boots
-            PLP : PLX : LDA.w #$0000 : RTL
-        +
-    PLP : PLX
-    LDA.w LinkDashing : AND.w #$00FF ; things we wrote over
-RTL
+            LDA.l BootsEquipment : BEQ .exit
+        + LDA.w LinkDashing
+.exit
+    BEQ +
+        PLP : REP #$02
+        RTL
+    +
+    PLP : SEP #$02
+    RTL
 ;--------------------------------------------------------------------------------
 BonkRockPile:
     LDA.l BootsModifier : CMP.b #$01 : BEQ +
@@ -48,10 +51,7 @@ BonkRockPile:
 RTL
 ;--------------------------------------------------------------------------------
 GravestoneHook:
-    LDA.l BootsModifier : CMP.b #$01 : BEQ +
-    LDA.l BootsEquipment : BEQ .done ; Check for Boots
-    +
-    LDA.w LinkDashing : BEQ .done ; things we wrote over
+    JSL ValidDashCheck : BEQ .done ;
         JML moveGravestone
     .done
     JML GravestoneHook_continue
