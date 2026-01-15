@@ -6,7 +6,25 @@
 ; --------------------------------------------------------------------------------
 
 Limited_OverworldPedestalTileChanges:
-    LDA.b OverworldIndex : CMP.w #$0080 : BEQ + : RTL : +
+    LDA.b OverworldIndex : CMP.w #$0015 : BNE +
+        LDA.w #$02C3 : STA.w $20A8
+	    LDA.w #$02CA : STA.w $2128
+        RTL
+    + CMP.w #$0043 : BNE +
+        LDA.l OverworldEventDataWRAM+$43 : AND.w #$0040 : BEQ ++
+		LDA.w #$0912 : STA.w $2310
+            INC : STA.w $2312
+            INC : STA.w $2390
+            INC : STA.w $2392
+        ++ RTL
+    + CMP.w #$007A : BNE +
+        LDA.l OverworldEventDataWRAM+$7A : AND.w #$0020 : BEQ ++
+		LDA.w #$0912 : STA.w $2A1E
+            INC : STA.w $2A20
+            INC : STA.w $2A9E
+            INC : STA.w $2AA0
+        ++ RTL
+    + CMP.w #$0080 : BEQ + : RTL : +
         LDA.w #$0034 : STA.w $2A14 : STA.w $2A96
         LDA.l !LoadedPedestalNumber : AND.w #$00FF : BNE + : RTL
         + CMP.w #$0001 : BNE +
@@ -136,6 +154,86 @@ Limited_ResetOnOWTransition:
     LDA.b #$00 : STA.l !LoadedPedestalNumber
 .exit
     RTL
+
+Limited_HammerPegSwampNook:
+    LDA.b OverworldIndex : CMP.w #$007A : BNE .exit
+    INC.w HammerPegCounter
+    LDA.w HammerPegCounter : CMP.w #$0007 : BNE .exit
+    PHX 
+        SEP #$20
+        LDA.l OverworldEventDataWRAM+$7A : ORA.b #$20
+        STA.l OverworldEventDataWRAM+$7A
+        LDA.b #$1B : STA.w SFX3
+        REP #$20
+        LDA.w #$0050 : STA.w TileMapUpdateId
+        LDA.w #$0A1E : STA.w TileMapTile32
+        JSL Overworld_DoMapUpdate32x32_long
+        REP #$30
+    PLX
+.exit
+    RTL
+
+Limited_HandlePedestalEntrances:
+    LDA.w OverworldIndexMirror : CMP.w #$0015 : BNE +
+        LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0B40 : BNE .exit
+        LDA.w #$0003 : BRA .load_pedestal
+    + CMP.w #$0043 : BNE +
+        LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0688 : BNE .exit
+        LDA.w #$0005 : BRA .load_pedestal
+    + CMP.w #$005B : BNE +
+        LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$06E8 : BNE .exit
+        LDA.w #$0008 : BRA .load_pedestal
+    + CMP.w #$007A : BNE .exit
+        LDA.w #$0007 : BRA .load_pedestal
+.load_pedestal
+    SEP #$20
+    STA.l !LoadedPedestalNumber
+    PLA : REP #$20 : PLX ; discard return address
+    LDX.w #$0000
+    JML Overworld_DoSpecialOverworldTrigger
+.exit
+    RTL
+
+pushpc
+org $9BC8BE
+JSL Overworld_OverrideSecrets : NOP
+
+org $9BC0C6
+JSL Overworld_OverrideSecretFlag : NOP #2
+pullpc
+
+; if bushdrop shuffle is ever implemented, this would need to be
+;   removed and entries would need to be added thru the generator
+Overworld_OverrideSecrets:
+    CPX.w #$0043<<1 : BNE .vanilla
+    LDA.w #OverworldData_HiddenItems_Screen_43 : STA.b Scrap00
+    LDA.w #OverworldData_HiddenItems_Screen_43>>16 : STA.b Scrap02
+    RTL
+.vanilla
+    LDA.w #$009B : STA.b Scrap02 ; what we wrote over
+    RTL
+
+Overworld_OverrideSecretFlag:
+    CPX.w #$0043 : BNE .vanilla
+        LDA.l OverworldEventDataWRAM, X : ORA.b #$40
+        RTL
+.vanilla
+    LDA.l OverworldEventDataWRAM, X : ORA.b #$20
+    RTL
+
+OverworldData_HiddenItems_Screen_43:
+    db $10, $03, $84 ; Staircase    xy:{ 0x080, 0x060 }
+    db $60, $0A, $04 ; Random pack  xy:{ 0x300, 0x140 }
+    db $DA, $0B, $04 ; Random pack  xy:{ 0x2D0, 0x160 }
+    db $E6, $0B, $04 ; Random pack  xy:{ 0x330, 0x160 }
+    db $60, $0D, $04 ; Random pack  xy:{ 0x300, 0x1A0 }
+    db $20, $19, $01 ; Green rupee  xy:{ 0x100, 0x320 }
+    db $04, $1A, $04 ; Random pack  xy:{ 0x020, 0x340 }
+    db $EE, $17, $06 ; Heart        xy:{ 0x370, 0x2E0 }
+    db $68, $19, $06 ; Heart        xy:{ 0x340, 0x320 }
+    db $74, $19, $06 ; Heart        xy:{ 0x3A0, 0x320 }
+    db $EE, $1A, $06 ; Heart        xy:{ 0x370, 0x340 }
+    dw $FFFF
 
 Limited_OverworldTransitionPedestal:
     TXY : LDA.l !ScreenSequenceIndex : TAX

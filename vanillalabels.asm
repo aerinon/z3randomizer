@@ -47,6 +47,7 @@ Module_PreDungeon                                          = $82821E
 Module_PreDungeon_setAmbientSfx                            = $828296
 Dungeon_SaveRoomData                                       = $82A0A8
 Dungeon_SaveRoomData_justKeys                              = $82A0BE
+Overworld_DoMapUpdate32x32_long                            = $82AC5B
 Dungeon_SaveRoomQuadrantData                               = $82B861
 CalculateTransitionLanding                                 = $82C11D
 OverworldLoadScreensPaletteSet_long                        = $82C3F2

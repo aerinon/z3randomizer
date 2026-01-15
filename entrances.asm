@@ -201,6 +201,9 @@ PreventEnterOnBonk:
 
 	.done
 	LDX.w #$0102 ; rest of what we wrote over
+	if !FEATURE_LIMITED_RUN == 2604
+		JSL Limited_HandlePedestalEntrances
+	endif
 JML PreventEnterOnBonk_return
 ;--------------------------------------------------------------------------------
 TurtleRockEntranceFix:

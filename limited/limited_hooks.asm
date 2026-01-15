@@ -49,6 +49,12 @@ if !FEATURE_LIMITED_RUN
         RTL
 
     HandleStakeFieldExtra:
+        if !FEATURE_LIMITED_RUN == 2604
+            CMP.w #$0062 : BEQ .exit ; vanilla hammer peg screen
+            PLA : SEP #$20 : PLA ; discard return address
+            REP #$20
+            JML Limited_HammerPegSwampNook
+        endif
     .exit
     RTL
 

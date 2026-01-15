@@ -21,7 +21,7 @@ OverworldMapChangePointers2:
 	dw $0000      ; 12
 	dw $0000      ; 13
 	dw .map14     ; 14
-	dw $0000      ; 15
+	dw .map15     ; 15
 	dw $0000      ; 16
 	dw $0000      ; 17
 	dw $0000      ; 18
@@ -126,7 +126,7 @@ OverworldMapChangePointers2:
 	dw $0000      ; 77
 	dw $0000      ; 78
 	dw $0000      ; 79
-	dw $0000      ; 7A
+	dw .map7A     ; 7A
 	dw $0000      ; 7B
 	dw $0000      ; 7C
 	dw $0000      ; 7D
@@ -368,6 +368,13 @@ OverworldMapChangePointers2:
 	dw !OWW_Stripe|!OWW_Vertical
 	dw $2424
 	dw $02F2, $0185, $0185|!OWW_STOP
+
+	dw !OWW_END
+
+;---------------------------------------------------------------------------------------------------
+
+.map15
+	dw !OWW_CustomCommand, Overworld_OtherTileChanges
 
 	dw !OWW_END
 
@@ -853,6 +860,8 @@ OverworldMapChangePointers2:
 	dw $08D6, $08E4, $0E91, $0E97, $0E97, $0E95|!OWW_STOP
 
 .map43_inverted
+	dw !OWW_CustomCommand, Overworld_OtherTileChanges
+
 	dw !OWW_InvertedOnly
 
 	dw $0212, $2BE0 ; add portal
@@ -1076,6 +1085,13 @@ OverworldMapChangePointers2:
 	dw !OWW_InvertedOnly
 
 	dw $0239, $3352 ; add portal
+
+	dw !OWW_END
+
+;---------------------------------------------------------------------------------------------------
+
+.map7A
+	dw !OWW_CustomCommand, Overworld_OtherTileChanges
 
 	dw !OWW_END
 

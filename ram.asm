@@ -286,6 +286,7 @@ Map16ChangeIndex = $7E04AC        ; Word length.
                                   ;
 OWEntranceCutscene = $7E04C6      ;
                                   ;
+HammerPegCounter = $7E04C8        ; Counts pegs hammered in overworld
 HeartBeepTimer = $7E04CA          ;
                                   ;
 ManipTileMapX = $7E0540           ; Tilemap X position of manipulable tile. $10 x 2 bytes
@@ -307,6 +308,7 @@ SomariaSwitchFlag = $7E0646       ; Set by Somaria when on a switch.
                                   ;
 TileMapDoorPos = $7E068E          ; (Dungeon) ???? related to trap doors and if they are open ; possibly bomb doors too? Update: module 0x07.0x4 probably uses this to know whether it's a key door or big key door to open. Word length.
 DoorTimer = $7E0690               ; Timer for animating doors, like Sanc or HC overworld doors
+TileMapUpdateId = $7E0692         ; Used as an index for updating doors in the underworld or tile32 on the overworld
                                   ;
 TileMapEntranceDoors = $7E0696    ; Tilemap location of entrance doors. Word length.
 TileMapTile32 = $7E0698           ; Tilemap location of new tile32 objects, such as from graves/rocks. Word length.
@@ -888,6 +890,7 @@ endmacro
 %assertRAM(RespawnFlag, $7E04AA)
 %assertRAM(Map16ChangeIndex, $7E04AC)
 %assertRAM(OWEntranceCutscene, $7E04C6)
+%assertRAM(HammerPegCounter, $7E04C8)
 %assertRAM(HeartBeepTimer, $7E04CA)
 %assertRAM(ManipTileMapX, $7E0540)
 %assertRAM(CameraTargetN, $7E0610)
@@ -903,6 +906,7 @@ endmacro
 %assertRAM(SomariaSwitchFlag, $7E0646)
 %assertRAM(TileMapDoorPos, $7E068E)
 %assertRAM(DoorTimer, $7E0690)
+%assertRAM(TileMapUpdateId, $7E0692)
 %assertRAM(TileMapEntranceDoors, $7E0696)
 %assertRAM(TileMapTile32, $7E0698)
 %assertRAM(RandoOverworldEdgeAddr, $7E06F8)
