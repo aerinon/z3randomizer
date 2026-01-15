@@ -53,6 +53,9 @@ if !FEATURE_LIMITED_RUN
     RTL
 
     FluteMenu_InterruptFluteDestination:
+        if !FEATURE_LIMITED_RUN == 2604
+            JSL Limited_FluteMenu_PedestalDestination
+        endif
     .exit
         JML Sprite_ResetAll ; what we wrote over
 

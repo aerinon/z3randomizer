@@ -71,6 +71,7 @@ LinkIncapacitatedTimer = $7E0046  ; Countdown when Link takes damage, not same a
                                   ;
 ForceMove = $7E0049               ; Forces D-Pad inputs when written to
                                   ;
+LinkVisible = $7E004B             ; When 0x0C, Link is invisible
 CapeTimer = $7E004C               ; Countdown for cape sapping magic Countdown for cape sapping magic..
 LinkJumping = $7E004D             ; $00 = None | $01 = Bonk/damage/water | $02 = Ledge
                                   ;
@@ -468,6 +469,8 @@ RoomStripes = $7E1100             ; Used for room drawing.
                                   ;
 MirrorPortalPosXH = $7E1ACF       ; Mirror portal position. (High byte of X coordinate)
                                   ;
+FluteSelection = $7E1AF0          ; Flute menu selection, zero based, shifted left by 1
+                                  ;
 IrisPtr = $7E1B00                 ; Spotlight pointers for HDMA. $1C0 bytes (?).
                                   ;
 MessageSubModule = $7E1CD8        ;
@@ -764,6 +767,7 @@ endmacro
 %assertRAM(OAMOffsetX, $7E0045)
 %assertRAM(LinkIncapacitatedTimer, $7E0046)
 %assertRAM(ForceMove, $7E0049)
+%assertRAM(LinkVisible, $7E004B)
 %assertRAM(CapeTimer, $7E004C)
 %assertRAM(LinkJumping, $7E004D)
 %assertRAM(LinkStrafe, $7E0050)
@@ -991,6 +995,7 @@ endmacro
 %assertRAM(GFXStripes, $7E1000)
 %assertRAM(RoomStripes, $7E1100)
 %assertRAM(MirrorPortalPosXH, $7E1ACF)
+%assertRAM(FluteSelection, $7E1AF0)
 %assertRAM(IrisPtr, $7E1B00)
 %assertRAM(MessageSubModule, $7E1CD8)
 %assertRAM(MessageCursor, $7E1CE8)

@@ -1,5 +1,6 @@
 !LoadedPedestalNumber = LimitedRunStore
 !PedestalCollectedFlags = LimitedRunStore+1
+!FortuneRead = LimitedRunStore+3
 !ScreenSequenceIndex = LimitedRunStore+4 ; 16-bit, screen temporary
 
 ; --------------------------------------------------------------------------------
@@ -164,4 +165,29 @@ dw $0090, $0050, $00A0, $0070, $0040, $0060
 dw $0001, $0002, $0001, $0003, $0002, $0000
 .override
 dw $0006, $0007, $0006, $0005, $0006, $B080
+
+Limited_FluteMenu_PedestalDestination:
+    LDA.l !FortuneRead : BEQ .exit
+    LDA.w FluteSelection : CMP.b #($04-1)<<1 : BNE .exit
+        LDA.b #$04 : STA.l !LoadedPedestalNumber
+        STZ.w CutsceneFlag
+        STZ.b LinkVisible
+        STZ.w ItemReceiptPose
+        PLA : REP #$30 : PLX ; discard return address
+        LDX.w #$0000 : JML Overworld_DoSpecialOverworldTrigger
+.exit
+    RTL
+
+pushpc
+org $8DC849
+LDA.b #$00 : NOP #2
+
+org $8DC986 : JSL FortuneTeller_TakeMoney_Additional
+org $8DCA89 : JSL FortuneTeller_TakeMoney_Additional
+pullpc
+
+FortuneTeller_TakeMoney_Additional:
+    STA.l HeartsFiller ; what we wrote over
+    LDA.b #$01 : STA.l !FortuneRead
+    RTL
 
