@@ -26,7 +26,7 @@ Overworld_LoadNewTiles:
 	JSL Overworld_LoadBonkTiles
 	
 	LDA.b OverworldIndex
-	CMP.w #$0080
+	CMP.w #$0082
 	BCS .exit
 
 	ASL
@@ -161,7 +161,11 @@ Overworld_LoadNewTiles:
 	!OWW_CustomCommand             = $8010
 	dw .custom_command              ; 10
 
-	dw .nothing                     ; 11
+	; dw !OWW_SkipIfNotEqual, <lookup>, <value>, <address>
+	;    skips to <address> when value at <lookup> is not equal to <value>
+	!OWW_SkipIfNotEqual            = $8011
+	dw .equal_block                 ; 11
+
 	dw .nothing                     ; 12
 	dw .nothing                     ; 13
 	dw .nothing                     ; 14
@@ -276,6 +280,26 @@ Overworld_LoadNewTiles:
 	PLX
 	AND.w #$0001
 	BNE .nothing
+
+	TXY
+
+	RTS
+
+;---------------------------------------------------------------------------------------------------
+
+.equal_block
+	LDX.w $0000,Y : STX.b OWSkipLookup
+	INY : INY
+	LDX.w $0000,Y : STX.b OWSkipFlags-1
+	INY : INY
+	LDX.w $0000,Y
+	INY : INY
+
+	SEP #$20
+	LDA.b [OWSkipLookup]
+	CMP.b OWSkipFlags
+	REP #$20
+	BEQ .nothing
 
 	TXY
 
@@ -566,6 +590,8 @@ OverworldMapChangePointers:
 	dw $0000      ; 7D
 	dw $0000      ; 7E
 	dw $0000      ; 7F
+	dw $0000      ; 80
+	dw $0000      ; 81
 
 ;---------------------------------------------------------------------------------------------------
 

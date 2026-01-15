@@ -83,3 +83,6 @@ Sprite_03_CustomSprite:
     RTL
 
 ; load specific limited run events here
+if !FEATURE_LIMITED_RUN == 2604
+    incsrc limited_2604.asm
+endif

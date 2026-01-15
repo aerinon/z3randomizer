@@ -137,15 +137,21 @@ pullpc
 MasterSword_CheckIfPulled:
     CPX.b #$80 : BEQ +
         - CLC : RTL ; not on pedestal screen, continue with cutscene
+    if !FEATURE_LIMITED_RUN == 2604
+        + JSL MasterSword_LimitedCheckIfPulled : BEQ + : RTL
+    endif
     + LDA.l OverworldEventDataWRAM,X : AND.b #$40 ; what we wrote over
     BEQ - : SEC : RTL
 
 MasterSword_ConditionalActivateCutscene:
     LDA.w SpriteMovement,X : BNE .specialCutscene
         PHX
-            REP #$30
             LDA.w SprRedrawFlag, X : BNE .doNormalPed
             INC.w SprRedrawFlag, X
+            if !FEATURE_LIMITED_RUN == 2604
+                JSL MasterSword_LimitedActivateCutscene : BCS .doNormalPed
+            endif
+            REP #$30
             LDA.l PedPullGfx : BEQ .doNormalPed
             LDX.w ItemStackPtr : STA.l ItemGFXStack,X
             LDA.w #$BCE0>>1 : STA.l ItemTargetStack,X
@@ -187,6 +193,11 @@ RTL
 MasterSword_SpawnPendantProp_ChangePalette:
     STA.w SpriteVelocityY,Y : PLX ; what we wrote over
     LDA.w SpriteMovement,X : BNE .specialCutscene
+    if !FEATURE_LIMITED_RUN == 2604
+        JSL MasterSword_LimitedCheckIfPulled : BEQ .regularPedestal
+            LDA.b #$09 : BRA .setPalette
+    endif
+    .regularPedestal
         LDA.l PedPullGfx : BNE .customPedGfx
         LDA.l PedPullGfx+1 : BNE .customPedGfx
         BRA .done
@@ -206,12 +217,17 @@ JML MasterSword_SpawnPendantProp_ChangePalette_return
 
 MasterSword_ConditionalHandleReceipt:
     LDA.w SpriteMovement,X : BNE .specialCutscene
+    if !FEATURE_LIMITED_RUN == 2604
+        JSL MasterSword_LimitedHandleReceipt : BNE .return
+    endif
+    .regularPedestal
         LDX.b OverworldIndex : LDA.l OverworldEventDataWRAM,X ; what we wrote over
         RTL
     .specialCutscene
-        PLA : PLA : PEA.w MasterSword_ConditionalHandleReceipt_DoReceipt-1
-        LDA.b 4,S : TAX
+        LDA.b 6,S : TAX
         LDY.b #$6A
+    .return
+        PLA : PLA : PEA.w MasterSword_ConditionalHandleReceipt_DoReceipt-1
     RTL
 
 pushpc

@@ -413,6 +413,11 @@ CheckForBossesDefeated:
 ;---------------------------------------------------------------------------------------------------
 CheckPedestalPull:
 ; Out: c - Successful ped pull if set, do nothing if unset.
+	if !FEATURE_LIMITED_RUN == 2604
+		JSL MasterSword_LimitedCheckIfPulled : BEQ +
+			SEC : RTL
+		+
+	endif
 	LDA.b #$02 : JSL CheckConditionPass : BCS .return
 		PHX : PHP
 			LDA.b GameMode : CMP.b #$0E : BEQ +

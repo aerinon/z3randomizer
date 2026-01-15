@@ -132,6 +132,8 @@ OverworldMapChangePointers2:
 	dw $0000      ; 7D
 	dw $0000      ; 7E
 	dw .map7F     ; 7F
+	dw .map80     ; 80
+	dw $0000      ; 81
 
 ;---------------------------------------------------------------------------------------------------
 
@@ -858,6 +860,7 @@ OverworldMapChangePointers2:
 	dw !OWW_END
 
 ;---------------------------------------------------------------------------------------------------
+
 .map45
 	dw !OWW_InvertedOnly
 
@@ -1127,6 +1130,11 @@ OverworldMapChangePointers2:
 
 ;---------------------------------------------------------------------------------------------------
 
+.map80
+	dw !OWW_CustomCommand, Overworld_OtherTileChanges
+
+	dw !OWW_END
+
 ;===================================================================================================
 
 Overworld_InvertedTRPuzzle:
@@ -1144,4 +1152,15 @@ Overworld_InvertedTRPuzzle:
     LDA.w #$0185 : LDX.w #$0A22 : JSL Overworld_DrawPersistentMap16
     LDA.w #$0185 : LDX.w #$0AA2 : JSL Overworld_DrawPersistentMap16
     RTL
+}
+
+Overworld_OtherTileChanges:
+{
+	if !FEATURE_LIMITED_RUN == 2604
+		PHX : PHY : PHB
+		PEA.w $7E00 : PLB : PLB
+			JSL Limited_OverworldPedestalTileChanges
+		PLB : PLY : PLX
+	endif
+	RTS
 }
