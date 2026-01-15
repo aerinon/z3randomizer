@@ -243,6 +243,7 @@ Multiworld_MasterSword_GrantToPlayer:
 
 	CPY.b #$6A : BEQ +
 		JSL Link_ReceiveItem ; thing we wrote over
+		LDA.b #$00 : STA.l !MULTIWORLD_RECEIVING_ITEM
 		RTL
 	+ JSL ActivateGoal
 RTL
