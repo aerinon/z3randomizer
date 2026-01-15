@@ -207,6 +207,7 @@ warnpc $A38000
 
 org $A38000
 incsrc stats/credits.asm ; Statically mapped
+org $A39800
 incsrc stats/main.asm
 incsrc stats/statConfig.asm
 FontTable:

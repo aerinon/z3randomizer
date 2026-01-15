@@ -65,7 +65,6 @@ CreditsStats:
 %AddStat(MenuFrames, 1, 8, 32, 4, !TOTAL_MENU_TIME_X, !TOTAL_MENU_TIME_Y)
 %AddStat(LagTime, 1, 0, 32, 4, !TOTAL_LAG_TIME_X, !TOTAL_LAG_TIME_Y)
 print "Collection Rate config: ", pc
-warnpc $A39864
 %AddStat(TotalItemCounter, 0, 0, 16, 3, !COLLECTION_RATE_X, !COLLECTION_RATE_Y)
 %AddStat(NMIFrames, 1, 0, 32, 4, !TOTAL_TIME_X, !TOTAL_TIME_Y)
 
