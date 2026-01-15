@@ -86,6 +86,7 @@ RTL
 
 GetMultiworldItem:
 {
+	JSL ShowAwaitingMessage
 	PHP
 	LDA.l !MULTIWORLD_ITEM : BNE +
 	LDA.l !MULTIWORLD_HUD_TIMER : BNE +

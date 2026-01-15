@@ -2426,6 +2426,21 @@ Dungeon_OpenKeyedObject_smallChest:
 ;================================================================================
 
 ;================================================================================
+; Custom Sprite
+;--------------------------------------------------------------------------------
+org $868661
+dw SpritePrep_CustomSprite_bounce
+org $86FF73
+SpritePrep_CustomSprite_bounce:
+JSL SpritePrep_CustomSprite : RTS
+
+org $869290
+dw Sprite_03_CustomSprite_bounce
+org $86B7C1
+Sprite_03_CustomSprite_bounce:
+JSL Sprite_03_CustomSprite : RTS
+
+;================================================================================
 ; Murahdahla (The brother who re-assembles the triforce pieces)
 ;--------------------------------------------------------------------------------
 org $86C092 ; bank06.asm:1864 (JSL Sprite_ElderLong) [22 CD F0 05]

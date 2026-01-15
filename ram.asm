@@ -698,7 +698,8 @@ skip $20                           ; Reserved for general dungeon tracking data.
                                    ; allocated here. Feel free to reassign.
 MapCompassFlag: skip 2             ; Used to flag overworld map drawing.
 skip $3E                           ; Unused
-skip $260                          ; Unused
+skip $220                          ; Unused
+LimitedRunStore: skip $40          ; Easter Egg Buffer
 DialogBuffer: skip $100            ; Dialog Buffer
                                    ;
 PrivateBlockWRAM = $7F7700         ; Reserved for 3rd party use. $500 bytes.
@@ -1126,6 +1127,7 @@ endmacro
 %assertRAM(CompassTotalsWRAM, $7F5410)
 %assertRAM(MapTotalsWRAM, $7F5430)
 %assertRAM(MapCompassFlag, $7F5460)
+%assertRAM(LimitedRunStore, $7F56C0)
 %assertRAM(DialogBuffer, $7F5700)
 %assertRAM(MiniGameTime, $7FFE00)
 %assertRAM(MiniGameTimeFinal, $7FFE04)

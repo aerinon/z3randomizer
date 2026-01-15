@@ -70,6 +70,8 @@ function hexto555(h) = ((((h&$FF)/8)<<10)|(((h>>8&$FF)/8)<<5)|(((h>>16&$FF)/8)<<
 !MULTIWORLD_ITEM_ID = "$7EC09B" ; for lua scripts?
 !Dungeon_ChestData = "$01E96C"
 
+!FEATURE_LIMITED_RUN ?= 0
+
 !FLAG_OW_MIXED = $04
 !FLAG_OW_CROSSED = $02
 !FLAG_OW_BONKDROP = $02
@@ -214,6 +216,7 @@ incsrc doorrando/doorrando.asm ; bank 27/A7
 ;bank 28/A8 for keydropshuffle / standing items
 incsrc keydrop/standing_items.asm ; bank 28/A8
 incsrc owrando.asm ; bank 2A/AA
+incsrc limited/limited_hooks.asm ; bank 2D/AD
 incsrc enemizer/main.asm ; bank 36/B6
 
 org $B08000 ; bank #$30
@@ -341,12 +344,14 @@ warnpc $B08000
 ;$22 Unused
 ;$23 Stats & Credits
 ;$24 Code Bank
+;$25 GFX/SFX Overrides
 ;$26 Multiworld data
 ;$27 DR Code Bank
 ;$28 Keydrop / Standing Items Code bank
 ;$29 External hooks (rest of bank not used)
 ;$2A Reserved for OWR
 ;$2B Reserved for "outlet data" ~5.8k
+;$2D Reserved for Limited-Run/Seasonal Features
 ;$2E Reserved for Tournament Use
 ;$2F Static RNG (rest is reserved for tournament use)
 ;$30 Main Configuration Table

@@ -30,6 +30,7 @@ GetAnimatedSpriteTile_variable                             = $80D52D
 ReloadPreviouslyLoadedSheets                               = $80D7C8
 Attract_DecompressStoryGfx                                 = $80D84E
 InitializeTilesets                                         = $80E1DB
+LoadDefaultGraphics                                        = $80E310
 LoadCommonSprites_long                                     = $80E3C4
 Graphics_LoadChrHalfSlot                                   = $80E43A
 LoadSelectScreenGfx                                        = $80E529
