@@ -5,6 +5,21 @@
 
 ; --------------------------------------------------------------------------------
 
+Limited_LoadEggGoalHUDGfx:
+    LDA.b #.gfx>>16 : STA.b Scrap02
+    REP #$30
+    LDA.w #.gfx : STA.b Scrap00
+    LDA.w #$7070 : STA.w VMADDR ; VRAM $E0E0
+    LDX.w #$0007
+    - LDA.b [$00] : STA.w VMDATA
+    INC.b Scrap00 : INC.b Scrap00
+    DEX : BPL -
+    LDA.w #$7C00 : STA.w VMADDR ; restore VMADDR
+    SEP #$30
+    RTL
+.gfx
+db $00, $00, $04, $1C, $02, $3E, $02, $3E, $02, $3E, $02, $3E, $24, $3C, $18, $18
+
 Limited_OverworldPedestalTileChanges:
     LDA.b OverworldIndex : CMP.w #$0015 : BNE +
         LDA.w #$02C3 : STA.w $20A8

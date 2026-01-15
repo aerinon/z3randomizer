@@ -39,6 +39,9 @@ if !FEATURE_LIMITED_RUN
     org $AD8000
     LoadDefaultGraphics_Custom:
         JSL LoadDefaultGraphics ; what we wrote over
+        if !FEATURE_LIMITED_RUN == 2604
+            JML Limited_LoadEggGoalHUDGfx
+        endif
     .exit
         RTL
 
