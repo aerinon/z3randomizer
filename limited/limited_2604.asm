@@ -451,6 +451,48 @@ ThrownSprite_FakeMasterSwordDeath:
 .exit
     RTL
 
+; Snitch Cucco Storm Gimmick
+pushpc
+
+org $9DC9CD
+JSL Thief_Chasing_CuccoStorm : NOP #2
+db $B0, $05 ; BCS to skip over following JSR
+
+org $9DCCC2
+JSL SpriteDraw_Thief_SnitchVariant
+
+pullpc
+
+SpriteDraw_Thief_SnitchVariant:
+    TAX ; part of what we wrote over
+    LDA.b IndoorsFlag : BNE .vanilla
+    LDA.b OverworldIndex : CMP.b #$18 : BNE .vanilla
+        LDY.b #$06
+        LDA.l .oam_body,X : STA.b ($90),Y
+        LDA.l .oam_head,X
+        RTL
+.vanilla
+    LDA.l $9DCC96,X ; part of what we wrote over
+    RTL
+
+.oam_head
+    db $E2, $E2, $C0, $E0
+.oam_body
+    db $E4, $E4, $C2, $E8
+
+Thief_Chasing_CuccoStorm:
+    INC.w SpriteActivity,X : LDA.b #$20 : STA.w SpriteTimer,X ; what we wrote over
+    LDA.b IndoorsFlag : BNE .exit
+    LDA.b OverworldIndex : CMP.b #$18 : BNE .exit
+        PHX
+            JSL CuccoStorm_activate
+        PLX
+        SEC
+        RTL
+.exit
+    CLC
+    RTL
+
 ; Kiki Banana Fetch Game
 pushpc
 org $9EE516
