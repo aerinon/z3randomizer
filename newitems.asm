@@ -1136,7 +1136,7 @@ MaybeFlagCompassTotalPickup:
 RTL
 
 MaybeFlagMapTotalPickup:
-;        LDA.l MapHUDMode : AND.b #$0F : BEQ .done
+        LDA.l MapHUDMode : AND.b #$0F : BEQ .done
         LDA.w DungeonID : BMI .done
                 LDA.w ItemReceiptID : CMP.b #$33 : BEQ .set_flag
                         REP #$20
@@ -1158,7 +1158,7 @@ MaybeFlagDungeonTotalsEntrance:
                 LDA.l CompassMode : AND.w #$000F : BEQ .maps ; Skip if we're not showing compass counts
                         JSR FlagCompassCount
                 .maps
-;                LDA.l MapHUDMode : AND.w #$000F : BEQ .done
+                LDA.l MapHUDMode : AND.w #$000F : BEQ .done
                         LDX.w DungeonID
                         JSR FlagMapCount
         .done
