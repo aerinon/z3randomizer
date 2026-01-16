@@ -1210,7 +1210,7 @@ MaybeFlagDungeonTotalsEntrance:
                 LDA.l CompassMode : AND.w #$000F : BEQ .maps ; Skip if we're not showing compass counts
                         JSR FlagCompassCount
                 .maps
-                LDA.l MapHUDMode : AND.w #$000F
+                LDA.l MapHUDMode : AND.w #$000F : BEQ .done
                         LDX.w DungeonID
                         JSR FlagMapCount
         .done
