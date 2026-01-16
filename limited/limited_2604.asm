@@ -493,6 +493,31 @@ Thief_Chasing_CuccoStorm:
     CLC
     RTL
 
+; Flying Floor Tiles
+pushpc
+org $89BA8A
+JSL SpawnFlyingTile_FollowLink : NOP
+pullpc
+
+SpawnFlyingTile_FollowLink:
+    LDA.b #$04 : STA.w SpriteHitPoints,Y ; what we wrote over
+    LDA.b LinkPosX : JSR .within_range
+    CMP.b #$C0 : BCC +
+        LDA.b #$C0
+    + STA.w SpritePosXLow,Y
+    LDA.b LinkPosY : JSR .within_range
+    CMP.b #$B0 : BCC +
+        LDA.b #$B0 : CLC
+    + ADC.b #$08 : STA.w SpritePosYLow,Y
+.exit
+    RTL
+.within_range
+    CLC : ADC.b #$08 : AND.b #$F0
+        CMP.b #$10 : BCS .return
+            LDA.b #$10
+.return
+    RTS
+
 ; Kiki Banana Fetch Game
 pushpc
 org $9EE516
