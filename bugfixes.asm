@@ -238,6 +238,18 @@ FixJingleGlitch:
 .exit
 	RTL
 ;--------------------------------------------------------------------------------
+FixSwimBump:
+	LDA.b LinkIncapacitatedTimer : BEQ .normal
+	LDA.b LinkJumping : BNE .normal
+	INC.b LinkJumping
+	BRA .not_diving
+.normal
+	LDA.b LinkJumping : BNE .continue ; what we wrote over
+.not_diving
+	PLA : PLA : PEA.w $87964E ; skip ahead, not diving
+.continue
+	RTL
+;--------------------------------------------------------------------------------
 ; Fix spawning with more hearts than capacity when less than 3 heart containers
 pushpc
         org $09F4AC ; <- module_death.asm:331
