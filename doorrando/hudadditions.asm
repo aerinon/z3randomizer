@@ -158,10 +158,8 @@ DrHudDungeonItemsAdditions:
         			jsr ConvertToDisplay2 : sta.w $1644, y
         		+ iny #2 : lda.w #$24f5 : sta.w $1644, y
         		phx : ldx.b Scrap00
-						LDA.l CompassMode : BIT.w #$0002 : BNE .skip_map_check
-					 	LDA.l MapField : AND.l DungeonMask, x : BEQ .key_info_done ; must have map
-					.skip_map_check
-						plx : sep #$30 : lda.l ChestKeys, x : sta.b Scrap02
+					LDA.l MapField : ORA.l MapCountDisplay : AND.l DungeonMask, x : BEQ .key_info_done ; must have map
+				plx : sep #$30 : lda.l ChestKeys, x : sta.b Scrap02
         		lda.l GenericKeys : bne +++
         			lda.b Scrap02 : !SUB.l DungeonCollectedKeys, x : sta.b Scrap02
         		+++ lda.b Scrap02

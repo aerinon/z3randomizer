@@ -116,9 +116,10 @@ BEQ .vanilla_light
         LDA.b OverworldIndex : AND.b #$40
         BEQ .vanilla_light
     .custom
-    PHB : PHK : PLB
-        JSL LoadMapDarkOrCustom
-    PLB
+    STZ.b ScrapBuffer72 ; clear tile swap flag
+    JSL LoadMapDarkOrCustom_long
+    NOP #2
+warnpc $8ABAB5
 .vanilla_light ; $0ABAB5
 
 org $8ABB32
@@ -241,6 +242,7 @@ OWMapWorldCheck16:
 {
     lda.b GameMode : cmp.w #$0014 : beq .return ; attract module, return with Z flag cleared
         jsl OWWorldCheck16
+        eor.b ScrapBuffer72 ; apply tile swap flag
     .return
     rtl
 }
@@ -410,6 +412,7 @@ LoadMapDarkOrCustom:
         LDX.b OverworldIndex
         LDA.l OWTileWorldAssoc,X
         AND.w #$0040
+        EOR.b ScrapBuffer72 ; apply tile swap flag
         BEQ .draw_lw
             LDA.w #OWMapGridDark
             BRA .draw_dw
@@ -444,7 +447,7 @@ LoadMapDarkOrCustom:
     .end
     SEP #$30
     LDA.b #$15 : STA.b NMIINCR ; what we wrote over
-    RTL
+    RTS
 }
 
 GetOWMapTilemapOffsetToCopy:
@@ -510,11 +513,11 @@ GetOWMapTilemapOffsetToCopy:
     dw $0400+$0210 ; bottom right
 }
 
-LoadMapSwapTiles:
+LoadMapDarkOrCustom_long:
 {
     PHB : LDA.b #WorldMap_DarkWorldTilemap>>16 : PHA : PLB
         LDA.l OWFlags : AND.b #!FLAG_OW_CUSTOM_MAP
-        JSL LoadMapDarkOrCustom
+        JSR LoadMapDarkOrCustom
     PLB
     RTL
 }
@@ -523,17 +526,15 @@ LoadMapOppositeWorld:
     LDA.l OWFlags : AND.b #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .vanilla
     LDA.b ScrapBuffer72 : BEQ +
         LDA.b Joy1B_All : AND.b #$30 : BNE .vanilla
-            STZ.b ScrapBuffer72
+            STZ.b ScrapBuffer72 ; clear tile swap flag
             BRA .new_tiles
     + LDA.b Joy1B_New : AND.b #$30 : BEQ .vanilla
-        LDA.b #$40 : STA.b ScrapBuffer72
+        LDA.b #$40 : STA.b ScrapBuffer72 ; set tile swap flag
 .new_tiles
-    EOR.b OverworldIndex : STA.b OverworldIndex
-        JSL OverworldMap_InitGfx+$10 ; load palette
-            DEC.w SubModuleInterface
-            LDA.b #$0F : STA.b INIDISPQ
-        JSL LoadMapSwapTiles
-    LDA.w OverworldIndexMirror : STA.b OverworldIndex
+    JSL OverworldMap_InitGfx+$10 ; load palette
+        DEC.w SubModuleInterface
+        LDA.b #$0F : STA.b INIDISPQ
+    JSL LoadMapDarkOrCustom_long
     LDA.b #$24 : STA.w SFX3
     PLA : PLA : PEA.w $BBAF ; skip everything upon return
 .vanilla
@@ -543,7 +544,7 @@ LoadMapOppositeWorld:
 WorldMap_SkipHandleSprites:
 {
     LDA.l OWFlags : AND.b #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .vanilla
-    LDA.b ScrapBuffer72 : BEQ .vanilla
+    LDA.b ScrapBuffer72 : BEQ .vanilla ; skip draw if no tile swap
         PLA : PLA : PEA.w $C3AF ; exit without drawing sprites
     RTL 
 .vanilla

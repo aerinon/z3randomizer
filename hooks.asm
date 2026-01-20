@@ -2107,6 +2107,11 @@ JSL FlipperScrollWarp
 ;--------------------------------------------------------------------------------
 ;org $878F51 ; <- 38F51 - Bank07.asm:2444 (JSR $AE54 ; $3AE54 IN ROM)
 ;JSL OnEnterWater : NOP
+;--------------------------------------------------------------------------------
+; Fixes getting bumped while swimming, unable to screen transition
+org $879632
+LinkState_Swimming:
+JSL FixSwimBump
 ;================================================================================
 ; Floodgate Softlock Fix
 ;--------------------------------------------------------------------------------

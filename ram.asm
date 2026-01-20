@@ -235,6 +235,8 @@ CurrentYItem = $7E0303            ;
 AButtonAct = $7E0308              ; Bitfield for A-actions. $80 = Carry/toss | $02 Prayer | $01 = Tree pull
 CarryAct = $7E0309                ; Bitfield for carrying. $02 = Tossing | $01 = Lifting
                                   ;
+LinkIFrames = $7E031F             ; Countdown for Link's invincibility frames after taking damage.
+                                  ;
 LinkSwimDirection = $7E0340       ; Bitfield for swim direction. (.... udlr)
                                   ;
 LinkDeepWater = $7E0345           ; Set when Link is in deep water.
@@ -875,6 +877,8 @@ endmacro
 %assertRAM(UseY1, $7E0301)
 %assertRAM(CurrentYItem, $7E0303)
 %assertRAM(AButtonAct, $7E0308)
+%assertRAM(CarryAct, $7E0309)
+%assertRAM(LinkIFrames, $7E031F)
 %assertRAM(LinkSwimDirection, $7E0340)
 %assertRAM(LinkDeepWater, $7E0345)
 %assertRAM(TileActIce, $7E0348)

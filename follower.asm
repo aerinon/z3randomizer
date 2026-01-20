@@ -23,7 +23,7 @@ JSL SpritePrep_OldManFollower : NOP #2 : db $F0 ; BEQ
 org $9DFF18
 JSL SpriteDraw_OldManFollower
 org $9EE9BC
-JSL Follower_CheckMessageCollision
+JSL OldMan_WaitForCollision
 org $9EE9CC
 JSL OldMan_BecomeFollower : NOP #2
 
@@ -632,6 +632,15 @@ SpriteDraw_OldManFollower:
 .oam_group
 dw 0,  0 : db $AC, $00, $00, $02
 dw 0,  8 : db $AE, $00, $00, $02
+
+OldMan_WaitForCollision:
+    PHA
+    LDA.w LinkIFrames : BEQ +
+        PLA : CLC
+        RTL
+    +
+    PLA
+    JML Follower_CheckMessageCollision
 
 OldMan_BecomeFollower:
     LDA.l FollowerTravelAllowed : CMP.b #$02 : BCC .set_follower_and_despawn
