@@ -124,14 +124,13 @@ BEQ .vanilla_light
 warnpc $8ABAB5
 .vanilla_light ; $0ABAB5
 
+org $8ABD12
+JSL MoveZoomedInPositionY
+org $8ABD2F
+JSL MoveZoomedInPositionX
+
 org $8ABB32
 JSL LoadMapOppositeWorld
-
-org $8ABF78
-JSL WorldMap_SkipHandleSprites
-
-org $8ABA22
-JSL MoveLinkMapSprite
 
 org $8ABFF0
 JSL MoveMirrorPortalMapSprite
@@ -551,21 +550,12 @@ LoadMapOppositeWorld:
 }
 WorldMap_SkipHandleSprites:
 {
-    LDA.l OWFlags : AND.b #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .vanilla
+    JSR MoveMapSprite : BEQ .vanilla
     LDA.b ScrapBuffer72 : BEQ .vanilla ; skip draw if no tile swap
-        PLA : PLA : PEA.w $C3AF ; exit without drawing sprites
+        PLA : PLA : PEA.w $C39B ; exit without drawing sprites
     RTL 
 .vanilla
     LDA.b FrameCounter : AND.b #$10 ; what we wrote over
-    RTL
-}
-
-MoveLinkMapSprite:
-{
-    STA.l $7EC10A ; what we overwrote
-    SEP #$20
-    JSR MoveMapSprite
-    REP #$20
     RTL
 }
 
@@ -576,9 +566,54 @@ MoveMirrorPortalMapSprite:
     RTL
 }
 
+MoveZoomedInPositionY:
+{
+    LDA.l OWFlags : AND.w #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .vanilla
+        SEP #$20
+        JSR MoveMapSprite_Setup
+        JSR MoveMapSprite_GetYCoordHighByte
+        PHA
+            REP #$20
+            LDA.l $7EC108 : XBA
+            SEP #$20
+        PLA : XBA
+        REP #$20
+        RTL
+.vanilla
+    LDA.l $7EC108 ; what we overwrote
+    RTL
+}
+MoveZoomedInPositionX:
+{
+    LDA.l OWFlags : AND.w #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .vanilla
+        SEP #$20
+        JSR MoveMapSprite_Setup
+        JSR MoveMapSprite_GetXCoordHighByte
+        PHA
+            REP #$20
+            LDA.l $7EC10A : XBA
+            SEP #$20
+        PLA : XBA
+        REP #$20
+        RTL
+.vanilla
+    LDA.l $7EC10A ; what we overwrote
+    RTL
+}
+
 MoveMapSprite:
 {
     LDA.l OWFlags : AND.b #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .return
+    PHP
+        JSR MoveMapSprite_Setup
+        JSR MoveMapSprite_GetXCoordHighByte : STA.l $7EC10B
+        JSR MoveMapSprite_GetYCoordHighByte : STA.l $7EC109
+    PLP
+    .return
+    RTS
+}
+MoveMapSprite_Setup:
+{
     LDA.l $7EC10B : AND.b #$0E : LSR
     STA.b Scrap00
     LDA.l $7EC109 : AND.b #$0E : ASL : ASL
@@ -597,12 +632,17 @@ MoveMapSprite:
     TAX
     AND.b #$07 : ASL
     STA.b Scrap00
-    LDA.l $7EC10B : AND.b #$01 : ORA.b Scrap00 : STA.l $7EC10B
-    TXA
-    AND.b #$38 : LSR : LSR
-    STA.b Scrap00
-    LDA.l $7EC109 : AND.b #$01 : ORA.b Scrap00 : STA.l $7EC109
-    .return
+    RTS
+}
+MoveMapSprite_GetXCoordHighByte:
+{
+    LDA.l $7EC10B : AND.b #$01 : ORA.b Scrap00
+    RTS
+}
+MoveMapSprite_GetYCoordHighByte:
+{
+    TXA : AND.b #$38 : LSR : LSR : STA.b Scrap00
+    LDA.l $7EC109 : AND.b #$01 : ORA.b Scrap00
     RTS
 }
 
