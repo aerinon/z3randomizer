@@ -107,6 +107,9 @@ org $8aba6c  ; < ? - Bank0a.asm:474 ()
 jsl OWMapWorldCheck16 : nop
 
 ; Custom Overworld Map
+org $8ABA52
+JSL OverworldMap_InitGfx_InitScrap
+
 org $8ABA99
 WorldMap_LoadDarkWorldMap:
 LDA.b GameMode : CMP.b #$14 ; attract module
@@ -512,6 +515,12 @@ GetOWMapTilemapOffsetToCopy:
     dw $0400+$0210 ; bottom right
 }
 
+OverworldMap_InitGfx_InitScrap:
+{
+    STZ.b ScrapBuffer72 ; clear tile swap flag
+    LDA.b #$11 : STA.b MAINDESQ ; what we wrote over
+    RTL
+}
 LoadMapDarkOrCustom_long:
 {
     PHB : LDA.b #WorldMap_DarkWorldTilemap>>16 : PHA : PLB
