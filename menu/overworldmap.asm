@@ -508,6 +508,45 @@ org $8AC3B6
 	JMP WorldMap_CalculateOAMCoordinates_exit_successfully
 
 warnpc $8AC433
+
+; most of this function is copied from the original, but rearranged
+org $8AB7F3
+FluteMenu_HandleSprites:
+	LDA.l $7EC108 : PHA
+	LDA.l $7EC109 : PHA
+	LDA.l $7EC10A : PHA
+	LDA.l $7EC10B : PHA
+	JSL FluteMenu_MoveLinkSprite ; override vanilla (LDA.b $1A : AND.b #$10)
+	BEQ .continue
+	JSR WorldMap_CalculateOAMCoordinates : BCC .continue
+		LDA.b Scrap0E : SEC : SBC.b #$04 : STA.b Scrap0E
+		LDA.b Scrap0F : SEC : SBC.b #$04 : STA.b Scrap0F
+		LDA.b #$00 : STA.b Scrap0D
+		LDA.b #$3E : STA.b Scrap0C
+		JSL OWMapFluteCancelIcon ; override vanilla (LDA.b #$02 : STA.b Scrap0B)
+		LDX.b #$10 : JSR WorldMap_HandleSpriteBlink
+.continue
+warnpc $8AB831
+
+; most of this function is copied from the original, but rearranged
+org $8ABF78
+WorldMap_HandleSprites:
+	LDA.l $7EC108 : PHA
+	LDA.l $7EC109 : PHA
+	LDA.l $7EC10A : PHA
+	LDA.l $7EC10B : PHA
+	JSL WorldMap_SkipHandleSprites ; override vanilla (LDA.b $1A : AND.b #$10)
+	BEQ .continue
+	JSR WorldMap_CalculateOAMCoordinates : BCC .continue
+		LDA.b Scrap0E : SEC : SBC.b #$04 : STA.b Scrap0E
+		LDA.b Scrap0F : SEC : SBC.b #$04 : STA.b Scrap0F
+		LDA.b #$00 : STA.b Scrap0D
+		LDA.b #$3E : STA.b Scrap0C
+		LDA.b #$02 : STA.b Scrap0B
+		LDX.b #$00 : JSR WorldMap_HandleSpriteBlink
+.continue
+warnpc $8ABFB6
+
 pullpc
 
 WorldMap_LoadChrHalfSlot:

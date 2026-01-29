@@ -78,8 +78,6 @@ org $8ab7af ;LDA $F2 : ORA $F0 : AND #$C0
 jml OWFluteCancel2 : nop
 org $8ab90d ;JSL $02E99D
 jsl OWFluteCancel
-org $8ab816
-JSL OWMapFluteCancelIcon
 
 ; allows Frog sprite to spawn in LW and also allows his friend to spawn in their house
 org $868a76 ; < 30a76 - sprite_prep.asm:785 (LDA $7EF3CA : AND.w #$40)
@@ -124,14 +122,13 @@ BEQ .vanilla_light
 warnpc $8ABAB5
 .vanilla_light ; $0ABAB5
 
+org $8ABD12
+JSL MoveZoomedInPositionY
+org $8ABD2F
+JSL MoveZoomedInPositionX
+
 org $8ABB32
 JSL LoadMapOppositeWorld
-
-org $8ABF78
-JSL WorldMap_SkipHandleSprites
-
-org $8ABA22
-JSL MoveLinkMapSprite
 
 org $8ABFF0
 JSL MoveMirrorPortalMapSprite
@@ -356,7 +353,7 @@ OWFluteCancel2:
 }
 OWMapFluteCancelIcon:
 {
-    STA.b Scrap0B : LDX.b #$10 ; what we wrote over
+    LDA.b #$02 : STA.b Scrap0B ; what we wrote over
     LDA.l OWFlags+1 : AND.b #$01 : BEQ .return
 	LDA.b GameSubMode : CMP.b #$0A : BNE .return
     LDA.b FrameCounter : AND.b #$10 : BNE .return
@@ -549,23 +546,19 @@ LoadMapOppositeWorld:
     LDA.b Joy1B_New : AND.b #$70 ; what we wrote over
     RTL
 }
+FluteMenu_MoveLinkSprite:
+{
+    JSR MoveMapSprite
+    BRA WorldMap_SkipHandleSprites_vanilla
+}
 WorldMap_SkipHandleSprites:
 {
-    LDA.l OWFlags : AND.b #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .vanilla
+    JSR MoveMapSprite : BEQ .vanilla
     LDA.b ScrapBuffer72 : BEQ .vanilla ; skip draw if no tile swap
-        PLA : PLA : PEA.w $C3AF ; exit without drawing sprites
+        PLA : PLA : PEA.w $C39B ; exit without drawing sprites
     RTL 
 .vanilla
     LDA.b FrameCounter : AND.b #$10 ; what we wrote over
-    RTL
-}
-
-MoveLinkMapSprite:
-{
-    STA.l $7EC10A ; what we overwrote
-    SEP #$20
-    JSR MoveMapSprite
-    REP #$20
     RTL
 }
 
@@ -576,9 +569,54 @@ MoveMirrorPortalMapSprite:
     RTL
 }
 
+MoveZoomedInPositionY:
+{
+    LDA.l OWFlags : AND.w #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .vanilla
+        SEP #$20
+        JSR MoveMapSprite_Setup
+        JSR MoveMapSprite_GetYCoordHighByte
+        PHA
+            REP #$20
+            LDA.l $7EC108 : XBA
+            SEP #$20
+        PLA : XBA
+        REP #$20
+        RTL
+.vanilla
+    LDA.l $7EC108 ; what we overwrote
+    RTL
+}
+MoveZoomedInPositionX:
+{
+    LDA.l OWFlags : AND.w #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .vanilla
+        SEP #$20
+        JSR MoveMapSprite_Setup
+        JSR MoveMapSprite_GetXCoordHighByte
+        PHA
+            REP #$20
+            LDA.l $7EC10A : XBA
+            SEP #$20
+        PLA : XBA
+        REP #$20
+        RTL
+.vanilla
+    LDA.l $7EC10A ; what we overwrote
+    RTL
+}
+
 MoveMapSprite:
 {
     LDA.l OWFlags : AND.b #!FLAG_OW_ADJUST_DYNAMIC_MAP_SPRITE_POSITION : BEQ .return
+    PHP
+        JSR MoveMapSprite_Setup
+        JSR MoveMapSprite_GetXCoordHighByte : STA.l $7EC10B
+        JSR MoveMapSprite_GetYCoordHighByte : STA.l $7EC109
+    PLP
+    .return
+    RTS
+}
+MoveMapSprite_Setup:
+{
     LDA.l $7EC10B : AND.b #$0E : LSR
     STA.b Scrap00
     LDA.l $7EC109 : AND.b #$0E : ASL : ASL
@@ -597,12 +635,17 @@ MoveMapSprite:
     TAX
     AND.b #$07 : ASL
     STA.b Scrap00
-    LDA.l $7EC10B : AND.b #$01 : ORA.b Scrap00 : STA.l $7EC10B
-    TXA
-    AND.b #$38 : LSR : LSR
-    STA.b Scrap00
-    LDA.l $7EC109 : AND.b #$01 : ORA.b Scrap00 : STA.l $7EC109
-    .return
+    RTS
+}
+MoveMapSprite_GetXCoordHighByte:
+{
+    LDA.l $7EC10B : AND.b #$01 : ORA.b Scrap00
+    RTS
+}
+MoveMapSprite_GetYCoordHighByte:
+{
+    TXA : AND.b #$38 : LSR : LSR : STA.b Scrap00
+    LDA.l $7EC109 : AND.b #$01 : ORA.b Scrap00
     RTS
 }
 
