@@ -65,6 +65,8 @@ LinkSubPixelVelocty = $7E002A     ; Word length
 LinkAnimationStep = $7E002E       ;
 LinkDirection = $7E002F           ; $00 = Up | $02 = Down | $04 = Left | $06 = Right
                                   ;
+FlagBY = $7E003A                  ; Bitfield for B and Y buttons.
+                                  ;
 OAMOffsetY = $7E0044              ;
 OAMOffsetX = $7E0045              ;
 LinkIncapacitatedTimer = $7E0046  ; Countdown when Link takes damage, not same as I-frames
@@ -761,6 +763,7 @@ endmacro
 %assertRAM(LinkRecoilZ, $7E0029)
 %assertRAM(LinkAnimationStep, $7E002E)
 %assertRAM(LinkDirection, $7E002F)
+%assertRAM(FlagBY, $7E003A)
 %assertRAM(OAMOffsetY, $7E0044)
 %assertRAM(OAMOffsetX, $7E0045)
 %assertRAM(LinkIncapacitatedTimer, $7E0046)

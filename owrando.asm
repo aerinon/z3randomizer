@@ -1338,6 +1338,7 @@ OWWorldTerrainUpdate: ; x = owid of destination screen, y = 1 for land to water,
         STZ.w RandoOverworldForceTrans
         CMP.b #$02 : BNE +
             DEC : STA.w LinkDeepWater : STZ.w LinkSwimDirection
+            LDA.b FlagBY : AND.b #$7F : STA.b FlagBY
             LDA.b #$04 : BRA .set_state
         +
         CMP.b #$03 : BNE ++
@@ -1358,6 +1359,7 @@ OWWorldTerrainUpdate: ; x = owid of destination screen, y = 1 for land to water,
         LDA.b #$01 : STA.w LinkDeepWater
         LDA.l FlippersEquipment : BEQ .no_flippers ; check if flippers obtained
         LDA.b LinkState : CMP.b #$17 : BEQ .no_flippers ; check if bunny
+            LDA.b FlagBY : AND.b #$7F : STA.b FlagBY
             LDA.b #$04 : STA.b LinkState : STZ.w LinkSwimDirection : RTS
         .no_flippers
             PHX
