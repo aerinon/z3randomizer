@@ -163,14 +163,14 @@ Limited_PedestalBeeSecrets:
         LDA.l .secret_xpos,X
         STA.b Scrap00
         PLX
-        LDA.l Bee_BounceBoundaries,X : AND.w #$00FF
+        LDA.l Bee_BounceBoundaries, X : AND.w #$00FF
         CLC : ADC.b Scrap00
         STA.b Scrap04
         LDX.b Scrap02
         LDA.l .secret_ypos,X
         STA.b Scrap02
         PLX
-        LDA.l Bee_BounceBoundaries,X : AND.w #$00FF
+        LDA.l Bee_BounceBoundaries, X : AND.w #$00FF
         CLC : ADC.b Scrap02
         STA.b Scrap06
         SEP #$20
@@ -212,8 +212,8 @@ MasterSword_LimitedActivateCutscene:
     JSL MasterSword_LimitedCheckIfPulled : BEQ .exit
         REP #$30
         LDA.w #$1020
-        LDX.w ItemStackPtr : STA.l ItemGFXStack,X
-        LDA.w #$BCE0>>1 : STA.l ItemTargetStack,X
+        LDX.w ItemStackPtr : STA.l ItemGFXStack, X
+        LDA.w #$BCE0>>1 : STA.l ItemTargetStack, X
         TXA : INC #2 : STA.w ItemStackPtr
         SEC : RTL
 .exit
@@ -241,7 +241,7 @@ MasterSword_ConditionalLoadOverlay:
         LDA.w #$0040 : RTL 
     + LDA.w #$0000 : RTL
 .vanilla
-    LDA.l OverworldEventDataWRAM,X ; what we wrote over
+    LDA.l OverworldEventDataWRAM, X ; what we wrote over
     RTL
 
 Limited_ResetOnOWTransition:
@@ -451,15 +451,15 @@ Limited_ShowAwaitingMessage:
 Limited_ModifyFakeSwordOverPit:
     LDA.w OWTransitionFlag : BEQ .exit
     CPY.b #$20 : BNE .exit ; over pit
-    LDA.w SpriteTypeTable,X : CMP.b #$E8 : BNE .exit
-        LDA.w SpriteVelocityY,X : JSL DivideByTwoPreserveSign : STA.w SpriteVelocityY,X
-        LDA.w SpriteVelocityX,X : JSL DivideByTwoPreserveSign : STA.w SpriteVelocityX,X
-        LDA.w SpriteVelocityZ,X : SEC : SBC.b #$02 : STA.w SpriteVelocityZ,X
+    LDA.w SpriteTypeTable, X : CMP.b #$E8 : BNE .exit
+        LDA.w SpriteVelocityY, X : JSL DivideByTwoPreserveSign : STA.w SpriteVelocityY, X
+        LDA.w SpriteVelocityX, X : JSL DivideByTwoPreserveSign : STA.w SpriteVelocityX, X
+        LDA.w SpriteVelocityZ, X : SEC : SBC.b #$02 : STA.w SpriteVelocityZ, X
 .exit
     RTL
 
 ThrownSprite_FakeMasterSwordDeath:
-    LDA.b #$06 : STA.w SpriteAITable,X ; what we wrote over
+    LDA.b #$06 : STA.w SpriteAITable, X ; what we wrote over
     LDA.w CurrentSpriteTile : CMP.b #$20 : BNE .exit ; over pit
     LDA.l OWTransitionFlag : BEQ .exit
         STZ.w OWTransitionFlag
@@ -497,7 +497,7 @@ SpriteDraw_Thief_SnitchVariant:
     db $E4, $E4, $C2, $E8
 
 Thief_Chasing_CuccoStorm:
-    INC.w SpriteActivity,X : LDA.b #$20 : STA.w SpriteTimer,X ; what we wrote over
+    INC.w SpriteActivity, X : LDA.b #$20 : STA.w SpriteTimer, X ; what we wrote over
     LDA.b IndoorsFlag : BNE .exit
     LDA.b OverworldIndex : CMP.b #$18 : BNE .exit
         PHX
@@ -908,8 +908,8 @@ SpritePrep_KikiBanana:
     PHX
         REP #$20
         LDA.w #$1160 ; banana gfx
-        LDX.w ItemStackPtr : STA.l ItemGFXStack,X
-        LDA.w #$B840>>1 : STA.l ItemTargetStack,X
+        LDX.w ItemStackPtr : STA.l ItemGFXStack, X
+        LDA.w #$B840>>1 : STA.l ItemTargetStack, X
         TXA : INC #2 : STA.w ItemStackPtr
         SEP #$20
     PLX

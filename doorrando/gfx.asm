@@ -95,8 +95,8 @@ OverridePaletteHeader:
 rtl
 
 Sprite_ConditionalPrepOAMCoord:
-    LDA.w SpriteTypeTable,X : CMP.b #$62 : BNE .notMasterSword
-    LDA.w $0D90,X : BNE .specialCutscene
+    LDA.w SpriteTypeTable, X : CMP.b #$62 : BNE .notMasterSword
+    LDA.w SpriteMovement, X : BNE .specialCutscene
     .notMasterSword
         JML Sprite_PrepOAMCoordLong ; what we wrote over
     .specialCutscene

@@ -15,7 +15,7 @@ GeldmanDrawOverride:
     LDA.l DRFlags+1 : AND.b #$08 : BEQ .vanilla
 
     LDA.b #$01
-    STA.w $0DC0,X
+    STA.w SpriteGFXControl, X
     JML Sprite_4C_Geldman_do_indeed_draw
 
 .vanilla
@@ -38,7 +38,7 @@ BlobDrawOverride:
     LDA.l DRFlags+1 : AND.b #$08 : BEQ .vanilla
 
     LDA.b #$05
-    STA.w $0DC0,X
+    STA.w SpriteGFXControl, X
 
     JML SpriteDraw_Blob_head_popping_out
 

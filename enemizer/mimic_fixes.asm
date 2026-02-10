@@ -78,14 +78,14 @@ RTL
 
 IsItReallyAMimic:
 	LDA.l !ENABLE_MIMIC_OVERRIDE : BEQ .continue
-	LDA.w SpriteTypeTable,X : CMP.b #$EF : BEQ .is_mimic
+	LDA.w SpriteTypeTable, X : CMP.b #$EF : BEQ .is_mimic
 	CMP.b #$F0 : BNE .continue
 
 	.is_mimic
 	CLC : RTL
 
 	.continue  ; code we hijacked
-	LDA.w SpriteTypeTable,X
+	LDA.w SpriteTypeTable, X
     CMP.b #$D8
 RTL
 

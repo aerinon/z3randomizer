@@ -358,7 +358,7 @@ db $00, $00, $00, $00, $00, $06, $00, $00, $06, $00, $00, $00, $00
 DetermineFollower:
     LDA.w SpriteAux, X : BEQ .skip_stored : RTL ; stored follower
 .skip_stored
-    + LDA.w $0E20,X : CMP.b #$1A : BNE +
+    + LDA.w SpriteTypeTable, X : CMP.b #$1A : BNE +
         LDA.l Follower_Frog : BRA .finalize
     + CMP.b #$39 : BNE +
         LDA.l Follower_Locksmith : BRA .finalize

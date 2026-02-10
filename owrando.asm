@@ -686,7 +686,7 @@ OWBonkDropPrepSprite:
 OWBonkDropSparkle:
 {
     LDA.l OWFlags+1 : AND.b #!FLAG_OW_BONKDROP : BEQ .nosparkle
-    LDA.w $0E90,X : BEQ .nosparkle
+    LDA.w SpriteAuxB,X : BEQ .nosparkle
     LDA.w SprRedrawFlag,X : BNE .nosparkle
     LDA.b GameMode : CMP.b #$0E : BEQ .nosparkle
     LDA.b LinkState : CMP.b #$08 : BCC + : CMP.b #$0A+1 : BCS + : BRA .nosparkle : + ; skip if we're mid-medallion
@@ -703,7 +703,7 @@ OWBonkDropSparkle:
     RTL
 
     .goodbee
-    LDA.w $0E90,X ; what we wrote over
+    LDA.w SpriteAuxB,X ; what we wrote over
     RTL
 
     .greenrupee

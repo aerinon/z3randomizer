@@ -492,7 +492,7 @@ RevealSpriteDrop2:
 
 PikitOverride:
 	CMP.b #$AA : BNE .no_pikit_drop
-	LDY.w $0E90,X : BEQ .no_pikit_drop
+	LDY.w SpriteAuxB, X : BEQ .no_pikit_drop
 	CPY.b #$04 : BEQ .normal_pikit
 	LDA.w SprDropsItem, X : BEQ .normal_pikit
 	JSR CheckIfDropsInThisLocation : BCC .normal_pikit

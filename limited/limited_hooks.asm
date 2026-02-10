@@ -85,7 +85,7 @@ if !FEATURE_LIMITED_RUN
             JSL Limited_ModifyFakeSwordOverPit
         endif
     .exit
-        LDA.w $0CAA,X ; part of what we wrote over
+        LDA.w SpriteDeflection, X ; part of what we wrote over
         RTL
 
 endif

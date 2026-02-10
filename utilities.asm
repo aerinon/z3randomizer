@@ -109,7 +109,7 @@ LoadDynamicTileOAMTable:
         LDA.w #$0000 : STA.l SpriteOAM : STA.l SpriteOAM+2
         LDA.w #$0200 : STA.l SpriteOAM+6
         LDA.l BeeTrapDisguise : AND.w #$00FF : BNE +
-        	LDA.w SprItemReceipt,X : AND.w #$00FF
+        	LDA.w SprItemReceipt, X : AND.w #$00FF
         + LDY.w #$0024
         PHX : ASL : TAX
         LDA.l InventoryTable_properties, X : BIT.w #$8000 : BEQ +
@@ -119,11 +119,11 @@ LoadDynamicTileOAMTable:
         SEP #$30
 
 		LDA.l BeeTrapDisguise : BNE +
-			LDA.w SprItemReceipt,X
+			LDA.w SprItemReceipt, X
         + JSL GetSpritePalette_resolved
         STA.l SpriteOAM+5 : STA.l SpriteOAM+13
         PHX
-        LDA.l SpriteProperties_standing_width,X : BEQ .narrow
+        LDA.l SpriteProperties_standing_width, X : BEQ .narrow
         BRA .done
 
         .narrow
