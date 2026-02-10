@@ -122,6 +122,7 @@ AncillaAdd_FallingPrize                                    = $898BAD
 AncillaAdd_FallingPrize_not_medallion                      = $898BD6
 AddWeathervaneExplosion                                    = $898CFD
 AddDashTremor                                              = $8993DF
+AncillaAdd_GraveStone                                      = $8999D5
 AncillaAdd_GTCutscene                                      = $899B6F
 AddDoorDebris_spawn_failed                                 = $899C39
 AddAncillaLong                                             = $899D04

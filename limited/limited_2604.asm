@@ -4,6 +4,8 @@
 !FortuneRead = LimitedRunStore+3
 !ScreenSequenceIndex = LimitedRunStore+4 ; 16-bit, screen temporary
 !BananaFlags = LimitedRunStore+4 ; 16-bit, screen temporary
+!StatueGFXLoaded = LimitedRunStore+4 ; 16-bit, screen temporary
+!GFXLoadFlag = LimitedRunStore+$20
 
 !BananaXPos = LimitedRunData
 !BananaYPos = LimitedRunData+10
@@ -30,6 +32,14 @@ Limited_OverworldPedestalTileChanges:
         LDA.w #$02C3 : STA.w $20A8
 	    LDA.w #$02CA : STA.w $2128
         RTL
+    + CMP.w #$001E : BNE +
+        LDA.b #$00 : STA.l !StatueGFXLoaded
+        LDA.l OverworldEventDataWRAM+$1E : AND.w #$0040 : BEQ ++
+		LDA.w #$0912 : STA.w $3318
+            INC : STA.w $331A
+            INC : STA.w $3398
+            INC : STA.w $339A
+        ++ RTL
     + CMP.w #$0043 : BNE +
         LDA.l OverworldEventDataWRAM+$43 : AND.w #$0040 : BEQ ++
 		LDA.w #$0912 : STA.w $2310
@@ -260,6 +270,10 @@ Limited_HandlePedestalEntrances:
     LDA.w OverworldIndexMirror : CMP.w #$0015 : BNE +
         LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0B40 : BNE .exit
         LDA.w #$0003 : BRA .load_pedestal
+    + CMP.w #$001E : BNE +
+        LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0CC8 : BNE .exit
+        LDA.w #$0000 : STA.l !StatueGFXLoaded
+        LDA.w #$0001 : BRA .load_pedestal
     + CMP.w #$0043 : BNE +
         LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0688 : BNE .exit
         LDA.w #$0005 : BRA .load_pedestal
@@ -517,6 +531,343 @@ SpawnFlyingTile_FollowLink:
             LDA.b #$10
 .return
     RTS
+
+; Z1 Armos Gimmick
+pushpc
+org $87C0F7
+JSL CheckForGravePush_Conditional
+
+org $87CB2E
+JSL CheckForZ1StatuePush : NOP
+
+org $8999E0
+JSL AncillaAdd_Z1ArmosStatue
+
+org $85A072
+JSL ArmosKnight_KnightDead
+
+org $85B800
+JSL SpriteDraw_Z1ArmosStatue_Alternate : NOP
+org $85B758
+JSL ArmosStatue_InactivePalette : NOP
+
+org $85A288
+JSL SpriteDraw_Z1ArmosKnight_Alternate
+org $9DEF7E
+JSL ArmosKnight_RedCrusherPalette : NOP
+
+org $8FFE97 : db $42 : skip 5 : db $42 : skip 8 : db $42, $42 : skip 5 : db $42 ; make statues pushable
+pullpc
+
+CheckForGravePush_Conditional:
+    BEQ .reset_push_timer ; what we
+    LDA.b LinkLastDirection : BEQ .continue ; wrote over
+    LDA.b OverworldIndex : CMP.b #$1E : BEQ .continue
+.reset_push_timer
+    LDA.b #$01
+.continue
+    RTL
+
+; most of this code is copied from CheckForGravePush
+CheckForZ1StatuePush:
+    STZ.b $6B ; part of what we wrote over
+    LDA.b OverworldIndex : CMP.b #$1E : BNE .reset_push_timer
+    LDA.w $02E7 : AND.b #$0F : BEQ .reset_push_timer
+    LDA.b LinkLastDirection : AND.b #$02 : BEQ .reset_push_timer
+    DEC.b $61 : BPL .return
+.dashing
+    LDA.b Scrap0E : PHA
+        LDY.b #$04 : LDA.b #$24 ; ANCILLA 24
+        JSL AncillaAdd_GraveStone
+    PLA : STA.b Scrap0E
+.reset_push_timer
+    LDA.b #$34 : STA.b $61
+.return
+    LDA.w $02E8 ; part of what we wrote over
+    RTL
+
+AncillaAdd_Z1ArmosStatue_gravestone:
+    REP #$30 : LDY.b LinkPosY ; what we wrote over
+    RTL
+AncillaAdd_Z1ArmosStatue:
+    LDA.b OverworldIndex : CMP.b #$1E : BNE .gravestone
+    PLA : PLA : PLA ; discard return address
+    LDA.b #AncillaAdd_Z1ArmosStatue>>16 : STA.b Scrap06 : PHA : PLB
+    STZ.w AncillaID, X
+
+    REP #$30
+    LDA.b LinkLastDirection : AND.w #$0002 : BNE +
+        ; up/down, set X
+        LDA.b LinkPosX : CLC : ADC.w #$0008 : AND.w #$FFF0 : STA.b Scrap02
+        BRA .determine_xy
+    + ; left/right, set Y
+    LDA.b LinkPosY : AND.w #$FFF0 : CLC : ADC.w #$0008 : STA.b Scrap00
+.determine_xy
+    LDA.b LinkLastDirection : AND.w #$00FF : BNE + ; up
+        LDA.b LinkPosY : SEC : SBC.w #$001C : AND.w #$FFF8 : STA.b Scrap00
+        BRA .search
+    + DEC : BNE + ; down
+        LDA.b LinkPosY : CLC : ADC.w #$0010 : AND.w #$FFF8 : STA.b Scrap00
+        BRA .search
+    + DEC : BNE + ; left
+        LDA.b LinkPosX : SEC : SBC.w #$001C : AND.w #$FFF0 : STA.b Scrap02
+        BRA .search
+    + LDA.b LinkPosX : CLC : ADC.w #$0010 : AND.w #$FFF0 : STA.b Scrap02 ;right
+.search
+    LDA.b LinkLastDirection : AND.w #$00FF : ASL : TAX
+    LDA.w .direction, X : STA.b Scrap04
+    LDY.w #((.position_x-.position_y)+2)
+.next_statue
+    JMP.w [Scrap04]
+.direction
+    dw .check_up, .check_down, .check_left, .check_right
+
+.check_up
+    LDA.w .position_y, Y : CMP.b Scrap00 : BNE .continue
+    LDA.w .position_x, Y : DEC : CMP.b Scrap02 : BCS .continue
+    CLC : ADC.w #$0020 : CMP.b Scrap02 : BCC .continue
+    BRA .found_statue
+.check_down
+    LDA.w .position_y, Y : CMP.b Scrap00 : BNE .continue
+    LDA.w .position_x, Y : DEC : CMP.b Scrap02 : BCS .continue
+    CLC : ADC.w #$0020 : CMP.b Scrap02 : BCC .continue
+    BRA .found_statue
+.check_left
+    LDA.w .position_x, Y : CMP.b Scrap02 : BNE .continue
+    LDA.w .position_y, Y : DEC : CMP.b Scrap00 : BCS .continue
+    CLC : ADC.w #$0020 : CMP.b Scrap00 : BCC .continue
+    BRA .found_statue
+.check_right
+    LDA.w .position_x, Y : CMP.b Scrap02 : BNE .continue
+    LDA.w .position_y, Y : DEC : CMP.b Scrap00 : BCS .continue
+    CLC : ADC.w #$0020 : CMP.b Scrap00 : BCC .continue
+    BRA .found_statue
+
+.continue
+    DEY #2 : BMI + : JMP.w [Scrap04] : +
+    SEP #$30
+    BRL .exit
+
+.found_statue
+    LDX.w .tilemap_offset, Y
+
+    PHY
+        LDA.w #$02E5 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+        INX #2
+        LDA.w #$02E5 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+        TXA : CLC : ADC.w #$007E : TAX
+        LDA.w #$02E5 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+        INX #2
+        LDA.w #$02E5 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+    PLX
+    SEP #$30
+    LDA.b #$01 : STA.b NMISTRIPES
+
+    PHX
+        TXA : LSR : TAX
+        LDA.w .sprite_id,X
+        PHA
+            JSL Sprite_SpawnDynamically
+            BMI +
+                JSL SpritePrep_LoadProperties
+            +
+        PLA
+    PLX
+    CPY.b #$00 : BMI .exit
+
+    CMP.b #$53 : BNE +
+        LDA.b #$01 : STA.w $0FF8 ; Red Armos Knight
+        BRA .set_position
+    +
+    bra + : NOP #20 : +
+    LDA.b #$02 : STA.w SpriteSpawnStep, Y
+    LDA.b #$0D : STA.w SpriteOAMProp, Y
+.set_position
+    REP #$20
+    LDA.w .position_x, X : CLC : ADC.w #$0008 : STA.b Scrap00
+    LDA.w .position_y, X : CLC : ADC.w #$0010 : STA.b Scrap02
+    SEP #$20
+
+    LDA.b Scrap02 : STA.w SpritePosYLow, Y
+    LDA.b Scrap03 : STA.w SpritePosYHigh, Y
+
+    LDA.b Scrap00 : STA.w SpritePosXLow, Y
+    LDA.b Scrap01 : STA.w SpritePosXHigh, Y
+
+    LDA.l !StatueGFXLoaded : BNE +
+        LDA.b #$01 : STA.l !StatueGFXLoaded : STA.l !GFXLoadFlag
+    +
+.exit
+    PLB : RTL
+
+.position_y
+    ;dw $06B0
+    ;dw $06B0
+    dw $0818
+    dw $0828
+    dw $0828
+    dw $0828
+    dw $0858
+    dw $0858
+    dw $0888
+    dw $0888
+    dw $0888
+    dw $0938
+    dw $0938
+.position_x
+    ;dw $0EE0
+    ;dw $0FB0
+    dw $0E20
+    dw $0C60
+    dw $0CC0
+    dw $0D20
+    dw $0CC0
+    dw $0EC0
+    dw $0C60
+    dw $0CC0
+    dw $0D20
+    dw $0D20
+    dw $0D80
+.tilemap_offset
+    ;dw $05DC
+    ;dw $05F6
+    dw $1144
+    dw $118C
+    dw $1198
+    dw $11A4
+    dw $1318
+    dw $1358
+    dw $148C
+    dw $1498
+    dw $14A4
+    dw $1A24
+    dw $1A30
+.sprite_id
+    ;db $51
+    ;db $51
+    db $51
+    db $51
+    db $51
+    db $51
+    db $53
+    db $51
+    db $51
+    db $51
+    db $51
+    db $51
+    db $51
+
+ArmosKnight_KnightDead:
+    JSL $89AF32 ; CheckIfScreenIsClear - what we wrote over
+    BCC .exit
+    LDA.b IndoorsFlag : BNE .exit
+        ; reveal entrance
+        LDA.b #$1A : STA.w SFX3
+        LDA.l OverworldEventDataWRAM+$1E : ORA.b #$40
+        STA.l OverworldEventDataWRAM+$1E
+        REP #$30
+            LDA.w #$0912 : LDX.w #$1318 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0913 : LDX.w #$131A : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0914 : LDX.w #$1398 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0915 : LDX.w #$139A : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+        SEP #$30
+        LDA.b #$01 : STA.b NMISTRIPES
+        CLC
+.exit
+    RTL
+
+ArmosStatue_InactivePalette:
+    LDA.b #$0B ; what we
+    CLC : ADC.w SpriteSpawnStep, X
+    STA.w SpriteOAMProp, X ; wrote over
+    RTL
+
+ArmosKnight_RedCrusherPalette:
+    LDA.b IndoorsFlag : BNE .vanilla
+        LDA.b #$03
+        BRA .set_palette
+.vanilla
+    LDA.b #$07 ; what we
+.set_palette
+    STA.w SpriteOAMProp, X ; wrote over
+    RTL
+
+SpriteDraw_Z1ArmosStatue_Alternate:
+    LDA.w SpriteSpawnStep, X : BEQ .vanilla
+        PHB : PHK : PLB
+            JSL OAM_AllocateFromRegionC
+            REP #$20
+            LDA.w #.oam_groups : STA.b Scrap08
+            SEP #$20
+            LDA.b #$04 : JSL Sprite_DrawMultiple
+            JSL OAM_AllocateFromRegionF
+        PLB
+    RTL
+.vanilla
+    LDA.b #$02 : JML Sprite_DrawMultiple ; what we wrote over
+.oam_groups
+dw  -8, -12 : db $CE, $00, $00, $02
+dw   8, -12 : db $CE, $40, $00, $02
+dw  -8,   4 : db $EE, $00, $00, $02
+dw   8,   4 : db $EE, $40, $00, $02
+
+SpriteDraw_Z1ArmosKnight_Alternate:
+    LDA.b IndoorsFlag : BNE .vanilla
+        PLA : PLA : PEA.w $A2E7 ; discard return address
+        PHB : PHK : PLB
+            JSL OAM_AllocateFromRegionC
+            REP #$20
+            LDA.w #.oam_groups : STA.b Scrap08
+            SEP #$20
+            LDA.b #$04 : JSL Sprite_DrawMultiple
+            JSL OAM_AllocateFromRegionF
+            JSL Sprite_DrawShadowLong
+        PLB
+.vanilla
+    LDA.w SpriteGFXControl, X : ASL ; what we wrote over
+    RTL
+.oam_groups
+dw  -8, -12 : db $CE, $00, $00, $02
+dw   8, -12 : db $CE, $40, $00, $02
+dw  -8,   4 : db $EE, $00, $00, $02
+dw   8,   4 : db $EE, $40, $00, $02
+
+Limited_TransferGFX_exit:
+    RTL
+Limited_TransferGFX:
+    LDA.l !GFXLoadFlag : BEQ .exit
+        PHP
+            REP #$10
+            SEP #$20
+            LDA.b #$80 : STA.w VMAIN
+            LDA.b #$01 : STA.w DMA0MODE
+            DEC : STA.l !GFXLoadFlag
+            LDA.b #$18 : STA.w DMA0PORT
+            LDA.b #$A2 : STA.w DMA0ADDRB
+
+            REP #$20
+            ; row 0 (tiles 0-1)
+            LDA.w #$B9C0>>1 : STA.w VMADDR
+            LDA.w #$9C20 : STA.w DMA0ADDR
+            LDA.w #$0040 : STA.w DMA0SIZE
+            SEP #$20 : LDA.b #$01 : STA.w DMAENABLE : REP #$20
+            ; row 1 (tiles 2-3)
+            LDA.w #$BBC0>>1 : STA.w VMADDR
+            LDA.w #$9E20 : STA.w DMA0ADDR
+            LDA.w #$0040 : STA.w DMA0SIZE
+            SEP #$20 : LDA.b #$01 : STA.w DMAENABLE : REP #$20
+            ; row 2 (tiles 4-5)
+            LDA.w #$BDC0>>1 : STA.w VMADDR
+            LDA.w #$A020 : STA.w DMA0ADDR
+            LDA.w #$0040 : STA.w DMA0SIZE
+            SEP #$20 : LDA.b #$01 : STA.w DMAENABLE : REP #$20
+            ; row 3 (tiles 6-7)
+            LDA.w #$BFC0>>1 : STA.w VMADDR
+            LDA.w #$A220 : STA.w DMA0ADDR
+            LDA.w #$0040 : STA.w DMA0SIZE
+            SEP #$20 : LDA.b #$01 : STA.w DMAENABLE : REP #$20
+        PLP
+    RTL
 
 ; Kiki Banana Fetch Game
 pushpc

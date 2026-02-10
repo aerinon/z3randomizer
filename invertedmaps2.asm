@@ -30,7 +30,7 @@ OverworldMapChangePointers2:
 	dw .map1B     ; 1B
 	dw $0000      ; 1C
 	dw $0000      ; 1D
-	dw $0000      ; 1E
+	dw .map1E     ; 1E
 	dw $0000      ; 1F
 	dw $0000      ; 20
 	dw $0000      ; 21
@@ -467,6 +467,13 @@ OverworldMapChangePointers2:
 		dw #ReliableOWWSentinel
 
 	dw $0101, $222C ; tower entry sign
+
+	dw !OWW_END
+
+;---------------------------------------------------------------------------------------------------
+
+.map1E
+	dw !OWW_CustomCommand, Overworld_OtherTileChanges
 
 	dw !OWW_END
 

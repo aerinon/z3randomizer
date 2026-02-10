@@ -53,6 +53,9 @@ PostNMIHookAction:
                 .return
                 STZ.w NMIAux ; zero bank byte of NMI hook pointer
         +
+        if !FEATURE_LIMITED_RUN == 2604
+                JSL Limited_TransferGFX
+        endif
         JSR TransferItemGFX
         LDA.b INIDISPQ : STA.w INIDISP ; thing we wrote over, turn screen back on
 
