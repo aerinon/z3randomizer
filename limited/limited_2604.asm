@@ -9,6 +9,7 @@
 
 !BananaXPos = LimitedRunData
 !BananaYPos = LimitedRunData+10
+!LostWoodsMessage = LimitedRunData+20
 
 ; --------------------------------------------------------------------------------
 
@@ -441,8 +442,9 @@ Limited_LoadOverworldFromUnderworld:
 
 Limited_ShowAwaitingMessage:
     LDA.l !KickedOutMessage : BEQ .exit
-    LDA.b #$98 : LDY.b #$01 : JSL Sprite_ShowMessageUnconditional
-    LDA.b #$00 : STA.l !KickedOutMessage
+        LDA.l !LostWoodsMessage+1 : TAY : LDA.l !LostWoodsMessage
+        JSL Sprite_ShowMessageUnconditional
+        LDA.b #$00 : STA.l !KickedOutMessage
 .exit
     RTL
 
@@ -693,7 +695,6 @@ AncillaAdd_Z1ArmosStatue:
         LDA.b #$01 : STA.w $0FF8 ; Red Armos Knight
         BRA .set_position
     +
-    bra + : NOP #20 : +
     LDA.b #$02 : STA.w SpriteSpawnStep, Y
     LDA.b #$0D : STA.w SpriteOAMProp, Y
 .set_position
@@ -988,10 +989,10 @@ KikiBanana_Collect:
         LDA.l OverworldEventDataWRAM+$5E : ORA.b #$40
         STA.l OverworldEventDataWRAM+$5E
         REP #$30
-            LDA.w #$0912 : LDX.w #$0B74 : JSL Overworld_DrawPersistentMap16
-            LDA.w #$0914 : LDX.w #$0BF4 : JSL Overworld_DrawPersistentMap16
-            LDA.w #$0913 : LDX.w #$0B76 : JSL Overworld_DrawPersistentMap16
-            LDA.w #$0915 : LDX.w #$0BF6 : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0912 : LDX.w #$0B74 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0914 : LDX.w #$0BF4 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0913 : LDX.w #$0B76 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0915 : LDX.w #$0BF6 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
         SEP #$30
         LDA.b #$01 : STA.b NMISTRIPES
     +
