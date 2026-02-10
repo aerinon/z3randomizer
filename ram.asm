@@ -93,6 +93,7 @@ LinkState = $7E005D               ; Main Link state handler
 LinkSpeed = $7E005E               ; Main Link speed handler
 ManipTileField = $7E005F          ; Bitfield used by manipulable tiles
                                   ;
+LinkLastDirection = $7E0066       ; Last direction Link moved: $00=up $01=down $02=left $03=right
 LinkWalkDirection = $7E0067       ; - - - - u d l r
                                   ;
 ScrapBuffer72 = $7E0072           ; Volatile scrap buffer. 5 bytes.
@@ -381,6 +382,7 @@ OverlordYLow = $7E0B18            ; $08 bytes.
 OverlordYHigh = $7E0B20           ; $08 bytes.
                                   ;
 EnemyStunTimer = $7E0B58          ; Auto-decrementing timer for stunned enemies. $10 bytes.
+SpriteTileDeath = $7E0B68         ; Contains properties involving a sprite's ability to die during tile interaction. $10 bytes.
                                   ;
 BowDryFire = $7E0B9A              ; If set, arrows are deleted immediately
                                   ;
@@ -388,28 +390,32 @@ SecretId = $7E0B9C                ; Controls the secret spawned from bushes, pot
 SaveFileIndex = $7E0B9D           ;
                                   ;
 SpriteAncillaInteract = $7E0BA0   ; If nonzero, ancillae do not interact with the sprite. $10 bytes.
+SpriteAncillaInteractID = $7E0BB0 ; This contains the ID of the ancilla that hit the sprite. $10 bytes.
                                   ;
+SpritePrizeProps = $7E0BE0        ; Various properties, including prize pack info. $10 bytes.
+AncillaGeneralM = $7E0BF0         ; General use buffer for ancillae. $10 bytes.
 AncillaCoordYLow = $7E0BFA        ;
 AncillaCoordXLow = $7E0C04        ;
 AncillaCoordYHigh = $7E0C0E       ;
 AncillaCoordXHigh = $7E0C18       ;
-                                  ;
 AncillaVelocityY = $7E0C22        ; $0A bytes.
 AncillaVelocityX = $7E0C2C        ; $0A bytes.
-                                  ;
+AncillaSubPixelY = $7E0C36        ; $0A bytes.
+AncillaSubPixelX = $7E0C40        ; $0A bytes.
 AncillaID = $7E0C4A               ; $0A bytes.
-                                  ;
 AncillaGeneralN = $7E0C54         ; General use buffer for ancillae. $0A bytes.
-                                  ;
 AncillaGet = $7E0C5E              ; Used by various ancilla in various ways. $0A bytes.
-                                  ;
+AncillaTimerA = $7E0C68           ; Used as a timer for ancilla. $0A bytes.
 AncillaDirection = $7E0C72        ; Used by various ancilla to track its direction. $0A bytes
 AncillaLayer = $7E0C7C            ;
-                                  ;
+AncillaOAMOffset = $7E0C86        ; OAM region offset of ancilla. $0A bytes.
+AncillaOAMAlloc = $7E0C90         ; OAM allocation for ancilla. $0A bytes.
+SpriteScreenOwner = $7E0C9A       ; Used during screen transitions to handle sprite death. $10 bytes.
 SpriteDeflection = $7E0CAA        ; Various flags relating to death and deflection. $10 bytes.
 SpriteForceDrop = $7E0CBA         ; Forces drops on sprite death. $10 bytes.
                                   ;
 SpriteBump = $7E0CD2              ; See symbols_wram.asm. $10 bytes.
+SpriteDamageIncurred = $7E0CE2    ; Stores damage being done to a sprite. $10 bytes.
                                   ;
 BossSpecialAction = $7E0CF3       ; Indicates special action required for some bosses
 TreePullKills = $7E0CFB           ; Kills for tree pulls.
@@ -425,14 +431,14 @@ SpriteSubPixelY = $7E0D60         ;
 SpriteSubPixelX = $7E0D70         ;
 SpriteActivity = $7E0D80          ; Not sure what this is.
 SpriteMovement = $7E0D90          ; Not sure what this is.
-                                  ;
-SpriteAuxTable = $7E0DA0          ; $20 bytes.
+SpriteAuxTable = $7E0DA0          ; $10 bytes.
+SpriteAuxTableB = $7E0DB0         ; $10 bytes.
 SpriteGFXControl = $7E0DC0        ;
 SpriteAITable = $7E0DD0           ; AI state of sprites. $10 bytes.
 SpriteMoveDirection = $7E0DE0     ; $00 = Right | $01 = Left | $02 = Down | $03 = Up
-                                  ;
 SpriteTimer = $7E0DF0             ;
-                                  ;
+SpriteTimerB = $7E0E00            ;
+SpriteTimerC = $7E0E10            ;
 SpriteTypeTable = $7E0E20         ; Which sprite occupies this slot. $10 bytes.
 SpriteAux = $7E0E30               ;
 SpriteOAMProperties = $7E0E40     ; h m w o o o o o | h = Harmless       | m = master sword? | w = walls?
@@ -440,23 +446,25 @@ SpriteOAMProperties = $7E0E40     ; h m w o o o o o | h = Harmless       | m = m
 SpriteHitPoints = $7E0E50         ; Set from $0DB173
 SpriteControl = $7E0E60           ; n i o s p p p t | n = Death animation? | i = Immune to attack/collion?
                                   ; o = Shadow      | p = OAM prop palette | t = OAM prop name table
+SpriteTileCollision = $7E0E70     ; Used for tile collision. $10 bytes.
 SpriteJumpIndex = $7E0E80         ; Sprite jump table local. $10 bytes.
-                                  ;
+SpriteAuxB = $7E0E90              ; Sprite, general use. $10 bytes.
+SpriteRecoilTimer = $7E0EA0       ; Sprite recoil timer. $10 bytes.
 SpriteDirectionTable = $7E0EB0    ; Sprite direction. $10 bytes.
-                                  ;
+SpriteAuxC = $7E0EC0              ; Sprite, general use. $10 bytes.
 SpriteSpawnStep = $7E0ED0         ; Related to enemies spawning other sprites (eg pikit, zirro)
-                                  ;
+SpriteTimerD = $7E0EE0            ;
+SpriteInvulnerableTimer = $7E0EF0 ; Sprite invulnerability timer after damage. $10 bytes.
 SpriteHalt = $7E0F00              ;
 SpriteTimerE = $7E0F10            ; ?
-                                  ;
 SpriteLayer = $7E0F20             ;
-                                  ;
+SpriteKnockbackY = $7E0F30        ;
+SpriteKnockbackX = $7E0F40        ;
 SpriteOAMProp = $7E0F50           ;
-                                  ;
+SpriteCollision = $7E0F60         ;
 SpriteZCoord = $7E0F70            ;
 SpriteVelocityZ = $7E0F80         ;
 SpriteSubPixelZ = $7E0F90         ;
-                                  ;
 CurrentSpriteSlot = $7E0FA0       ; Holds the current sprite/ancilla's index
                                   ;
 CurrentSpriteTile = $7E0FA5       ; Holds the current sprite/ancilla's tile type
@@ -798,6 +806,7 @@ endmacro
 %assertRAM(LinkState, $7E005D)
 %assertRAM(LinkSpeed, $7E005E)
 %assertRAM(ManipTileField, $7E005F)
+%assertRAM(LinkLastDirection, $7E0066)
 %assertRAM(LinkWalkDirection, $7E0067)
 %assertRAM(ScrapBuffer72, $7E0072)
 %assertRAM(WorldCache, $7E007B)
@@ -964,20 +973,31 @@ endmacro
 %assertRAM(OverlordYLow, $7E0B18)
 %assertRAM(OverlordYHigh, $7E0B20)
 %assertRAM(EnemyStunTimer, $7E0B58)
+%assertRAM(SpriteTileDeath, $7E0B68)
 %assertRAM(BowDryFire, $7E0B9A)
 %assertRAM(SecretId, $7E0B9C)
 %assertRAM(SaveFileIndex, $7E0B9D)
 %assertRAM(SpriteAncillaInteract, $7E0BA0)
+%assertRAM(SpriteAncillaInteractID, $7E0BB0)
+%assertRAM(SpritePrizeProps, $7E0BE0)
+%assertRAM(AncillaGeneralM, $7E0BF0)
 %assertRAM(AncillaVelocityY, $7E0C22)
 %assertRAM(AncillaVelocityX, $7E0C2C)
+%assertRAM(AncillaSubPixelY, $7E0C36)
+%assertRAM(AncillaSubPixelX, $7E0C40)
 %assertRAM(AncillaID, $7E0C4A)
 %assertRAM(AncillaGeneralN, $7E0C54)
 %assertRAM(AncillaGet, $7E0C5E)
+%assertRAM(AncillaTimerA, $7E0C68)
 %assertRAM(AncillaDirection, $7E0C72)
 %assertRAM(AncillaLayer, $7E0C7C)
+%assertRAM(AncillaOAMOffset, $7E0C86)
+%assertRAM(AncillaOAMAlloc, $7E0C90)
+%assertRAM(SpriteScreenOwner, $7E0C9A)
 %assertRAM(SpriteDeflection, $7E0CAA)
 %assertRAM(SpriteForceDrop, $7E0CBA)
 %assertRAM(SpriteBump, $7E0CD2)
+%assertRAM(SpriteDamageIncurred, $7E0CE2)
 %assertRAM(BossSpecialAction, $7E0CF3)
 %assertRAM(TreePullKills, $7E0CFB)
 %assertRAM(TreePullHits, $7E0CFC)
@@ -992,22 +1012,34 @@ endmacro
 %assertRAM(SpriteActivity, $7E0D80)
 %assertRAM(SpriteMovement, $7E0D90)
 %assertRAM(SpriteAuxTable, $7E0DA0)
+%assertRAM(SpriteAuxTableB, $7E0DB0)
 %assertRAM(SpriteGFXControl, $7E0DC0)
 %assertRAM(SpriteAITable, $7E0DD0)
 %assertRAM(SpriteMoveDirection, $7E0DE0)
 %assertRAM(SpriteTimer, $7E0DF0)
+%assertRAM(SpriteTimerB, $7E0E00)
+%assertRAM(SpriteTimerC, $7E0E10)
 %assertRAM(SpriteTypeTable, $7E0E20)
 %assertRAM(SpriteAux, $7E0E30)
 %assertRAM(SpriteOAMProperties, $7E0E40)
 %assertRAM(SpriteHitPoints, $7E0E50)
 %assertRAM(SpriteControl, $7E0E60)
+%assertRAM(SpriteTileCollision, $7E0E70)
 %assertRAM(SpriteJumpIndex, $7E0E80)
+%assertRAM(SpriteAuxB, $7E0E90)
+%assertRAM(SpriteRecoilTimer, $7E0EA0)
 %assertRAM(SpriteDirectionTable, $7E0EB0)
+%assertRAM(SpriteAuxC, $7E0EC0)
 %assertRAM(SpriteSpawnStep, $7E0ED0)
+%assertRAM(SpriteTimerD, $7E0EE0)
+%assertRAM(SpriteInvulnerableTimer, $7E0EF0)
 %assertRAM(SpriteHalt, $7E0F00)
 %assertRAM(SpriteTimerE, $7E0F10)
 %assertRAM(SpriteLayer, $7E0F20)
+%assertRAM(SpriteKnockbackY, $7E0F30)
+%assertRAM(SpriteKnockbackX, $7E0F40)
 %assertRAM(SpriteOAMProp, $7E0F50)
+%assertRAM(SpriteCollision, $7E0F60)
 %assertRAM(SpriteZCoord, $7E0F70)
 %assertRAM(SpriteVelocityZ, $7E0F80)
 %assertRAM(SpriteSubPixelZ, $7E0F90)
