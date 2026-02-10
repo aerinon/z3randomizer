@@ -532,6 +532,20 @@ SpawnFlyingTile_FollowLink:
 .return
     RTS
 
+; Desert Statue Gimmick
+pushpc
+org $8595DA : NOP #5
+org $8595E6 : db #$03
+org $8595F3
+JSL DesertStatue_Moving_Finish : NOP
+STZ.w $02F0
+pullpc
+
+DesertStatue_Moving_Finish:
+    STZ.w SpriteActivity, X
+    STZ.w SpriteSpawnStep, X
+    RTL
+
 ; Z1 Armos Gimmick
 pushpc
 org $87C0F7
