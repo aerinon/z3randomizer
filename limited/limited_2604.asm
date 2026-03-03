@@ -1039,3 +1039,324 @@ Kiki_VerifyPurchaseCheckBanana:
 .checkrupees
     LDA.b #$64 : LDY.b #$00 ; what we wrote over
     RTL
+
+; Ganon Gimmick
+pushpc
+org $9D8FCC
+JML Ganon_MaybeWarpOnLink
+org $9D8F58
+JSL Sprite_Ganon_skip_damage : NOP #2
+org $9D8EEA
+JSL Ganon_MaybeEnableVulnerabilty : NOP
+org $9DF00F
+JSL RedArmosCrusher_Jump_adjust_proximity : NOP #2
+org $89EE44
+JSL Ganon_FakeVictory : NOP
+org $81C78A
+JSL RoomTag_GanonDoor_victory
+pullpc
+
+macro JSRLongCall_Bank1D(call, return)
+    PHK : PEA.w (<return>)-1 ; address to return back to
+    PEA.w $88BB-1 ; some RTL in bank 1D
+    JML <call>
+endmacro
+
+; $0D80 - SpriteActivity - this determines which routine runs on the next frame, the added routines are $14-$1B
+; $0C9A - SpriteScreenOwner - prevents vanilla torch-based invulnerability check from activating
+;                             *allows our code to properly let Ganon be set up for this newly added phase
+; $0BA0 - SpriteAncillaInteract - this is used to skip the collision/damage check
+;                                 *sometimes is ineffective under certain conditions
+; $0CAA - SpriteDeflection - this is used to bypass activating an invulnerability timer* during the $0A carry state
+;                            *this timer caused routine code to be skipped for a period after throwing Ganon
+; $0E40 - SpriteOAMProperties - toggles 'harmless' bit to selectively avoid collision/damage in stunned phase
+
+; $0E90/$0DA0/$0DB0 - SpriteAuxB/SpriteAuxTable/SpriteAuxTableB - Armos code uses these to temp store Link's coords
+
+; $0EB0 - SpriteDirectionTable - this is used to change the direction Ganon faces
+;                                *Armos code also uses this to temp store part of Link's coords
+; $0DC0 - SpriteGFXControl - this determines which body gfx Ganon uses
+; $0DE0 - SpriteMoveDirection - this determines which head gfx Ganon uses
+; $0ED0 - SpriteSpawnStep - controls gfx for Ganon's trident
+;                           *Armos code increments this to determine if ready for the next routine
+; $0F50 - SpriteOAMProp - controls the palette for Ganon gfx
+
+; $0EC0 - SpriteAuxC - used to count how many times Ganon was hit since last reset
+; $0D90 - SpriteMovement - used to count how many times Ganon has smashed the floor since last reset
+
+; $0E70 - SpriteTileCollision - this is zeroed when we want Ganon to clip thru tiles
+;                               *helps let him clip into walls slightly to allow pit fall
+; $0B68 - SpriteTileDeath - this allows Ganon to fall into pits
+
+; $0DF0 - SpriteTimer - this is the primary routine countdown timer
+; $0E00 - SpriteTimerB - while active, this skips damage checks, but also exits Ganon code early
+; $0F10 - SpriteTimerE - this timer allows the current routine to pause and let recoil take visual effect
+; $0EE0 - SpriteTimerD - controls duration of floor shake
+
+Ganon_MaybeWarpOnLink:
+    ; Ganon in phase 4 has a chance to warp on Link's position
+    JSL RNG_Ganon : AND.b #$03 : BNE .vanilla
+        LDA.b LinkPosX : STA.l $7FFD5C
+        LDA.b LinkPosY : STA.l $7FFD68
+        LDA.b #$12 : JML Ganon_SelectWarpLocation_custom
+.vanilla
+    LDA.b #$12 : JML Ganon_SelectWarpLocation ; what we wrote over
+
+Ganon_FakeVictory:
+    LDA.b #$13 : STA.w MusicControlRequest ; what we wrote over
+    LDA.b #$09 : STA.w SpriteAITable, X
+    LDA.b #$01 : STA.w CutsceneFlag : STA.w ForceSwordUp
+    LDA.b #$14 : STA.w SpriteActivity, X
+    LDA.b #$04 : STA.w SpriteHitPoints, X
+    LDA.b #$80 : STA.w SpriteTimer, X
+    LDA.b #$FF : STA.w SpriteGFXControl, X
+    LDA.w SpriteDeflection, X : ORA.b #$80 : STA.w SpriteDeflection, X
+    STZ.w SpriteTimerB, X
+.exit
+    RTL
+
+RoomTag_GanonDoor_victory:
+    STA.b $11 : STZ.b $B0 ; what we wrote over
+    LDA.b #$13 : STA.w MusicControlRequest
+    RTL
+
+Sprite_Ganon_skip_damage_return:
+    RTL
+Sprite_Ganon_skip_damage:
+    STZ.w SpriteAncillaInteract, X : LDA.w SpriteActivity, X ; what we wrote over
+    CMP.b #$14 : BCC .return
+    TAY
+    PLA : PLA : PEA.w $8FAD-1 ; some RTS in bank 1D
+    TYA
+    SEC : SBC.b #$14
+    JSL JumpTableLocal
+    dw Ganon_Phase5_WaitForFanfare  ; 0x14
+    dw Ganon_Phase5_SpawnBats       ; 0x15
+    dw Ganon_Phase5_RelightTorches  ; 0x16
+    dw Ganon_Phase5_TargetLink      ; 0x17
+    dw Ganon_Phase5_Jump            ; 0x18
+    dw Ganon_Phase5_Hover           ; 0x19
+    dw Ganon_Phase5_PrepSlam        ; 0x1A
+    dw Ganon_Phase5_Stunned         ; 0x1B
+
+Ganon_Phase5_WaitForFanfare:
+    LDA.w SpriteTimer, X : BNE .exit
+    LDA.b #$A0 : STA.w SpriteTimer, X
+    LDA.w SpriteHitPoints, X : DEC : STA.w SpriteHitPoints, X : BNE .exit
+        INC.w SpriteActivity, X
+        LDA.b #$12 : STA.w SFX1
+        LDA.b #$FF : STA.w SpriteTimer, X
+        LDA.b #$02 : STA.w SpriteHitPoints, X
+        STZ.w SpriteMoveDirection, X
+.exit
+    RTL
+
+Ganon_Phase5_SpawnBats_advance:
+    INC.w SpriteActivity, X
+    LDA.b #$10 : STA.w SpriteTimer, X
+    LDA.b #$02 : STA.w SpriteHitPoints, X
+    STZ.w SpriteLayer, X
+Ganon_Phase5_SpawnBats_exit:
+    RTL
+Ganon_Phase5_SpawnBats:
+    LDA.w SpriteTimer, X : BNE .exit
+    LDA.w SpriteHitPoints, X : BEQ .advance
+        LDA.b #$20 : STA.w SpriteTimer, X
+        STZ.w CutsceneFlag : STZ.w ForceSwordUp
+        %JSRLongCall_Bank1D(Ganon_SpawnFireBat_trailing, +) : +
+        LDA.b LinkPosX : STA.l $7EC10A
+        LDA.b LinkPosY : STA.l $7EC108
+        LDA.b #$B8 : STA.b LinkPosY
+        LDA.b #$20 : STA.w SpritePosYLow, Y
+        LDA.w SpriteHitPoints, X : DEC : STA.w SpriteHitPoints, X
+        AND.b #$01 : BEQ +
+            ; bat 1
+            LDA.b #$28 : STA.w SpritePosXLow, Y
+            LDA.b #$C8 : STA.b LinkPosX
+            BRA .bat_move
+        + ; bat 2
+        LDA.b #$C8 : STA.w SpritePosXLow, Y
+        LDA.b #$28 : STA.b LinkPosX
+.bat_move
+    PHX : TYX
+    LDA.b #$20 : JSL Sprite_ApplySpeedTowardsPlayerLong
+    PLX
+    LDA.l $7EC10A : STA.b LinkPosX
+    LDA.l $7EC108 : STA.b LinkPosY
+    RTL
+
+Ganon_Phase5_RelightTorches_advance:
+    INC.w SpriteActivity, X
+    LDA.b #$FF : STA.w SpriteHitPoints, X
+    LDA.b #$1F : STA.w MusicControlRequest
+    STZ.w SpriteAuxC, X
+    STZ.w SpriteTimerB, X
+    LDA.b #$20 : STA.w SpriteTimer, X
+Ganon_Phase5_RelightTorches_exit:
+    RTL
+Ganon_Phase5_RelightTorches:
+    LDA.w SpriteTimer, X : BNE .exit
+    LDA.w SpriteHitPoints, X : BEQ .advance
+        LDA.w SpriteHitPoints, X : DEC : STA.w SpriteHitPoints, X
+        AND.b #$01 : CLC : BEQ + : SEC : +
+        LDA.b #$C0 : BCC + : INC : + : STA.w $0333
+        PHP : PHX
+            JSL LightTorch
+        PLX : PLP
+        LDA.w $04C5 : INC : STA.w SpriteScreenOwner, X
+        LDY.b #$00 : TYA : BCC + : INY : + : STA.w $04F0, Y
+        LDA.b #$20 : STA.w SpriteTimer, X
+    RTL
+
+Ganon_Phase5_HandleShake:
+    STZ.w BG1ShakeH : STZ.w BG1ShakeH+1
+    LDA.w SpriteTimerD, X : BEQ +
+        AND.b #$01 : TAY
+        LDA.w $9D8000, Y : STA.w BG1ShakeH
+        LDA.w $9D8002, Y : STA.w BG1ShakeH+1
+    +
+    RTS
+
+Ganon_Phase5_CheckDamage:
+    LDA.w SpriteHitPoints, X : CMP.b #$FF : BEQ .exit
+        LDA.b #$FF : STA.w SpriteHitPoints, X
+        LDA.w SpriteAuxC, X : INC : CMP.b #$03 : BCS Ganon_Phase5_TargetLink_stun
+            STA.w SpriteAuxC, X
+            LDA.b #$10 : STA.w SpriteTimerE, X
+            CMP.w SpriteTimer, X : BCS .exit
+                STA.w SpriteTimer, X
+.exit
+    RTL
+
+Ganon_Phase5_TargetLink_stun:
+    LDA.b #$1B : STA.w SpriteActivity, X
+    LDA.b #$FF : STA.w SpriteTimer, X
+    STZ.w SpriteAuxC, X : STZ.w SpriteMovement, X
+    STZ.w SpriteVelocityZ, X : STZ.w SpriteVelocityX, X : STZ.w SpriteVelocityY, X
+Ganon_Phase5_TargetLink_exit:
+    RTL
+Ganon_Phase5_TargetLink:
+    JSR Ganon_Phase5_HandleShake
+    JSL Ganon_Phase5_CheckDamage
+    %JSRLongCall_Bank1D(MoveSpriteZ_bank1D, +) : +
+    LDA.w SpriteZCoord, X : BPL +
+        LDA.b #$00 : STA.w SpriteZCoord, X
+    +
+    CMP.b #$10 : BCC +
+        INC.w SpriteAncillaInteract, X
+    +
+    ORA.w SpriteTimer, X : BNE .exit
+        LDA.b #$20 : STA.w SpriteVelocityZ, X
+        JSL Sprite_ApplySpeedTowardsPlayerLong
+        INC.w SpriteActivity, X
+        LDA.w SpriteMovement, X : INC : STA.w SpriteMovement, X
+        CMP.b #$05 : BCC +
+            STZ.w SpriteAuxC, X : STZ.w SpriteMovement, X
+            LDA.b #$6E : STA.w TextID
+            LDA.b #$01 : STA.w TextID+1
+            JSL Sprite_ShowMessageMinimal
+        +
+        LDA.b LinkPosX : STA.w SpriteAuxTable, X
+        LDA.b LinkPosX+1 : STA.w SpriteAuxTableB, X
+        LDA.b LinkPosY : STA.w SpriteAuxB, X
+        LDA.b #$20 : JSL Sound_SetSfx2PanLong
+    RTL
+
+Ganon_Phase5_Jump_exit:
+    RTL
+Ganon_Phase5_Jump:
+    JSL Ganon_Phase5_CheckDamage
+    LDA.w SpriteTimerE, X : BNE .exit
+        LDA.b LinkPosY+1 : STA.w SpriteDirectionTable, X
+        LDA.w SpriteSpawnStep, X : PHA : STZ.w SpriteSpawnStep, X
+            %JSRLongCall_Bank1D($9DEFE0, +) : + ; RedArmosCrusher_Jump
+        PLA : XBA : LDA.w SpriteSpawnStep, X : PHP
+            XBA : STA.w SpriteSpawnStep, X
+        PLP : BEQ +
+        LDA.w SpriteZCoord, X : CMP.b #$20 : BCC +
+            INC.w SpriteActivity, X
+        +
+        %JSRLongCall_Bank1D(MoveSpriteXYZ_bank1D, +) : +
+        LDA.w SpriteZCoord, X : CMP.b #$40 : BCC +
+            LDA.b #$40 : STA.w SpriteZCoord, X
+            STZ.w SpriteVelocityZ, X
+        +
+        STZ.w SpriteDirectionTable, X
+        LDA.b #$06 : STA.w SpriteGFXControl, X
+        INC.w SpriteAncillaInteract, X
+    RTL
+
+RedArmosCrusher_Jump_adjust_proximity:
+    PHA
+        LDA.b RoomIndex : BNE .vanilla
+            ; makes Ganon go closer to target
+            PLA : ADC.w #$0004 : CMP.w #$0008
+        RTL
+.vanilla
+    PLA
+    ADC.w #$0010 : CMP.w #$0020 ; what we wrote over
+    RTL
+
+Ganon_Phase5_Hover:
+    STZ.w SpriteVelocityZ, X
+    STZ.w SpriteVelocityY, X
+    STZ.w SpriteVelocityX, X
+    INC.w SpriteAncillaInteract, X
+    %JSRLongCall_Bank1D(MoveSpriteXYZ_bank1D, +) : +
+    LDA.w SpriteTimer, X : BNE .exit
+        INC.w SpriteActivity, X
+.exit
+    RTL
+
+Ganon_Phase5_PrepSlam:
+    LDA.b #$98 : STA.w SpriteVelocityZ, X
+    LDA.b #$07 : STA.w SpriteGFXControl, X
+    INC.w SpriteAncillaInteract, X
+    %JSRLongCall_Bank1D(MoveSpriteZ_bank1D, +) : +
+    LDA.w SpriteZCoord, X : BMI .exit
+        LDA.b #$0C : JSL Sound_SetSfx2PanLong
+        LDA.b #$20 : STA.w SpriteTimerD, X
+#Ganon_Phase5_Reset:
+        LDA.b #$20 : STA.w SpriteTimer, X
+        LDA.b #$17 : STA.w SpriteActivity, X
+        LDA.w SpriteOAMProperties, X : AND.b #$7F : STA.w SpriteOAMProperties, X
+.exit
+    RTL
+
+Ganon_Phase5_Stunned:
+    LDA.w SpriteOAMProperties, X : ORA.b #$80 : STA.w SpriteOAMProperties, X
+    LDA.b #$02 : STA.w SpriteTileDeath, X
+    LDA.b #$01 : STA.w SpriteDirectionTable, X
+    %JSRLongCall_Bank1D(MoveSpriteXYZ_bank1D, +) : +
+    LDA.w SpriteVelocityZ, X : ORA.w SpriteVelocityX, X : ORA.w SpriteVelocityY, X : BEQ .skip_throw
+        LDA.b #$02 : STA.w SpriteTimer, X
+        JSL Sprite_CheckTileCollisionLong
+        LDA.w $0FA5 : CMP.b #$20 : BNE +
+            STZ.w SpriteTileCollision, X
+        +
+        JSL ThrownSprite_TileAndSpriteInteraction_long  
+.skip_throw
+    LDA.w SpriteTimer, X : BNE .exit
+        LDA.b #$01 : STA.w SpriteOAMProp, X
+        LDA.b #$07 : STA.w SpriteGFXControl, X
+        BRA Ganon_Phase5_Reset
+.exit
+    JSL Sprite_CheckIfLifted_permissive_long
+    LDA.b #$05 : STA.w SpriteOAMProp, X
+    RTL
+
+Ganon_MaybeEnableVulnerabilty:
+    LDA.w SpriteActivity, X : CMP.b #$1B : BEQ .skip
+        LDA.b #$40 : STA.w SpriteTimerB, X ; what we wrote over
+.exit
+    RTL
+.skip
+    ; change Ganon GFX based on Link direction if carried
+    LDA.w SpriteAITable, X : CMP.b #$0A : BNE .exit
+    PHB : PHK : PLB
+        LDA.b LinkDirection : LSR : TAY
+        LDA.w .stun_gfx, Y : STA.w SpriteGFXControl, X
+    PLB
+    RTL
+.stun_gfx
+db $0A, $05, $0F, $05
