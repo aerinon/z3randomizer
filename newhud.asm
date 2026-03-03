@@ -251,7 +251,7 @@ NewHUD_DrawMagicMeter:
         TAY
 
         LDA.l InfiniteMagic
-        BEQ .set_index
+        BEQ .check_blink_timer
 
 .infinite_magic
         LDA.b #$80
@@ -264,9 +264,14 @@ NewHUD_DrawMagicMeter:
         LSR
         BRA .recolor
 
-.set_index ; this branch is always 0000 when taken
+.check_blink_timer
         REP #$30
-        TDC
+        if !FEATURE_LIMITED_RUN == 2604
+                JSL LimitedRun_BlinkTimer : BCS NewHUD_DoneDrawing
+        endif
+
+.all_green ; this branch is always 0000 when taken
+        TDC  ; Load 0 for green (default behavior)
         .recolor
         TAX
         LDA.l MagicMeterColorMasks,X

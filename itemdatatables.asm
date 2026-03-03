@@ -320,8 +320,12 @@ endmacro
 %ReceiptProps($B4, -4, 0, $28, $F36A, $FF, free_crystal, skip) ; B4 - Crystal 2 
 %ReceiptProps($B5, -4, 0, $28, $F36A, $FF, free_crystal, skip) ; B5 - Crystal 4 
 %ReceiptProps($B6, -4, 0, $28, $F36A, $FF, free_crystal, skip) ; B6 - Crystal 3 
-%ReceiptProps($B7, -4, 0, $49, $F36A, $FF, skip, skip) ; B7 - Reserved 
-%ReceiptProps($B8, -4, 0, $49, $F36A, $FF, skip, skip) ; B8 - 
+%ReceiptProps($B7, -4, 0, $49, $F36A, $FF, skip, skip) ; B7 - Reserved
+if !FEATURE_LIMITED_RUN == 2604
+	%ReceiptProps($B8, -2, 5, $10, $F358, $FF, skip, puzzle) ; B8 - Puzzle reward
+else
+	%ReceiptProps($B8, -4, 0, $49, $F36A, $FF, skip, skip) ; B8 - 
+endif
 %ReceiptProps($B9, -4, 0, $49, $F36A, $FF, skip, skip) ; B9 - 
 %ReceiptProps($BA, -4, 0, $49, $F36A, $FF, skip, skip) ; BA - 
 %ReceiptProps($BB, -4, 0, $49, $F36A, $FF, skip, skip) ; BB - 
@@ -600,7 +604,11 @@ endmacro
 %SpriteProps($B5, 2, 2, $80, $80, PalettesCustom_crystal)               ; B5 - Crystal 4
 %SpriteProps($B6, 2, 2, $80, $80, PalettesCustom_crystal)               ; B6 - Crystal 3
 %SpriteProps($B7, 2, 2, $80, $80, $0000)                                ; B7 - Reserved
-%SpriteProps($B8, 2, 2, $04, $04, $0000)                                ; B8 - 
+if !FEATURE_LIMITED_RUN == 2604
+	%SpriteProps($B8, 0, 0, $01, $01, PalettesVanilla_red_melon+$0E)    ; B8 - Puzzle reward
+else
+	%SpriteProps($B8, 2, 2, $04, $04, $0000)                            ; B8 - 
+endif
 %SpriteProps($B9, 2, 2, $04, $04, $0000)                                ; B9 - 
 %SpriteProps($BA, 2, 2, $04, $04, $0000)                                ; BA - 
 %SpriteProps($BB, 2, 2, $04, $04, $0000)                                ; BB - 
@@ -876,7 +884,11 @@ endmacro
 %InventoryItem($B5, $0080, $0000, $0000) ; B5 - Crystal 4
 %InventoryItem($B6, $0080, $0000, $0000) ; B6 - Crystal 3
 %InventoryItem($B7, $0000, $0000, $0000) ; B7 - Reserved
-%InventoryItem($B8, $0001, $0000, $0000) ; B8 -
+if !FEATURE_LIMITED_RUN == 2604
+	%InventoryItem($B8, $0000, $0000, $0000) ; B8 - Puzzle Reward
+else
+	%InventoryItem($B8, $0001, $0000, $0000) ; B8 - 
+endif
 %InventoryItem($B9, $0001, $0000, $0000) ; B9 -
 %InventoryItem($BA, $0001, $0000, $0000) ; BA -
 %InventoryItem($BB, $0001, $0000, $0000) ; BB -
@@ -1140,7 +1152,11 @@ ItemReceiptGraphicsOffsets:
 	dw BigDecompressionBuffer+$08A0        ; B5 - Crystal 4
 	dw BigDecompressionBuffer+$08A0        ; B6 - Crystal 3
 	dw $0                                  ; B7 - Reserved
-	dw $0                                  ; B8 -
+	if !FEATURE_LIMITED_RUN == 2604
+		dw BigDecompressionBuffer+$1DE0    ; B8 - Puzzle Reward
+	else
+		dw $0                              ; B8 -
+	endif
 	dw $0                                  ; B9 -
 	dw $0                                  ; BA -
 	dw $0                                  ; BB -
@@ -1410,7 +1426,11 @@ StandingItemGraphicsOffsets:
 	dw BigDecompressionBuffer+$08A0        ; B5 - Crystal 4
 	dw BigDecompressionBuffer+$08A0        ; B6 - Crystal 3
 	dw $0                                  ; B7 - Reserved
-	dw $0                                  ; B8 -
+	if !FEATURE_LIMITED_RUN == 2604
+		dw BigDecompressionBuffer+$1DE0    ; B8 - Puzzle reward
+	else
+		dw $0                              ; B8 - Puzzle reward
+	endif
 	dw $0                                  ; B9 -
 	dw $0                                  ; BA -
 	dw $0                                  ; BB -

@@ -6,6 +6,11 @@
 !BananaFlags = LimitedRunStore+4 ; 16-bit, screen temporary
 !StatueGFXLoaded = LimitedRunStore+4 ; 16-bit, screen temporary
 !GFXLoadFlag = LimitedRunStore+$20
+!UnderworldPuzzlesSolved = LimitedRunStore+$21 ; equals how many puzzle items link's collected
+!BlinkTimer = LimitedRunStore+$22 ; Blink timer - must be zero to activate
+!NewTagTimer = $7E0AB9 ; Timer for new room tag effects
+!NewTagIndex = $7E0ABA ; Index for new room tag effects
+!NewTagFlag  = $7E0ABB ; Flag for new room tag effects
 
 !BananaXPos = LimitedRunData
 !BananaYPos = LimitedRunData+10
@@ -1360,3 +1365,2041 @@ Ganon_MaybeEnableVulnerabilty:
     RTL
 .stun_gfx
 db $0A, $05, $0F, $05
+
+; ----- BEGIN AERINON SECTION -----
+pushpc
+; hooks
+org $819907
+  NOP #2
+  JSL HideChestForNewTags
+
+org $819925
+  NOP #2
+  JSL HideChestForNewTags
+
+org $81BCC4
+  NOP #2 : JSL PreventCollisionForNewTags
+
+org $81BCE2
+  NOP #2 : JSL PreventCollisionForNewTags
+
+org $81BE07
+  Underworld_SetChestAttributes_ToNext:
+
+ org $81BDE0
+    JSL CheckSkipChestCollision
+    BCS Underworld_SetChestAttributes_ToNext
+    NOP
+
+org $81C307
+  JSL HandleNewTags1
+  BCS Underworld_HandleRoomTags_AfterTag1
+
+org $81C312
+  JSL HandleNewTags2
+  BCS Underworld_HandleRoomTags_AfterTag2
+
+org $818786
+  NOP : JSL ClearNewTagMem
+
+org $868859
+  NOP : JSL SpritePrep_SwitchExtended
+
+org $85D908
+  NOP : JSL PullSwitch_GoodSound
+
+org $81C893
+  JSL OperateChestRevealModForPullSwitchTag
+
+; NOTE: this overrides the chest encryption function - won't work with IsEncrypted flag
+org $81EBEB
+  NOP : JML GetChestDataExtended
+
+org $81D961
+  NOP #2
+  JSL PushBlock_TileTypeMod
+
+;org $82D894  ; After vanilla SRAM pushblock init
+;  JSL InitExtendedPushBlocks
+;  NOP
+;
+;org $81889A  ; After vanilla room loading loop
+;  JSL LoadExtendedPushBlocks
+;  NOP
+
+org $87A0B8  ; see LinkItem_Boomerang, bank07
+  JSL SecretBoomerang
+  BCS LinkItem_Boomerang_exit ; only if boomerang is already out
+  NOP
+
+org $878102
+  JSL HandleBlinkTimer
+
+;org $81D7D0  ; PushBlock_Main floor tile restoration
+;  JSL PushBlock_FloorTileCheck
+;  NOP #2
+
+; Push block overrides:
+
+org $04EED2 ; Room CA Push blocks (unused)
+dw $0120, $09E0 ; for good bee room
+dw $00D5, $1AE0 ; for map room
+
+pullpc
+
+;--------------------------------------------------------------------------------
+;  New Tag Code
+;--------------------------------------------------------------------------------
+
+; Check the new tags that have chests hidden
+HideChestForNewTags:
+  STA.b $00
+  CMP.w #$0040 : BEQ .exit ; new tag - 40, if equal then hide chest
+  ; didn't need to add one for 42 because room already qualified
+  ; chests for tag 43 only hides one chest. - How to do that?
+  CMP.w #$0043 : BNE .continue ; next tag
+  LDA.w $0496
+  CMP.w #$000A : BNE .continue ; only hide if chest index 4 (new chest 5)
+  LDX.w #$0008 ; need to set X to check for this particular chest
+  TDC : RTL ; set zero flag and leave
+.continue
+  LDA.b $00
+  CMP.w #$0044 : BEQ .exit ; new tag - 44, if equal then hide chest
+  CMP.w #$0045 : BEQ .exit ; new tag - 45, if equal then hide chest
+  CMP.w #$0046 : BEQ .exit ; new tag - 46, if equal then hide chest
+  CMP.w #$0047 : BEQ .exit ; new tag - 47, if equal then hide chest
+  AND.w #$00FF
+  CMP.w #$0027
+.exit
+  RTL ; if zero flag set, the chest will be hidden, otherwise not
+
+PreventCollisionForNewTags:
+  AND.w #$00FF
+  CMP.w #$0027 : BEQ .exit
+  CMP.w #$0040 : BEQ .exit ; don't check for $43 here as this check isn't chest specific
+  CMP.w #$0044 : BEQ .exit
+  CMP.w #$0045 : BEQ .exit
+  CMP.w #$0046 : BEQ .exit
+  CMP.w #$0047
+.exit
+  RTL ; if zero flag set, collision will be prevented, otherwise not
+
+CheckSkipChestCollision:
+  AND.w #$7FFF : LSR : TAX ; What we wrote over
+
+  ; Check if this is chest 5 (Y=$0008) AND tag $43 is active
+  CPY.w #$0008 : BNE .write_collision
+
+  PHA
+  LDA.b $AE : AND.w #$00FF
+  CMP.w #$0043
+  BNE .not_tag43   ; Branch before PLA!
+  ; Tag $43 active, skip writing collision
+  PLA              ; Clean up stack
+  SEC              ; Set carry = skip
+  RTL
+
+.not_tag43
+  PLA              ; Restore A
+.write_collision
+  LDA.b $00        ; Original instruction (load collision value)
+  CLC              ; Clear carry = write collision
+  RTL
+
+HandleNewTags1:
+  STZ.b $0E
+  LDA.b $AE
+  ASL A
+  TAX
+  CMP.b #$80
+  BCC .done
+  JSR HandleNewTag
+  SEC
+.done
+  RTL
+
+HandleNewTags2:
+  STA.b $0E
+  LDA.b $AF
+  ASL A
+  TAX
+  CMP.b #$80
+  BCC .done
+  JSR HandleNewTag
+  SEC
+.done
+  RTL
+
+NewTagPool:
+ dw HandleTunicTag ; $40 (index 0), tunic code
+ dw HandleQuantumChestTag ; $41 (index 1), quantum chest code
+ dw HandlePullSwitchChestTag ; $42 (index 2), pull switch chest code
+ dw HandleMapRoomTag ; $43 (index 3), map room code
+ dw HandleTilePuzzleTag ; $44 (index 4), tile stepping puzzle code
+ dw HandleSokobanTag ; $45 (index 5), sokoban puzzle code
+ dw HandlePortalRoomTag ; $46 (index 6), portal room code
+ dw HandleFinalPuzzleTag ; $47 (index 7), final puzzle code
+
+HandleNewTag:
+  AND.b #$7F : TAX
+  JSR (NewTagPool, X)
+  RTS
+
+ClearNewTagMem:
+  STZ.b $FC  ; hook code
+  STZ.w $045C
+  STZ.w !NewTagIndex
+  STZ.w !NewTagTimer
+  STZ.w !NewTagFlag
+  RTL
+
+;--------------------------------------------------------------------------------
+;  Tunic Tag Code
+;--------------------------------------------------------------------------------
+
+PatternTarget:
+  db $04, $01, $08, $01, $01, $04, $02 ; d,r,u,r,r,d,l (udlr)
+
+HandleTunicTag:
+  LDA.w !NewTagIndex
+  CMP.b #$07 ; already completed
+  BEQ .exit
+  LDA.w !NewTagTimer
+  BEQ .reset_pattern ; timeout reached
+  DEC.w !NewTagTimer
+
+  LDA.b Joy1A_New
+  AND.b #$0F
+  BEQ .release_input
+  LDX.w !NewTagFlag ; use X to not corrupt input in A
+  BNE .exit ; no clean release yet
+
+  LDX.w !NewTagIndex
+  AND.l PatternTarget, X ; check if matches target pattern
+  BEQ .reset_pattern ; reset if wrong input
+
+  INX
+  CPX.b #$07  ; is pattern complete?
+  BEQ .pattern_complete
+  INC.w !NewTagFlag
+  LDX.b #$B4 ; 180 frames (~3 second timeout)
+  STX.w !NewTagTimer
+  RTS
+
+.pattern_complete
+  STX.w !NewTagIndex ; mark as complete
+  PHK : PEA.w .jslrtsreturn-1
+  PEA.w $81CF8C ; an rtl address - 1 in Bank01
+  JML RoomTag_OperateChestReveal ; _01C7D8
+.jslrtsreturn
+  RTS
+
+.release_input
+  LDA.w !NewTagFlag
+  BEQ .exit ; nothig to do
+  LDA.w !NewTagIndex
+  INC
+  STA.w !NewTagIndex
+  STZ.w !NewTagFlag
+  RTS
+
+.reset_pattern
+  STZ.w !NewTagIndex
+  LDA.b #$B4 ; 180 frames (~3 second timeout)
+  STA.w !NewTagTimer
+  STZ.w !NewTagFlag
+.exit
+  RTS
+
+;--------------------------------------------------------------------------------
+;  Quantum Chest Tag Code
+;--------------------------------------------------------------------------------
+
+; needed data for quantum chest tag, the 3 location that the chest could be at
+; These are pixel locations. Tile locations would be divided by 8.
+ChestXPositions:
+  dw $0030, $0058, $0098  ; x positions (6*8, 11*8, 19*8)
+
+ChestYPositions:
+  dw $00D8, $0040, $01B8  ; y positions (27*8, 8*8, 55*8)
+
+HandleQuantumChestTag:
+  LDA.b LinkQuadrantH
+  BEQ .continue ; only runs if on left side of room
+.early_exit
+  RTS
+.continue
+  LDA.l RoomDataWRAM[$6A].low : AND.b #$40 : BNE .early_exit
+
+  LDA.w !NewTagFlag
+  CMP.b #$02 : BNE .not_revealing_new_chest
+
+  REP #$30
+  LDA.w #$0004 : STA.w $0200
+  LDA.w #$5A5A : STA.b $0C
+;  STZ.w $1000
+  LDA.w #$0006 : STA.w $0496
+  ; need to set X appropriately
+  PHK : PEA.w .jslrtsreturn-1
+  PEA.w $81CF8C ; an rtl address - 1 in Bank01
+  JML $81C7EB ; _01C7DE - RoomTag_OperateChestReveal_DontClearTag
+.jslrtsreturn
+  STZ.w !NewTagFlag ; all done
+  RTS
+
+.not_revealing_new_chest
+  JSL Underworld_ExtinguishTorch
+  ; determine if chest is in sight line using AABB collision
+  JSR CalculateTrapezoidBounds
+  LDA.w !NewTagIndex ; which position the chest is at
+  ASL : TAX  ; position tables are words
+  JSR CheckNearRectangle
+  BCS .collision
+  JSR CheckFarRectangle
+  BCS .collision
+.no_collision
+  ; was it last seen?
+  SEP #$20
+  LDA.w !NewTagFlag
+  BEQ .exit ; no change
+  JSR MoveChestToNewPosition
+  INC.w !NewTagFlag ; next step, show new chest
+  RTS
+.collision
+  SEP #$20
+  LDA.w !NewTagFlag
+  BNE .exit ; already marked as seen
+  INC.w !NewTagFlag ; mark as seen
+.exit
+  RTS
+
+MoveChestToNewPosition:
+  ; move cheset to new location
+  ; Pick new "random" position (cycle through positions)
+  LDX.w !NewTagIndex
+  INX
+  LDA.b FrameCounter : LSR : BCC .noSkip
+  INX
+.noSkip
+  CPX.b #$03 : BCC .storeNewIndex
+  TXA : SBC.b #$03 : TAX
+.storeNewIndex
+  STX.w !NewTagIndex
+
+  ; Clear old chest tiles (graphics and collision)
+  LDY.b #$04 ; hardcoded chest number (2nd chest - index 4)
+  REP #$30
+  LDA.w $06E0, Y ; get old tilemap offset
+  TAX
+  LDA.w #$1CC6 ; Carpet tile
+  STA.l $7E2000, X ; clear top-left
+  STA.l $7E2002, X ; clear top-right
+  STA.l $7E2080, X ; clear bottom-left
+  STA.l $7E2082, X ; clear bottom-right
+  STA.b $02 : STA.b $04 : STA.b $06 : STA.b $08
+
+  TXA : LSR : TAX ; divided by two since collision map is byte per tile
+  LDA.w #$0000 ; empty collision
+  STA.l $7F2000, X
+  STA.l $7F2040, X
+
+  STZ.w $1000
+  STZ.w $0200
+  LDA.w #$0002
+  STA.w $0496
+  PHK : PEA.w .jslrtsreturn-1
+  PEA.w $81CF8C ; an rtl address - 1 in Bank01
+  JML $81C837 ; _01C837 - RoomTag_OperateChestReveal_BuildNMIStripes ; doesn't alter y, depends on it
+.jslrtsreturn
+  REP #$30
+  ; Calculate new tilemap offset from X/Y positions
+  LDA.w !NewTagIndex : AND.w #$00FF : ASL : TAX
+  LDA.l ChestYPositions, X
+  ASL #3 ; multiply Y by 8 (account for width of tilemap)
+  STA.b Scrap00
+  LDA.l ChestXPositions, X
+  LSR #3 ; divide X by 8 (convert to tile offset)
+  CLC : ADC.b Scrap00
+  ASL A ; word offset
+  STA.w $06E0, Y ; store new position
+
+  SEP #$30
+  RTS
+
+CONE_FORWARD = $44        ; 68 pixels forward
+CONE_BACK = $20           ; 32 pixels backward
+CONE_NEAR_WIDTH = $46     ; 70 pixels wide at near
+CONE_FAR_WIDTH = $5E      ; 94 pixels wide at far
+CONE_NEAR_RANGE = $10     ; 16 pixels ahead (near portion)
+
+; Near rectangle bounds
+ConeNearLeft  = $00
+ConeNearRight = $02
+ConeNearTop   = $04
+ConeNearBottom = $06
+
+; Far rectangle bounds
+ConeFarLeft   = $08
+ConeFarRight  = $0A
+ConeFarTop    = $0C
+ConeFarBottom = $0E
+
+DirectionRoutine:
+dw TrapezoidUp
+dw TrapezoidDown
+dw TrapezoidLeft
+dw TrapezoidRight
+
+
+CalculateTrapezoidBounds:
+    LDA.b LinkDirection : TAX
+    REP #$20
+    JMP (DirectionRoutine, X)
+
+TrapezoidRight:
+    ; Near rectangle: behind Link to near range
+    LDA.b LinkPosX : AND.w #$01FF
+    SEC : SBC.w #CONE_BACK
+    STA.b ConeNearLeft
+
+    LDA.b LinkPosX : AND.w #$01FF
+    CLC : ADC.w #CONE_NEAR_RANGE
+    STA.b ConeNearRight
+
+    LDA.b LinkPosY : AND.w #$01FF
+    SEC : SBC.w #(CONE_NEAR_WIDTH/2)
+    STA.b ConeNearTop
+
+    LDA.b LinkPosY : AND.w #$01FF
+    CLC : ADC.w #(CONE_NEAR_WIDTH/2)
+    STA.b ConeNearBottom
+
+    ; Far rectangle: near range to full forward
+    LDA.b LinkPosX : AND.w #$01FF
+    CLC : ADC.w #CONE_NEAR_RANGE
+    STA.b ConeFarLeft
+
+    LDA.b LinkPosX : AND.w #$01FF
+    CLC : ADC.w #CONE_FORWARD
+    STA.b ConeFarRight
+
+    LDA.b LinkPosY : AND.w #$01FF
+    SEC : SBC.w #(CONE_FAR_WIDTH/2)
+    STA.b ConeFarTop
+
+    LDA.b LinkPosY : AND.w #$01FF
+    CLC : ADC.w #(CONE_FAR_WIDTH/2)
+    STA.b ConeFarBottom
+    RTS
+
+TrapezoidLeft:
+    ; Near rectangle
+    LDA.b LinkPosX : AND.w #$01FF
+    SEC : SBC.w #CONE_NEAR_RANGE
+    STA.b ConeNearLeft
+
+    LDA.b LinkPosX : AND.w #$01FF
+    CLC : ADC.w #CONE_BACK
+    STA.b ConeNearRight
+
+    LDA.b LinkPosY : AND.w #$01FF
+    SEC : SBC.w #(CONE_NEAR_WIDTH/2)
+    STA.b ConeNearTop
+
+    LDA.b LinkPosY : AND.w #$01FF
+    CLC : ADC.w #(CONE_NEAR_WIDTH/2)
+    STA.b ConeNearBottom
+
+    ; Far rectangle
+    LDA.b LinkPosX : AND.w #$01FF
+    SEC : SBC.w #CONE_FORWARD
+    STA.b ConeFarLeft
+
+    LDA.b LinkPosX : AND.w #$01FF
+    SEC : SBC.w #CONE_NEAR_RANGE
+    STA.b ConeFarRight
+
+    LDA.b LinkPosY : AND.w #$01FF
+    SEC : SBC.w #(CONE_FAR_WIDTH/2)
+    STA.b ConeFarTop
+
+    LDA.b LinkPosY : AND.w #$01FF
+    CLC : ADC.w #(CONE_FAR_WIDTH/2)
+    STA.b ConeFarBottom
+    RTS
+
+TrapezoidUp:
+    ; Near rectangle
+    LDA.b LinkPosX : AND.w #$01FF
+    SEC : SBC.w #(CONE_NEAR_WIDTH/2)
+    STA.b ConeNearLeft
+
+    LDA.b LinkPosX : AND.w #$01FF
+    CLC : ADC.w #(CONE_NEAR_WIDTH/2)
+    STA.b ConeNearRight
+
+    LDA.b LinkPosY : AND.w #$01FF
+    SEC : SBC.w #CONE_NEAR_RANGE
+    STA.b ConeNearTop
+
+    LDA.b LinkPosY : AND.w #$01FF
+    CLC : ADC.w #CONE_BACK
+    STA.b ConeNearBottom
+
+    ; Far rectangle
+    LDA.b LinkPosX : AND.w #$01FF
+    SEC : SBC.w #(CONE_FAR_WIDTH/2)
+    STA.b ConeFarLeft
+
+    LDA.b LinkPosX : AND.w #$01FF
+    CLC : ADC.w #(CONE_FAR_WIDTH/2)
+    STA.b ConeFarRight
+
+    LDA.b LinkPosY : AND.w #$01FF
+    SEC : SBC.w #CONE_FORWARD
+    STA.b ConeFarTop
+
+    LDA.b LinkPosY : AND.w #$01FF
+    SEC : SBC.w #CONE_NEAR_RANGE
+    STA.b ConeFarBottom
+    RTS
+
+TrapezoidDown:
+    ; Near rectangle
+    LDA.b LinkPosX : AND.w #$01FF
+    SEC : SBC.w #(CONE_NEAR_WIDTH/2)
+    STA.b ConeNearLeft
+
+    LDA.b LinkPosX : AND.w #$01FF
+    CLC : ADC.w #(CONE_NEAR_WIDTH/2)
+    STA.b ConeNearRight
+
+    LDA.b LinkPosY : AND.w #$01FF
+    SEC : SBC.w #CONE_BACK
+    STA.b ConeNearTop
+
+    LDA.b LinkPosY : AND.w #$01FF
+    CLC : ADC.w #CONE_NEAR_RANGE
+    STA.b ConeNearBottom
+
+    ; Far rectangle
+    LDA.b LinkPosX : AND.w #$01FF
+    SEC : SBC.w #(CONE_FAR_WIDTH/2)
+    STA.b ConeFarLeft
+
+    LDA.b LinkPosX : AND.w #$01FF
+    CLC : ADC.w #(CONE_FAR_WIDTH/2)
+    STA.b ConeFarRight
+
+    LDA.b LinkPosY : AND.w #$01FF
+    CLC : ADC.w #CONE_NEAR_RANGE
+    STA.b ConeFarTop
+
+    LDA.b LinkPosY : AND.w #$01FF
+    CLC : ADC.w #CONE_FORWARD
+    STA.b ConeFarBottom
+    RTS
+
+
+CheckNearRectangle:
+    ; AABB: if (rect1.right > rect2.left AND rect1.left < rect2.right
+    ;       AND rect1.bottom > rect2.top AND rect1.top < rect2.bottom)
+
+    ; Check: chest.left < cone.right
+    LDA.l ChestXPositions, X    ; chest.left
+    CMP.b ConeNearRight
+    BCS .no_hit                 ; if chest.left >= cone.right, no collision
+
+    ; Check: chest.right > cone.left
+    CLC : ADC.w #$0008   ; chest.right = chest.left + 8
+    CMP.b ConeNearLeft
+    BCC .no_hit                 ; if chest.right <= cone.left, no collision
+
+    ; Check: chest.top < cone.bottom
+    LDA.l ChestYPositions, X    ; chest.top
+    CMP.b ConeNearBottom
+    BCS .no_hit
+
+    ; Check: chest.bottom > cone.top
+    CLC : ADC.w #$0008              ; chest.bottom = chest.top + 8
+    CMP.b ConeNearTop
+    BCC .no_hit
+
+    SEC                         ; Collision!
+    RTS
+
+.no_hit:
+    CLC : RTS
+
+CheckFarRectangle:
+    ; AABB: if (rect1.right > rect2.left AND rect1.left < rect2.right
+    ;       AND rect1.bottom > rect2.top AND rect1.top < rect2.bottom)
+
+    ; Check: chest.left < cone.right
+    LDA.l ChestXPositions, X    ; chest.left
+    CMP.b ConeFarRight
+    BCS .no_hit                 ; if chest.left >= cone.right, no collision
+
+    ; Check: chest.right > cone.left
+    CLC : ADC.w #$0008              ; chest.right = chest.left + 8
+    CMP.b ConeFarLeft
+    BCC .no_hit                 ; if chest.right <= cone.left, no collision
+
+    ; Check: chest.top < cone.bottom
+    LDA.l ChestYPositions, X    ; chest.top
+    CMP.b ConeFarBottom
+    BCS .no_hit
+
+    ; Check: chest.bottom > cone.top
+    CLC : ADC.w #$0008              ; chest.bottom = chest.top + 8
+    CMP.b ConeFarTop
+    BCC .no_hit
+
+    SEC                         ; Collision!
+    RTS
+
+.no_hit:
+    CLC : RTS
+
+
+;--------------------------------------------------------------------------------
+;  Pull Switch Tag Code
+;--------------------------------------------------------------------------------
+
+SpritePrep_SwitchExtended:
+  LDA.w $048E
+  CMP.b #$CE
+  BEQ .done
+  CMP.b #$5F
+.done
+  RTL
+
+SwitchOrder:
+;db $07, $03, $05, $04, $02, $01, $06 ; order to pull switches in
+db $09, $05, $07, $06, $04, $03, $08 ; sprite index of switches
+
+PullSwitch_GoodSound:
+  LDA $A0 : CMP.b #$5F : BNE .normal
+  STX.b $00
+  LDX.w !NewTagIndex : LDA.l SwitchOrder, X
+  CMP.b $00 : BNE .noMatch
+  INC.w !NewTagIndex
+  BRA .exit
+.noMatch
+  STZ.w !NewTagIndex
+  BRA .exit
+.normal
+  LDA.b #$1B ; good switch sound
+  STA.w $012F
+.exit
+  RTL
+
+
+HandlePullSwitchChestTag:
+  LDA.w !NewTagIndex : CMP.b #$07 : BCC .exit
+  ; operate chest reveal
+  STZ.b $AF ; clear tag
+  REP #$30
+  STZ.w $1000
+  LDA.w #$0002 : STA.w $0200 ; start at chest 2
+  LDA.w #$5959 : STA.b $0C ; chest 2
+  LDA.w #$0004 : STA.w $0496 ; 2 chest in room
+  PHK : PEA.w .exit-1
+  PEA.w $81CF8C ; an rtl address - 1 in Bank01
+  JML $81C7EB ; _01C7DE - RoomTag_OperateChestReveal_DontClearTag
+.exit
+  RTS
+
+OperateChestRevealModForPullSwitchTag:
+  INC : STA.w $0200
+  LDA.b $AF : CMP.w #$0042 : BNE .normal
+  LDA.w $0200 : INC #2 : STA.w $0200 ; skips a chest
+.normal
+  LDA.w $0200
+  RTL
+
+;--------------------------------------------------------------------------------
+;  Map Room Tag Code
+;--------------------------------------------------------------------------------
+
+; Memory locations you'll need:
+; Link: $20/$21 (Y), $22/$23 (X)
+; Ancillas: $029E,X (type), $2A,X/$2B,X (Y), $2C,X/$2D,X (X) - 10 slots (0-9)
+; Push blocks: $0292-$02A1 (16 blocks), positions in room data
+; Sprites: $0E20,X (type), $0D00,X (Y low), $0D20,X (Y high), $0D10,X (X low), $0D30,X (X high)
+
+HandleMapRoomTag:
+  LDA.b LinkQuadrantH : BEQ .exit ; only right side of room
+  ; Check Link's position first (cheapest check)
+  LDA.b LinkPosY : CMP.b #$7C : BCC .exit
+  CMP.b #$8C : BCS .exit
+  LDA.b LinkPosX : CMP.b #$48 : BCC .exit
+  CMP.b #$58 : BCS .exit
+
+  ; Check for somaria block (ancilla type $0C)
+  JSR CheckSomariaBlock
+  BCC .exit
+
+  ; Check for push block in position
+  JSR CheckPushBlock
+  BCC .exit
+
+  ; Check for statue (sprite type $??)
+  JSR CheckStatue
+  BCC .exit
+
+  ; Check for chicken (sprite type $D5)
+  JSR CheckChicken
+  BCC .exit
+
+  ; All conditions met - reveal chest
+  STZ.b $AE ; clear tag (or $AF depending on which tag slot)
+  REP #$30
+  STZ.w $1000
+  LDA.w #$0008 : STA.w $0200 ; chest index * 2, 5th chest
+  LDA.w #$5C5C : STA.b $0C ; chest data, 5th chest (58, 0th chest etc)
+  LDA.w #$000A : STA.w $0496 ; number of chests * 2
+  PHK : PEA.w .exit-1
+  PEA.w $81CF8C ; an rtl address - 1 in Bank01
+  JML $81C7EB ; _01C7DE - RoomTag_OperateChestReveal_DontClearTag
+.exit
+  RTS
+
+CheckSomariaBlock:
+  LDX.b #$09 ; 10 ancilla slots (0-9)
+.loop
+  LDA.w AncillaID, X : CMP.b #$2C : BEQ .found ; $2C = somaria block
+  DEX : BPL .loop
+  CLC : RTS ; not found
+.found
+  ; Check position
+  LDA.w AncillaCoordYLow, X : CMP.b #$50 : BCC .fail
+  CMP.b #$60 : BCS .fail
+  LDA.w AncillaCoordXLow, X : CMP.b #$98 : BCC .fail
+  CMP.b #$A8 : BCS .fail
+  SEC : RTS ; found and in position
+.fail
+  CLC : RTS
+
+CheckPushBlock:
+  ; Assume push block is the only manipulable block in the room
+  LDY.b #$00
+
+  ; Get tilemap offset from $0540,Y
+  LDA.w $0540, Y ; load tilemap offset (low byte) x or y?
+  CMP.b #$EC : BNE .fail ; check bounds
+
+  LDA.w $0541, Y ; load tilemap offset (high byte) x or y?
+  CMP.b #$1A : BNE .fail ; check bounds
+  SEC : RTS
+
+.fail
+  SEP #$20
+  CLC : RTS
+
+CheckStatue:
+  LDX.b #$06
+  LDA.w $0D00, X : CMP.b #$6C : BCC .fail
+  CMP.b #$7C : BCS .fail
+  LDA.w $0D10, X : CMP.b #$3C : BCC .fail
+  CMP.b #$4C : BCS .fail
+  SEC : RTS
+.fail
+  CLC : RTS
+
+CheckChicken:
+  LDX.b #$05
+  LDA.w $0D00, X : CMP.b #$70 : BCC .fail
+  CMP.b #$80 : BCS .fail
+  LDA.w $0D10, X : CMP.b #$70 : BCC .fail
+  CMP.b #$80 : BCS .fail
+  SEC : RTS
+.fail
+  CLC : RTS
+
+;--------------------------------------------------------------------------------
+;  Tile Puzzle Tag Code
+;--------------------------------------------------------------------------------
+
+; Constants
+CARPET_TILE = $1CC6 ; Carpet tile ID
+
+; Green floor tile IDs (hardcoded in IsFloorTile)
+; $18DB = top-left of 16x16, $18DA = top-right of 16x16
+
+; Tiles that SHOULD be carpet when puzzle is solved
+; Format: X coordinate, Y coordinate (both 8-bit, in 16x16 tile coords)
+ShouldBeCarpetTiles:
+; $12, $18 is ambiguous, can be floor or carpet depending on pattern
+; $12, $17 is also ambiguous, but likely can't be avoided
+  db $12, $17, $12, $16, $13, $16
+  db $14, $16, $14, $15, $14, $14, $15, $14
+  db $16, $14, $16, $15, $16, $16, $17, $16
+  db $18, $16, $18, $17, $18, $18, $18, $19
+  db $18, $1A, $17, $1A, $16, $1A, $15, $1A
+  db $14, $1A, $14, $1B, $14, $1C, $15, $1C
+  db $16, $1C, $17, $1C, $18, $1C, $19, $1C
+  db $1A, $1C, $1A, $1B, $1A, $1A, $1A, $19
+  db $1A, $18, $1A, $17, $1A, $16, $1B, $16
+  db $1C, $16, $1C, $15, $1C, $14
+SHOULD_BE_CARPET_COUNT = $26
+
+; Tiles that SHOULD be floor when puzzle is solved
+; Format: X coordinate, Y coordinate (both 8-bit, in 16x16 tile coords)
+ShouldBeFloorTiles:
+  db $12, $14, $13, $14, $17, $14, $18, $14
+  db $19, $14, $1A, $14, $1B, $14, $12, $15
+  db $18, $15, $1A, $15, $15, $16, $19, $16
+  db $14, $17, $16, $17, $1C, $17, $13, $18
+  db $14, $18, $15, $18, $16, $18, $17, $18
+  db $19, $18, $1B, $18, $1C, $18, $12, $19
+  db $14, $19, $16, $19, $1C, $19, $12, $1A
+  db $13, $1A, $19, $1A, $1B, $1A, $1C, $1A
+  db $12, $1B, $16, $1B, $18, $1B, $1C, $1B
+  db $12, $1C, $13, $1C, $1B, $1C, $1C, $1C
+SHOULD_BE_FLOOR_COUNT = $28
+
+HandleTilePuzzleTag:
+
+  LDA.b LinkQuadrantH : BEQ .early_exit ; Only activate on right side of room
+  LDA.l RoomDataWRAM[$AB].low : AND.b #$10 : BEQ .continue ; Check if we already opened the chest
+.early_exit
+  RTS
+
+.continue
+  ; Get Link's position in tile coordinates (16x16)
+  ; Link coordinates are 9-bit (0x000-0x1FF)
+  REP #$30  ; 16-bit A and X/Y
+  ; Calculate full room 8x8 coordinates for VRAM (0-63)
+  ; Add 4 pixels before dividing to shift tile boundaries to ...4 and ...C
+  LDA.b LinkPosX : AND.w #$01FF : CLC : ADC.w #$0004 : LSR #3 : STA.b $00  ; X (0-63)
+  LDA.b LinkPosY : AND.w #$01FF : CLC : ADC.w #$0004 : LSR #3 : INC : STA.b $02  ; Y (0-63) +4px, +1 for visual
+
+  ; Calculate VRAM tilemap offset: ((Y × 64) + X) × 2
+  LDA.b $02 : XBA : LSR #2 : CLC : ADC.b $00 : ASL : STA.b $0E
+
+  ; Ensure coordinates are within 0-63 range for 64-wide tilemap
+  LDA.b $00 : AND.w #$003F : STA.b $04  ; X (0-63)
+  LDA.b $02 : AND.w #$003F : STA.b $06  ; Y (0-63)
+
+  ; Calculate tilemap offset for 64-wide layout: (Y8 * 128) + (X8 * 2)
+  LDA.b $06 : XBA : LSR #2 : CLC : ADC.b $04 : ASL : TAX
+
+  ; Check if it's any valid floor tile (checks TL and TR)
+  JSR IsFloorTile
+  BCC .not_floor  ; Not a floor tile
+
+  ; Change to carpet
+  LDA.w #CARPET_TILE
+  STA.l $7E2000, X      ; Top-left
+  STA.b $02             ; Save tile value once
+  STA.l $7E2002, X      ; Top-right
+  STA.l $7E2080, X      ; Bottom-left
+  STA.l $7E2082, X      ; Bottom-right
+
+  ; Build NMI stripe to update VRAM ($0E already contains VRAM offset)
+  JSR BuildTileStripe
+
+.not_floor
+  ; Check if pattern is complete
+  JSR CheckCompletePattern
+  BCC .exit
+
+  PHK : PEA.w .exit-1
+  PEA.w $81CF8C ; an rtl address - 1 in Bank01
+  JML RoomTag_OperateChestReveal ; _01C7D8
+
+.exit
+  SEP #$30
+  RTS
+
+; Check if all tiles match the expected pattern
+CheckCompletePattern:
+  ; First check all tiles that should be carpet
+  LDX.w #$0000
+.loop_carpet
+  CPX.w #SHOULD_BE_CARPET_COUNT*2 : BCS .check_floor
+
+  ; Convert 16x16 tile coords to 8x8 top-left position (X=odd, Y=odd)
+  LDA.l ShouldBeCarpetTiles, X : AND.w #$00FF : ASL : INC : STA.b $00  ; X8 = (X16 * 2) + 1 (odd)
+  INX
+  LDA.l ShouldBeCarpetTiles, X : AND.w #$00FF : ASL : INC : STA.b $02  ; Y8 = (Y16 * 2) + 1 (odd)
+  INX
+  PHX  ; Save loop counter
+
+  ; Calculate offset for 64-wide layout: (Y8 * 128) + (X8 * 2)
+  LDA.b $02 : XBA : LSR #2 : CLC : ADC.b $00 : ASL : TAX
+
+  ; Check if tile is carpet
+  LDA.l $7E2000, X
+  PLX  ; Restore loop counter before comparison
+  CMP.w #CARPET_TILE
+  BNE .fail
+
+  BRA .loop_carpet
+
+.check_floor
+  ; Now check all tiles that should still be floor
+  LDX.w #$0000
+.loop_floor
+  CPX.w #SHOULD_BE_FLOOR_COUNT*2 : BCS .success
+
+  ; Convert 16x16 tile coords to 8x8 top-left position (X=odd, Y=odd)
+  LDA.l ShouldBeFloorTiles, X : AND.w #$00FF : ASL : INC : STA.b $00  ; X8 = (X16 * 2) + 1 (odd)
+  INX
+  LDA.l ShouldBeFloorTiles, X : AND.w #$00FF : ASL : INC : STA.b $02  ; Y8 = (Y16 * 2) + 1 (odd)
+  INX
+  PHX  ; Save loop counter
+
+  ; Calculate offset for 64-wide layout: (Y8 * 128) + (X8 * 2)
+  LDA.b $02 : XBA : LSR #2 : CLC : ADC.b $00 : ASL : TAX
+
+  ; Check if tile is floor (checks TL and TR)
+  JSR IsFloorTile
+  PLX  ; Restore loop counter
+  BCC .fail  ; Not a floor tile
+
+  BRA .loop_floor
+
+.success
+  SEC
+  RTS
+
+.fail
+  CLC
+  RTS
+
+; Check if tiles match a valid floor pattern
+; Input: X = tilemap offset to current tile position
+; Output: Carry set if valid floor pattern found, clear otherwise
+; Preserves: X
+; Modifies: A
+IsFloorTile:
+  ; REP #$20 assumed
+  PHX  ; Save X
+
+  ; Check if TL=18DB (left half of green floor)
+  LDA.l $7E2000, X
+  CMP.w #$18DB
+  BEQ .valid
+
+  ; Check if TR=18DA (right half of green floor)
+  LDA.l $7E2002, X
+  CMP.w #$18DA
+  BEQ .valid
+
+  ; Neither matches
+  PLX
+  CLC
+  RTS
+
+.valid:
+  PLX
+  SEC
+  RTS
+
+; Build VRAM stripe for a single 16x16 tile
+; Input: $0E = tilemap offset (word offset into $7E2000)
+;        $02, $04, $06, $08 = tile data for 4 8x8 tiles
+BuildTileStripe:
+  LDX.w $1000  ; Get current stripe buffer position
+
+  ; Build stripe for top-left 8x8 tile (offset +$0000)
+  LDA.b $0E
+  JSR TilemapOffsetToVRAM
+  STA.w $1002, X
+
+  ; Build stripe for top-right 8x8 tile (offset +$0002)
+  LDA.b $0E : CLC : ADC.w #$0002
+  JSR TilemapOffsetToVRAM
+  STA.w $1008, X
+
+  ; Build stripe for bottom-left 8x8 tile (offset +$0080)
+  LDA.b $0E : CLC : ADC.w #$0080
+  JSR TilemapOffsetToVRAM
+  STA.w $100E, X
+
+  ; Build stripe for bottom-right 8x8 tile (offset +$0082)
+  LDA.b $0E : CLC : ADC.w #$0082
+  JSR TilemapOffsetToVRAM
+  STA.w $1014, X
+
+  ; Store tile data (reuse same value)
+  LDA.b $02
+  STA.w $1006, X
+  STA.w $100C, X
+  STA.w $1012, X
+  STA.w $1018, X
+
+  ; Set stripe size (1 tile = $0100)
+  LDA.w #$0100
+  STA.w $1004, X
+  STA.w $100A, X
+  STA.w $1010, X
+  STA.w $1016, X
+
+  ; Terminate stripe list
+  LDA.w #$FFFF
+  STA.w $101A, X
+
+  ; Update stripe buffer position
+  TXA
+  CLC : ADC.w #$001A
+  STA.w $1000
+
+  ; Set NMI flag to upload stripes
+  SEP #$20
+  LDA.b #$01
+  STA.b $14
+  REP #$20
+
+  RTS
+
+; Convert tilemap offset to VRAM address
+; Input: A = tilemap offset
+; Output: A = VRAM address (byte-swapped for stripe format)
+; Based on RoomTag_BuildChestStripes at $01EF0D
+TilemapOffsetToVRAM:
+  STA.b $04
+
+  AND.w #$0040
+  LSR #4
+  XBA
+  STA.b $06
+
+  LDA.b $04
+  AND.w #$303F
+  LSR
+  ORA.b $06
+  STA.b $06
+
+  LDA.b $04
+  AND.w #$0F80
+  LSR #2
+  ORA.b $06
+  XBA
+
+  RTS
+
+;--------------------------------------------------------------------------------
+;  Sokoban Tag Code
+;--------------------------------------------------------------------------------
+
+; Pressure plate positions in room $0038 (tilemap indices)
+PressurePlatePositions:
+  dw $0972  ; (X=$29, Y=$08)
+  dw $0652  ; (X=$29, Y=$0C)
+  dw $1452  ; (X=$29, Y=$10)
+  dw $0556  ; (X=$2B, Y=$0A)
+  dw $0756  ; (X=$2B, Y=$0E)
+  dw $065A  ; (X=$2D, Y=$0C)
+
+!PRESSURE_PLATE_COUNT = 6
+
+HandleSokobanTag:
+  ; Check if chest already opened
+  SEP #$20
+
+  LDA.l RoomDataWRAM[$AB].low : AND.b #$10 : BNE .exit ; Check if chest already opened
+
+  ; Check all 6 pressure plates - each must have a pushblock on it
+  REP #$30
+  LDX.w #$0000  ; Pressure plate index
+
+.check_plate_loop
+  CPX.w #!PRESSURE_PLATE_COUNT*2 : BCS .all_plates_covered
+
+  ; Load pressure plate position
+  LDA.l PressurePlatePositions, X
+  STA.b $00  ; Store plate position in $00
+  PHX        ; Save plate index
+
+  ; Search all pushblocks (slots 0-15) for a match
+  LDY.w #$0000
+.check_block_loop
+  CPY.w #$0020 : BCS .no_block_found  ; 16 blocks * 2 bytes = $20
+
+  ; Load pushblock position and mask off flags
+  LDA.w $0540, Y
+  AND.w #$3FFF
+
+  ; Compare with plate position
+  CMP.b $00
+  BEQ .block_found
+
+  INY : INY
+  BRA .check_block_loop
+
+.no_block_found
+  ; This plate doesn't have a block - puzzle incomplete
+  PLX
+  BRA .exit
+
+.block_found
+  ; This plate has a block - continue to next plate
+  PLX
+  INX : INX
+  BRA .check_plate_loop
+
+.all_plates_covered
+  PHK : PEA.w .exit-1
+  PEA.w $81CF8C ; an rtl address - 1 in Bank01
+  JML RoomTag_OperateChestReveal ; _01C7D8
+
+.exit
+  SEP #$30
+  RTS
+
+;--------------------------------------------------------------------------------
+;  Portal Room Tag Code
+;--------------------------------------------------------------------------------
+
+HandlePortalRoomTag:
+  RTS ; stubbed out for now
+
+;--------------------------------------------------------------------------------
+;  Final Puzzle Tag Code
+;--------------------------------------------------------------------------------
+
+HandleFinalPuzzleTag:
+  RTS ; stubbed out for now
+
+;--------------------------------------------------------------------------------
+;  New Chest Code
+;--------------------------------------------------------------------------------
+
+ExtendedRoomData_ChestItems:
+; room id, chest number; item id
+dw $0039 : db $00 : db $B8  ; red boom puzzle item
+dw $006A : db $02 : db $B8  ; red boom puzzle item
+dw $005F : db $01 : db $B8  ; red boom puzzle item
+dw $00D5 : db $04 : db $B8  ; red boom puzzle item
+dw $00AB : db $00 : db $B8  ; red boom puzzle item
+dw $0038 : db $00 : db $B8  ; red boom puzzle item
+dw $0091 : db $00 : db $B9  ; altered puzzle item
+dw $0000 : db $00 : db $BA  ; final reward
+; SEE HARDCODE TABLE SIZE below currently $0020 (32 bytes, 8 entries)
+
+GetChestDataExtended:
+  if !FEATURE_LIMITED_RUN == 2604
+    BRA .checkExtended
+  endif
+
+.couldntFindChest
+  INC.b Scrap0E : LDX.w #$FFFD ; what we wrote over
+  JML Dungeon_OpenKeyedObject_nextChest
+
+.checkExtended
+  LDX.w #$FFFC
+
+.nextChest
+  ; HARDCODE TABLE SIZE here - change if you add more entries
+  INX #4 : CPX.w #$0020 : BEQ .couldntFindChest
+  LDA.l ExtendedRoomData_ChestItems, X : AND.w #$7FFF : CMP.b RoomIndex : BNE .nextChest
+  SEP #$20
+  LDA.l ExtendedRoomData_ChestItems+2, X : CMP.b Scrap0E
+  REP #$20
+  BNE .nextChest
+
+;.foundChest
+  LDA.l ExtendedRoomData_ChestItems+3, X : STA.b Scrap0C
+  LDA.l ExtendedRoomData_ChestItems,X : ASL A : BCC .smallChest
+  JML Dungeon_OpenKeyedObject_bigChest
+
+.smallChest
+  JML Dungeon_OpenKeyedObject_smallChest
+
+;--------------------------------------------------------------------------------
+;  Push Block Manip
+;--------------------------------------------------------------------------------
+PushBlock_TileTypeMod:
+  STA.w $0500,Y
+  LDA.b RoomIndex
+  CMP.w #$0038 : BEQ .multipush
+  CMP.w #$00D5 : BEQ .multipush
+  CMP.w #$0120 : BNE .normal
+.multipush
+  LDA.w #$7070 : RTL
+.normal
+  LDA.w #$2727 : RTL
+
+;--------------------------------------------------------------------------------
+;  Pressure Plate Preservation System
+;--------------------------------------------------------------------------------
+
+; Pressure plate tile values (2x2 16x16 tile = 4 tiles)
+; PLACEHOLDER: Fill in actual tile values after testing in-game
+;PressurePlateTiles:
+;  dw $FFFF  ; Top-left
+;  dw $FFFF  ; Top-right
+;  dw $FFFF  ; Bottom-left
+;  dw $FFFF  ; Bottom-right
+;
+;; Hook function: Check if block is moving off pressure plate, preserve tiles
+;; Called in 16-bit mode (REP #$20 already active)
+;PushBlock_FloorTileCheck:
+;  ; Check if room $0038
+;  LDA.b RoomIndex            ; Room index is 16-bit
+;  CMP.w #$0038
+;  BNE .execute_original
+;
+;  ; Check if tag $45 active
+;  LDA.b $AE
+;  AND.w #$00FF         ; Mask to 8-bit value (tag is 8-bit)
+;  CMP.w #$0045
+;  BNE .execute_original
+;
+;  ; Check if block is at pressure plate position
+;  LDA.w $0540,Y        ; Load tilemap position
+;  AND.w #$3FFF         ; Mask off flags
+;
+;  LDX.w #$0000
+;.check_loop
+;  CMP.l PressurePlatePositions,X
+;  BEQ .found_match
+;  INX : INX
+;  CPX.w #!PRESSURE_PLATE_COUNT*2
+;  BNE .check_loop
+;  BRA .execute_original
+;
+;.found_match
+;  ; Override stored floor tiles with pressure plate tiles
+;  LDA.l PressurePlateTiles+0
+;  STA.w $0560,Y
+;  LDA.l PressurePlateTiles+2
+;  STA.w $0580,Y
+;  LDA.l PressurePlateTiles+4
+;  STA.w $05A0,Y
+;  LDA.l PressurePlateTiles+6
+;  STA.w $05C0,Y
+;
+;.execute_original
+;  ; Call original drawing function using jslrts (stays in 16-bit mode)
+;  PHK : PEA.w .return-1
+;  PEA.w $81CF8C       ; RTL address - 1 in Bank01
+;  JML RoomDraw_16x16Single
+;.return
+;  LDX.w $0474  ; overriden instruction - must be executed
+;  RTL
+
+;--------------------------------------------------------------------------------
+;  Extended Pushblock System
+;--------------------------------------------------------------------------------
+
+; Configuration: Change this to add more blocks (max 29)
+!EXTENDED_PUSHBLOCK_COUNT = 6
+
+; Data table: Add pushblock entries here
+; Format: dw RoomID, TilemapIndex
+ExtendedPushBlocks:
+  dw $0038, $0652  ; Slot 99  - (X=$29, Y=$0C)
+  dw $0038, $0556  ; Slot 100 - (X=$2B, Y=$0A)
+  dw $0038, $0756  ; Slot 101 - (X=$2B, Y=$0E)
+  dw $0038, $066A  ; Slot 102 - (X=$35, Y=$0C)
+  dw $0038, $066E  ; Slot 103 - (X=$37, Y=$0C)
+  dw $0038, $056E  ; Slot 104 - (X=$37, Y=$0A)
+  ; Add up to 23 more entries here (slots 105-127)
+  ; Maximum capacity: 29 entries = 116 bytes
+
+;--------------------------------------------------------------------------------
+; InitExtendedPushBlocks
+; Called once at game start to copy extended pushblocks to SRAM
+; Replaces: LDX.b #$3E : LDA.w #$0000
+;--------------------------------------------------------------------------------
+;InitExtendedPushBlocks:
+;  PHP
+;  REP #$20
+;
+;  ; Copy extended pushblocks from ROM to SRAM
+;  ; Can't use Y-indexed with long addressing, so use absolute addressing
+;  LDX.w #$0000           ; ROM table offset
+;.loop
+;  LDA.l ExtendedPushBlocks,X
+;  STA.w $7EF9CC,X        ; $7EF940 + $018C = $7EFACC (slot 99 start)
+;  INX : INX
+;  CPX.w #!EXTENDED_PUSHBLOCK_COUNT*4  ; Count × 4 bytes per entry
+;  BNE .loop
+;
+;  PLP
+;
+;  ; Execute replaced instructions (ensure 16-bit A mode)
+;  REP #$20
+;  LDX.b #$3E             ; Original instruction
+;  LDA.w #$0000           ; Original instruction
+;  RTL
+
+;--------------------------------------------------------------------------------
+; LoadExtendedPushBlocks
+; Called every room entry to check for extended pushblocks in current room
+; Replaces: REP #$20 : LDA.w $042C
+;--------------------------------------------------------------------------------
+;LoadExtendedPushBlocks:
+;  REP #$20               ; Execute replaced instruction early (needed for our code)
+;
+;  ; Loop through extended SRAM slots (99+)
+;  LDA.w #$018C           ; Start index (slot 99)
+;  STA.b $BA
+;
+;.loop
+;  LDX.b $BA
+;
+;  ; Check if room ID matches current room
+;  LDA.l $7EF940,X        ; Load room ID from SRAM
+;  CMP.b $A0              ; Compare with current room
+;  BNE .next
+;
+;  ; Match found - load and draw pushblock
+;  LDA.l $7EF942,X        ; Load tilemap index
+;  STA.b $08
+;  TAY
+;
+;  ; Call vanilla draw function using jslrts technique
+;  PHK : PEA.w .jslrtsreturn-1
+;  PEA.w $81CF8C          ; RTL address - 1 in Bank01
+;  JML RoomDraw_PushableBlock
+;.jslrtsreturn
+;  REP #$20               ; Restore 16-bit A mode after draw function
+;
+;.next
+;  LDA.b $BA
+;  CLC
+;  ADC.w #$0004           ; Next entry (+4 bytes)
+;  STA.b $BA
+;  CMP.w #$018C+(!EXTENDED_PUSHBLOCK_COUNT*4)  ; End index
+;  BCC .loop              ; Continue if less than limit
+;
+;  ; Execute replaced instruction
+;  LDA.w $042C            ; Original instruction (already in 16-bit mode)
+;  RTL
+
+;--------------------------------------------------------------------------------
+;  Reward Item
+;--------------------------------------------------------------------------------
+
+LimitedRun_ReceiveRewardItem:
+  LDA.l !UnderworldPuzzlesSolved : INC : STA.l !UnderworldPuzzlesSolved
+  TYA
+  RTL
+
+SecretBoomerang:
+  LDA.w $035F : BEQ .clear_exit
+  LDA.l !UnderworldPuzzlesSolved : BEQ .set_exit
+  LDA.l !BlinkTimer : BNE .set_exit
+
+  LDX.b #$05
+.find_boom_ancilla ; $0385,X where X is 4 and the value should be 5? Search for 5 in this array?
+  DEX
+  LDA.w AncillaGeneralA, X
+  CMP.b #$04 : BEQ .found_boom
+  BRA .find_boom_ancilla
+.found_boom
+  ; is it the red one?
+  LDA.w AncillaGeneralD, X : BEQ .set_exit  ; $0394,X is eiher 0 or 1 (blue or red)
+
+  ; switch boomerange coords and links coords (Link teleports 8 pixels higher than boomerang)
+  LDA.w AncillaCoordYHigh, X : STA.b $01
+  LDA.w AncillaCoordYLow, X : SEC : SBC #$08 : STA $00
+  BCS +                                   ; If carry set, no borrow needed
+  DEC $01                                 ; Else decrement high byte for borrow
++
+  LDA.w AncillaCoordXHigh, X : STA.b $03 : LDA.w AncillaCoordXLow, X : STA $02
+  LDA.b LinkPosY : STA.w AncillaCoordYLow, X : LDA.b LinkPosY+1 : STA.w AncillaCoordYHigh, X
+  LDA.b LinkPosX : STA.w AncillaCoordXLow, X : LDA.b LinkPosX+1 : STA.w AncillaCoordXHigh, X
+  LDA.b IndoorsFlag : BEQ .overworld_teleport
+  JSR TeleportLink_Underworld : BRA .after_teleport
+.overworld_teleport
+  JSR TeleportLink_Overworld
+
+.after_teleport
+  ; if activated, set timer I guess
+  LDA.b #$05 ; todo: number of puzzles available
+  SEC : SBC.l !UnderworldPuzzlesSolved : TAX ; LDA.l !UnderworldPuzzlesSolved : TAX for simpler table
+  LDA.l CooldownTable, X
+  STA.l !BlinkTimer
+
+.set_exit ; boomerang is out; go to normal exit
+  SEC
+  RTL
+.clear_exit ; boomerang is not out, proceed normally
+  CLC
+  RTL
+
+CooldownTable:
+; simpler lookup if we finish 7 puzzles
+;  db $FF, $7D, $33, $1D, $0C, $07, $00
+; subtraction version
+  db $00, $07, $0C, $1D, $33, $7D, $FF
+
+;===================================================================================================
+; Teleport Link to Absolute Position with Camera Clamping
+;===================================================================================================
+; Input:
+;   $00-$01 = New Y position (absolute) - DESTROYED
+;   $02-$03 = New X position (absolute) - DESTROYED
+; Scratch:
+;   $04-$05 = Temporary storage for old camera position
+;===================================================================================================
+
+TeleportLink_Underworld:
+  REP #$20
+
+  ;-----------------------------------------------------------------------------------------------
+  ; Process X (horizontal) position and camera
+  ;-----------------------------------------------------------------------------------------------
+
+  ; Save old camera X
+  LDA.w BG2H : STA.b $04 ; Temp: old camera X
+
+  ; Calculate X delta
+  LDA.b $02 : SEC : SBC.w LinkPosX
+  PHA                  ; Save delta on stack
+
+  ; Update Link X position
+  LDA.b $02  : STA.w LinkPosX
+
+  ; Apply delta to camera
+  PLA                  ; Restore X delta
+  CLC : ADC.w BG2H     ; Add to camera X
+
+  ; Clamp camera X to boundaries
+  LDX.b CameraBoundH ; Horizontal boundary set index ($A6)
+
+  CMP.w $0608,X    ; Check west boundary
+  BCS +
+  LDA.w $0608,X
++ CMP.w $060C,X    ; Check east boundary
+  BCC +
+  BEQ +
+  LDA.w $060C,X
++ STA.w BG2H : STA.w BG1H   ; Store clamped camera X
+
+  SEC : SBC.b $04           ; Actual delta = new camera - old camera
+
+  ; Update horizontal scroll triggers
+  CLC : ADC.w CameraScrollW : STA.w CameraScrollW
+  INC #2        ; East = West + 2
+  STA.w CameraScrollE
+
+  ;-----------------------------------------------------------------------------------------------
+  ; Process Y (vertical) position and camera
+  ;-----------------------------------------------------------------------------------------------
+
+  ; Save old camera Y
+  LDA.w BG2V : STA.b $04  ; Temp: old camera Y
+
+  ; Calculate Y delta
+  LDA.b $00 : SEC : SBC.w LinkPosY
+  PHA                 ; Save delta on stack
+
+  ; Update Link Y position
+  LDA.b $00 : STA.w LinkPosY
+
+  ; Apply delta to camera
+  PLA                 ; Restore Y delta
+  CLC : ADC.w BG2V    ; Add to camera Y
+
+  ; Clamp camera Y to boundaries
+  LDX.b CameraBoundV  ; Vertical boundary set index ($A7)
+
+  CMP.w $0600,X    ; Check north boundary
+  BCS +
+  LDA.w $0600,X
++ CMP.w $0604,X    ; Check south boundary
+  BCC +
+  BEQ +
+  LDA.w $0604,X
++ STA.w BG2V : STA.w BG1V  ; Store clamped camera Y
+
+  SEC : SBC.b $04     ; Actual delta = new camera - old camera
+
+  ; Update vertical scroll triggers
+  CLC : ADC.w CameraScrollN : STA.w CameraScrollN
+  INC #2        ; South = North + 2
+  STA.w CameraScrollS
+
+  SEP #$20
+  RTS
+
+;===================================================================================================
+; Teleport Link - Overworld
+;===================================================================================================
+
+TeleportLink_Overworld:
+  REP #$20
+
+  ; Clear BG1 sub-pixel accumulators to prevent parallax drift
+;  STZ.w $0620                   ; OWBG1SUBPX (X sub-pixel accumulator)
+;  STZ.w $0622                   ; OWBG1SUBPY (Y sub-pixel accumulator)
+
+  ;-----------------------------------------------------------------------------------------------
+  ; Process X (horizontal) position and camera
+  ;-----------------------------------------------------------------------------------------------
+
+  LDA.w BG2H : STA.b $04        ; $04 = old FULL camera X (absolute coords)
+
+  LDA.b $02 : SEC : SBC.w LinkPosX
+  PHA                           ; Save X delta
+
+  LDA.b $02 : STA.w LinkPosX    ; Update Link X
+
+  PLA                           ; Restore X delta
+  CLC : ADC.b $04               ; Apply delta to FULL camera value
+  STA.b $08                     ; $08 = new camera X (full pixels, before clamping)
+
+  ; X boundaries are in /8 space, need to scale coordinates
+  LSR A : LSR A : LSR A         ; Divide by 8 (discard low 3 bits)
+  STA.b $0A                     ; $0A = camera X in /8 space
+
+  ; Clamp camera X to overworld boundaries (/8 space)
+  ; Check min X (west edge)
+  CMP.w $070C
+  BCS +
+  LDA.w $070C                   ; Clamp to min boundary
+  STA.b $0A
+
++ ; Check max X (east edge)
+  LDA.w $070C : CLC : ADC.w $070E
+  STA.b $0C                     ; $0C = max X boundary
+
+  LDA.b $0A                     ; Reload camera X (/8 space)
+  CMP.b $0C
+  BCC +
+  BEQ +
+  LDA.b $0C                     ; Clamp to max boundary
+  STA.b $0A
+
++ ; Convert back to full pixel space
+  LDA.b $0A
+  ASL A : ASL A : ASL A         ; Multiply by 8
+  STA.b $0A                     ; $0A = clamped camera X (full pixels, but low 3 bits = 0)
+
+  ; Preserve low 3 bits from original unclamped camera
+  LDA.b $08 : AND.w #$0007      ; Get low 3 bits
+  ORA.b $0A                     ; Combine with clamped value
+  STA.w BG2H                    ; Store final camera X
+
+  SEC : SBC.b $04               ; Calculate actual X delta
+  STA.b $06                     ; Save delta
+
+  ; Apply scaled delta to BG1H for parallax effect
+  ; Check if we're on Death Mountain screens (quarter rate) or normal (half rate)
+  SEP #$20
+  LDA.b $8C                     ; Check overlay screen number
+  CMP.b #$95                    ; OW 95 (Death Mountain)
+  BEQ .quarter_rate_x
+  CMP.b #$9E                    ; OW 9E (Death Mountain)
+  BEQ .quarter_rate_x
+
+  ; Standard parallax: BG1 moves at half rate
+  REP #$20
+  LDA.b $06 : LSR A             ; Divide by 2 (unsigned)
+  CMP.w #$7000 : BCC +          ; Check if needs sign extension
+  ORA.w #$F000                  ; Restore sign bits
++ CLC : ADC.w BG1H : STA.w BG1H
+  BRA .done_bg1h
+
+.quarter_rate_x
+  ; Death Mountain parallax: BG1 moves at quarter rate
+  REP #$20
+  LDA.b $06 : LSR A : LSR A     ; Divide by 4 (unsigned)
+  CMP.w #$3000 : BCC +          ; Check if needs sign extension
+  ORA.w #$F000                  ; Restore sign bits
++ CLC : ADC.w BG1H : STA.w BG1H
+
+.done_bg1h
+
+  ; Update horizontal scroll triggers (OVERWORLD: inverted)
+  LDA.b $06                     ; Reload actual X delta
+  CLC : ADC.w CameraScrollW : STA.w CameraScrollW
+  DEC #2              ; East = West - 2 (inverted!)
+  STA.w CameraScrollE
+
+  ;-----------------------------------------------------------------------------------------------
+  ; Process Y (vertical) position and camera
+  ;-----------------------------------------------------------------------------------------------
+
+  LDA.w BG2V : STA.b $04        ; $04 = old FULL camera Y (absolute coords)
+
+  LDA.b $00 : SEC : SBC.w LinkPosY
+  PHA                           ; Save Y delta
+
+  LDA.b $00 : STA.w LinkPosY    ; Update Link Y
+
+  PLA                           ; Restore Y delta
+  CLC : ADC.b $04               ; Apply delta to FULL camera value
+  STA.b $08                     ; $08 = new camera Y (before clamping)
+
+  ; Clamp camera Y to overworld boundaries (absolute coordinate space)
+  ; Check min Y (north edge)
+  CMP.w $0708
+  BCS +
+  LDA.w $0708                   ; Clamp to min boundary
+  STA.b $08
+
++ ; Check max Y (south edge = boundary + size)
+  LDA.w $0708 : CLC : ADC.w $070A
+  STA.b $0A                     ; $0A = max Y boundary
+
+  LDA.b $08                     ; Reload camera Y
+  CMP.b $0A
+  BCC +
+  BEQ +
+  LDA.b $0A                     ; Clamp to max boundary
+  STA.b $08
+
++ LDA.b $08                     ; Final clamped camera Y
+  STA.w BG2V                    ; Store final camera Y
+
+  SEC : SBC.b $04               ; Calculate actual Y delta (full coords)
+  STA.b $06                     ; Save actual Y delta in $06
+
+  ; Apply scaled delta to BG1V for parallax effect
+  SEP #$20
+  LDA.b $8C                     ; Check overlay screen number
+  CMP.b #$97                    ; OW 97 (no parallax)
+  BEQ .no_parallax_y
+  CMP.b #$9D                    ; OW 9D (no parallax)
+  BEQ .no_parallax_y
+  CMP.b #$B5                    ; OW B5 (quarter rate)
+  BEQ .quarter_rate_y
+  CMP.b #$BE                    ; OW BE (quarter rate)
+  BEQ .quarter_rate_y
+
+  ; Standard parallax: BG1 moves at half rate
+  REP #$20
+  LDA.b $06 : LSR A             ; Divide by 2 (unsigned)
+  CMP.w #$7000 : BCC +          ; Check if needs sign extension
+  ORA.w #$F000                  ; Restore sign bits
++ CLC : ADC.w BG1V : STA.w BG1V
+  BRA .done_bg1v
+
+.quarter_rate_y
+  ; Quarter rate parallax
+  REP #$20
+  LDA.b $06 : LSR A : LSR A     ; Divide by 4 (unsigned)
+  CMP.w #$3000 : BCC +          ; Check if needs sign extension
+  ORA.w #$F000                  ; Restore sign bits
++ CLC : ADC.w BG1V : STA.w BG1V
+  BRA .done_bg1v
+
+.no_parallax_y
+  ; No parallax - don't update BG1V
+  REP #$20
+
+.done_bg1v
+
+  ; Update vertical scroll triggers (OVERWORLD: inverted)
+  LDA.b $06                     ; Reload actual Y delta
+  CLC : ADC.w CameraScrollN : STA.w CameraScrollN
+  DEC #2              ; South = North - 2 (inverted!)
+  STA.w CameraScrollS
+
+; Optimized method: 16-pixel tiles with base offset 0x18
+
+  ; Save Y delta for reuse
+  LDA.w BG2V
+  SEC : SBC.w $0708
+  STA.b $0C            ; Save Y delta
+
+  ; Y component for $84: (delta_Y & $FFF0) * 8
+  AND.w #$FFF0
+  ASL #3
+  STA.b $06            ; Temporary Y component
+
+  ; Calculate and save screen_left in pixels
+  LDA.w $070C : ASL #3 : STA.b $0E
+
+  ; Save X delta for reuse
+  LDA.w BG2H
+  SEC : SBC.b $0E
+  STA.b $08            ; Save X delta
+
+  ; X component for $84: (delta_X & $FFF0) / 8
+  AND.w #$FFF0
+  LSR #3
+  CLC : ADC.b $06      ; Add Y component
+  STA.b $84            ; Final $84
+
+  ; $86 = (X_delta / 16 + 0x18) & 0x1F
+  LDA.b $08            ; Reuse saved X delta
+  LSR #4
+  CLC : ADC.w #$0018
+  AND.w #$001F
+  STA.b $86
+
+  ; $88 = (Y_delta / 16 + 0x18) & 0x1F
+  LDA.b $0C            ; Reuse saved Y delta
+  LSR #4
+  CLC : ADC.w #$0018
+  AND.w #$001F
+  STA.b $88
+
+  ;-----------------------------------------------------------------------------------------------
+  ; Rebuild VRAM tilemap if on a big screen (fixes off-screen corruption)
+  ;-----------------------------------------------------------------------------------------------
+
+  SEP #$20
+
+  ; Check if big screen: OverworldScreenSize[$8A] == 0
+  LDX.b $8A
+  LDA.l OverworldScreenSize,X      ; OverworldScreenSize table
+  BNE .skip_rebuild    ; Non-zero = small screen, skip rebuild
+
+  ; Big screen detected - rebuild entire tilemap without blackout
+  REP #$20
+
+  ; Save current $84/$86/$88 values (same as Module09_21 does)
+  LDA.b $84 : PHA
+  LDA.b $86 : PHA
+  LDA.b $88 : PHA
+
+  ; Set up parameters for BuildOverworldMapFromMap16
+  LDA.w #$FFFF : STA.b $C8  ; Mark all quadrants for rebuild
+  STZ.b $CA                 ; Clear horizontal offset
+  STZ.b $CC                 ; Clear vertical offset
+
+  SEP #$20
+
+  ; Call long wrapper for BuildOverworldMapFromMap16
+  PHK : PEA.w .jslrtsreturn-1
+  PEA.w $828020            ; RTL address-1 in Bank02
+  JML $82FA9B              ; BuildOverworldMapFromMap16
+.jslrtsreturn:
+
+  ; Set NMI dispatch to upload stripe data to VRAM
+  LDA.b #$04               ; NMI_UpdateSubscreenOverlay
+  STA.b $17                ; NMI dispatch index
+  STA.w $0710              ; Backup/frame counter
+
+  ; Restore original $84/$86/$88 values
+  REP #$20
+  PLA : STA.b $88
+  PLA : STA.b $86
+  PLA : STA.b $84
+
+  SEP #$20
+.skip_rebuild
+
+  RTS
+
+;===================================================================================================
+; Blink Timer
+;===================================================================================================
+
+HandleBlinkTimer:
+
+  LDA.b FrameCounter : AND.b #$3F : BNE .exit
+  LDA.l !BlinkTimer : BEQ .exit
+  DEC : STA.l !BlinkTimer
+.exit
+  JSL GetMultiworldItem ; overwriting someone elses hook
+  RTL
+
+LimitedRun_BlinkTimer:
+    LDA.l !BlinkTimer : AND.w #$00FF : BEQ .normal_exit
+        ASL #3 : TAX ; X = !BlinkTimer * 8
+
+        ; Y register holds magic level for tilemap offset
+        ; Strategy: Load all 4 masks onto stack, then process with magic level
+
+        ; Load all 4 masks from table (X = table index)
+        LDA.l BlinkMeterColorTable+6,X : PHA  ; Portion 4 (bottom)
+        LDA.l BlinkMeterColorTable+4,X : PHA  ; Portion 3
+        LDA.l BlinkMeterColorTable+2,X : PHA  ; Portion 2
+        LDA.l BlinkMeterColorTable+0,X : PHA  ; Portion 1 (top)
+
+        TYX  ; X = magic level offset into tilemap
+        ; Apply masks (pop in reverse order)
+        PLA : AND.l DrawMagicMeter_mp_tilemap+0,X : STA.w HUDTileMapBuffer+$046
+        PLA : AND.l DrawMagicMeter_mp_tilemap+2,X : STA.w HUDTileMapBuffer+$086
+        PLA : AND.l DrawMagicMeter_mp_tilemap+4,X : STA.w HUDTileMapBuffer+$0C6
+        PLA : AND.l DrawMagicMeter_mp_tilemap+6,X : STA.w HUDTileMapBuffer+$106
+        SEC : RTL
+.normal_exit
+    CLC : RTL
+
+;================================================================================
+; Cascade Meter Color Table - Reheat Cascade
+; 256 entries (one per !BlinkTimer value)
+; Each entry is 8 bytes: 4 words for [Portion1, Portion2, Portion3, Portion4]
+;
+; Heat order: Red(4) > Orange(3) > Yellow(2) > Blue(1) > Green(0)
+;
+; Rules:
+;   - P1 ≤ P2 ≤ P3 ≤ P4 (top never hotter than bottom)
+;   - Top portion (P1) cools first through all values ≤ P2
+;   - When P1 reaches 0, P2 decrements and P1 reheats to match P2
+;   - This creates a 'sawtooth' cooling pattern
+;
+; Progression example:
+;   RRRR → ORRR → YRRR → BRRR → GRRR → OORR (P1 reheats!) → YORR → ...
+;
+; 70 unique states mapped across 256 timer values
+;
+; Index calculation:
+;   Base = (BlinkTimer << 3)
+;================================================================================
+BlinkMeterColorTable:
+; Total valid states: 70
+
+    dw $FFFF, $FFFF, $FFFF, $FFFF ; $00 [Grn][Grn][Grn][Grn] ← READY
+    dw $FFFF, $FFFF, $FFFF, $EFFF ; $01 [Grn][Grn][Grn][Blu]
+    dw $FFFF, $FFFF, $FFFF, $EFFF ; $02 [Grn][Grn][Grn][Blu]
+    dw $FFFF, $FFFF, $FFFF, $EFFF ; $03 [Grn][Grn][Grn][Blu] < All puzzles
+    dw $FFFF, $FFFF, $EFFF, $EFFF ; $04 [Grn][Grn][Blu][Blu]
+    dw $FFFF, $FFFF, $EFFF, $EFFF ; $05 [Grn][Grn][Blu][Blu]
+    dw $FFFF, $FFFF, $EFFF, $EFFF ; $06 [Grn][Grn][Blu][Blu]
+    dw $FFFF, $FFFF, $EFFF, $EFFF ; $07 [Grn][Grn][Blu][Blu] <- Missing 1
+    dw $FFFF, $EFFF, $EFFF, $EFFF ; $08 [Grn][Blu][Blu][Blu]
+    dw $FFFF, $EFFF, $EFFF, $EFFF ; $09 [Grn][Blu][Blu][Blu]
+    dw $FFFF, $EFFF, $EFFF, $EFFF ; $0A [Grn][Blu][Blu][Blu]
+    dw $FFFF, $EFFF, $EFFF, $EFFF ; $0B [Grn][Blu][Blu][Blu]
+    dw $EFFF, $EFFF, $EFFF, $EFFF ; $0C [Blu][Blu][Blu][Blu] ← Missing 2
+    dw $EFFF, $EFFF, $EFFF, $EFFF ; $0D [Blu][Blu][Blu][Blu]
+    dw $EFFF, $EFFF, $EFFF, $EFFF ; $0E [Blu][Blu][Blu][Blu]
+    dw $FFFF, $FFFF, $FFFF, $EBFF ; $0F [Grn][Grn][Grn][Yel]
+    dw $FFFF, $FFFF, $FFFF, $EBFF ; $10 [Grn][Grn][Grn][Yel]
+    dw $FFFF, $FFFF, $FFFF, $EBFF ; $11 [Grn][Grn][Grn][Yel]
+    dw $FFFF, $FFFF, $FFFF, $EBFF ; $12 [Grn][Grn][Grn][Yel]
+    dw $FFFF, $FFFF, $EFFF, $EBFF ; $13 [Grn][Grn][Blu][Yel]
+    dw $FFFF, $FFFF, $EFFF, $EBFF ; $14 [Grn][Grn][Blu][Yel]
+    dw $FFFF, $FFFF, $EFFF, $EBFF ; $15 [Grn][Grn][Blu][Yel]
+    dw $FFFF, $FFFF, $EFFF, $EBFF ; $16 [Grn][Grn][Blu][Yel]
+    dw $FFFF, $EFFF, $EFFF, $EBFF ; $17 [Grn][Blu][Blu][Yel]
+    dw $FFFF, $EFFF, $EFFF, $EBFF ; $18 [Grn][Blu][Blu][Yel]
+    dw $FFFF, $EFFF, $EFFF, $EBFF ; $19 [Grn][Blu][Blu][Yel]
+    dw $EFFF, $EFFF, $EFFF, $EBFF ; $1A [Blu][Blu][Blu][Yel] ← REHEAT!
+    dw $EFFF, $EFFF, $EFFF, $EBFF ; $1B [Blu][Blu][Blu][Yel]
+    dw $EFFF, $EFFF, $EFFF, $EBFF ; $1C [Blu][Blu][Blu][Yel]
+    dw $EFFF, $EFFF, $EFFF, $EBFF ; $1D [Blu][Blu][Blu][Yel] <-Missing 3
+    dw $FFFF, $FFFF, $EBFF, $EBFF ; $1E [Grn][Grn][Yel][Yel]
+    dw $FFFF, $FFFF, $EBFF, $EBFF ; $1F [Grn][Grn][Yel][Yel]
+    dw $FFFF, $FFFF, $EBFF, $EBFF ; $20 [Grn][Grn][Yel][Yel]
+    dw $FFFF, $FFFF, $EBFF, $EBFF ; $21 [Grn][Grn][Yel][Yel]
+    dw $FFFF, $EFFF, $EBFF, $EBFF ; $22 [Grn][Blu][Yel][Yel]
+    dw $FFFF, $EFFF, $EBFF, $EBFF ; $23 [Grn][Blu][Yel][Yel]
+    dw $FFFF, $EFFF, $EBFF, $EBFF ; $24 [Grn][Blu][Yel][Yel]
+    dw $EFFF, $EFFF, $EBFF, $EBFF ; $25 [Blu][Blu][Yel][Yel] ← REHEAT!
+    dw $EFFF, $EFFF, $EBFF, $EBFF ; $26 [Blu][Blu][Yel][Yel]
+    dw $EFFF, $EFFF, $EBFF, $EBFF ; $27 [Blu][Blu][Yel][Yel]
+    dw $EFFF, $EFFF, $EBFF, $EBFF ; $28 [Blu][Blu][Yel][Yel]
+    dw $FFFF, $EBFF, $EBFF, $EBFF ; $29 [Grn][Yel][Yel][Yel]
+    dw $FFFF, $EBFF, $EBFF, $EBFF ; $2A [Grn][Yel][Yel][Yel]
+    dw $FFFF, $EBFF, $EBFF, $EBFF ; $2B [Grn][Yel][Yel][Yel]
+    dw $FFFF, $EBFF, $EBFF, $EBFF ; $2C [Grn][Yel][Yel][Yel]
+    dw $EFFF, $EBFF, $EBFF, $EBFF ; $2D [Blu][Yel][Yel][Yel] ← REHEAT!
+    dw $EFFF, $EBFF, $EBFF, $EBFF ; $2E [Blu][Yel][Yel][Yel]
+    dw $EFFF, $EBFF, $EBFF, $EBFF ; $2F [Blu][Yel][Yel][Yel]
+    dw $EFFF, $EBFF, $EBFF, $EBFF ; $30 [Blu][Yel][Yel][Yel]
+    dw $EBFF, $EBFF, $EBFF, $EBFF ; $31 [Yel][Yel][Yel][Yel] ← REHEAT!
+    dw $EBFF, $EBFF, $EBFF, $EBFF ; $32 [Yel][Yel][Yel][Yel]
+    dw $EBFF, $EBFF, $EBFF, $EBFF ; $33 [Yel][Yel][Yel][Yel] <- Missing 4
+    dw $FFFF, $FFFF, $FFFF, $E3FF ; $34 [Grn][Grn][Grn][Org]
+    dw $FFFF, $FFFF, $FFFF, $E3FF ; $35 [Grn][Grn][Grn][Org]
+    dw $FFFF, $FFFF, $FFFF, $E3FF ; $36 [Grn][Grn][Grn][Org]
+    dw $FFFF, $FFFF, $FFFF, $E3FF ; $37 [Grn][Grn][Grn][Org]
+    dw $FFFF, $FFFF, $EFFF, $E3FF ; $38 [Grn][Grn][Blu][Org]
+    dw $FFFF, $FFFF, $EFFF, $E3FF ; $39 [Grn][Grn][Blu][Org]
+    dw $FFFF, $FFFF, $EFFF, $E3FF ; $3A [Grn][Grn][Blu][Org]
+    dw $FFFF, $FFFF, $EFFF, $E3FF ; $3B [Grn][Grn][Blu][Org]
+    dw $FFFF, $EFFF, $EFFF, $E3FF ; $3C [Grn][Blu][Blu][Org]
+    dw $FFFF, $EFFF, $EFFF, $E3FF ; $3D [Grn][Blu][Blu][Org]
+    dw $FFFF, $EFFF, $EFFF, $E3FF ; $3E [Grn][Blu][Blu][Org]
+    dw $EFFF, $EFFF, $EFFF, $E3FF ; $3F [Blu][Blu][Blu][Org] ← REHEAT!
+    dw $EFFF, $EFFF, $EFFF, $E3FF ; $40 [Blu][Blu][Blu][Org]
+    dw $EFFF, $EFFF, $EFFF, $E3FF ; $41 [Blu][Blu][Blu][Org]
+    dw $EFFF, $EFFF, $EFFF, $E3FF ; $42 [Blu][Blu][Blu][Org]
+    dw $FFFF, $FFFF, $EBFF, $E3FF ; $43 [Grn][Grn][Yel][Org]
+    dw $FFFF, $FFFF, $EBFF, $E3FF ; $44 [Grn][Grn][Yel][Org]
+    dw $FFFF, $FFFF, $EBFF, $E3FF ; $45 [Grn][Grn][Yel][Org]
+    dw $FFFF, $FFFF, $EBFF, $E3FF ; $46 [Grn][Grn][Yel][Org]
+    dw $FFFF, $EFFF, $EBFF, $E3FF ; $47 [Grn][Blu][Yel][Org]
+    dw $FFFF, $EFFF, $EBFF, $E3FF ; $48 [Grn][Blu][Yel][Org]
+    dw $FFFF, $EFFF, $EBFF, $E3FF ; $49 [Grn][Blu][Yel][Org]
+    dw $EFFF, $EFFF, $EBFF, $E3FF ; $4A [Blu][Blu][Yel][Org] ← REHEAT!
+    dw $EFFF, $EFFF, $EBFF, $E3FF ; $4B [Blu][Blu][Yel][Org]
+    dw $EFFF, $EFFF, $EBFF, $E3FF ; $4C [Blu][Blu][Yel][Org]
+    dw $EFFF, $EFFF, $EBFF, $E3FF ; $4D [Blu][Blu][Yel][Org]
+    dw $FFFF, $EBFF, $EBFF, $E3FF ; $4E [Grn][Yel][Yel][Org]
+    dw $FFFF, $EBFF, $EBFF, $E3FF ; $4F [Grn][Yel][Yel][Org]
+    dw $FFFF, $EBFF, $EBFF, $E3FF ; $50 [Grn][Yel][Yel][Org]
+    dw $FFFF, $EBFF, $EBFF, $E3FF ; $51 [Grn][Yel][Yel][Org]
+    dw $EFFF, $EBFF, $EBFF, $E3FF ; $52 [Blu][Yel][Yel][Org] ← REHEAT!
+    dw $EFFF, $EBFF, $EBFF, $E3FF ; $53 [Blu][Yel][Yel][Org]
+    dw $EFFF, $EBFF, $EBFF, $E3FF ; $54 [Blu][Yel][Yel][Org]
+    dw $EFFF, $EBFF, $EBFF, $E3FF ; $55 [Blu][Yel][Yel][Org]
+    dw $EBFF, $EBFF, $EBFF, $E3FF ; $56 [Yel][Yel][Yel][Org] ← REHEAT!
+    dw $EBFF, $EBFF, $EBFF, $E3FF ; $57 [Yel][Yel][Yel][Org]
+    dw $EBFF, $EBFF, $EBFF, $E3FF ; $58 [Yel][Yel][Yel][Org]
+    dw $FFFF, $FFFF, $E3FF, $E3FF ; $59 [Grn][Grn][Org][Org]
+    dw $FFFF, $FFFF, $E3FF, $E3FF ; $5A [Grn][Grn][Org][Org]
+    dw $FFFF, $FFFF, $E3FF, $E3FF ; $5B [Grn][Grn][Org][Org]
+    dw $FFFF, $FFFF, $E3FF, $E3FF ; $5C [Grn][Grn][Org][Org]
+    dw $FFFF, $EFFF, $E3FF, $E3FF ; $5D [Grn][Blu][Org][Org]
+    dw $FFFF, $EFFF, $E3FF, $E3FF ; $5E [Grn][Blu][Org][Org]
+    dw $FFFF, $EFFF, $E3FF, $E3FF ; $5F [Grn][Blu][Org][Org]
+    dw $FFFF, $EFFF, $E3FF, $E3FF ; $60 [Grn][Blu][Org][Org]
+    dw $EFFF, $EFFF, $E3FF, $E3FF ; $61 [Blu][Blu][Org][Org] ← REHEAT!
+    dw $EFFF, $EFFF, $E3FF, $E3FF ; $62 [Blu][Blu][Org][Org]
+    dw $EFFF, $EFFF, $E3FF, $E3FF ; $63 [Blu][Blu][Org][Org]
+    dw $FFFF, $EBFF, $E3FF, $E3FF ; $64 [Grn][Yel][Org][Org]
+    dw $FFFF, $EBFF, $E3FF, $E3FF ; $65 [Grn][Yel][Org][Org]
+    dw $FFFF, $EBFF, $E3FF, $E3FF ; $66 [Grn][Yel][Org][Org]
+    dw $FFFF, $EBFF, $E3FF, $E3FF ; $67 [Grn][Yel][Org][Org]
+    dw $EFFF, $EBFF, $E3FF, $E3FF ; $68 [Blu][Yel][Org][Org] ← REHEAT!
+    dw $EFFF, $EBFF, $E3FF, $E3FF ; $69 [Blu][Yel][Org][Org]
+    dw $EFFF, $EBFF, $E3FF, $E3FF ; $6A [Blu][Yel][Org][Org]
+    dw $EFFF, $EBFF, $E3FF, $E3FF ; $6B [Blu][Yel][Org][Org]
+    dw $EBFF, $EBFF, $E3FF, $E3FF ; $6C [Yel][Yel][Org][Org] ← REHEAT!
+    dw $EBFF, $EBFF, $E3FF, $E3FF ; $6D [Yel][Yel][Org][Org]
+    dw $EBFF, $EBFF, $E3FF, $E3FF ; $6E [Yel][Yel][Org][Org]
+    dw $FFFF, $E3FF, $E3FF, $E3FF ; $6F [Grn][Org][Org][Org]
+    dw $FFFF, $E3FF, $E3FF, $E3FF ; $70 [Grn][Org][Org][Org]
+    dw $FFFF, $E3FF, $E3FF, $E3FF ; $71 [Grn][Org][Org][Org]
+    dw $FFFF, $E3FF, $E3FF, $E3FF ; $72 [Grn][Org][Org][Org]
+    dw $EFFF, $E3FF, $E3FF, $E3FF ; $73 [Blu][Org][Org][Org] ← REHEAT!
+    dw $EFFF, $E3FF, $E3FF, $E3FF ; $74 [Blu][Org][Org][Org]
+    dw $EFFF, $E3FF, $E3FF, $E3FF ; $75 [Blu][Org][Org][Org]
+    dw $EFFF, $E3FF, $E3FF, $E3FF ; $76 [Blu][Org][Org][Org]
+    dw $EBFF, $E3FF, $E3FF, $E3FF ; $77 [Yel][Org][Org][Org] ← REHEAT!
+    dw $EBFF, $E3FF, $E3FF, $E3FF ; $78 [Yel][Org][Org][Org]
+    dw $EBFF, $E3FF, $E3FF, $E3FF ; $79 [Yel][Org][Org][Org]
+    dw $E3FF, $E3FF, $E3FF, $E3FF ; $7A [Org][Org][Org][Org] ← REHEAT!
+    dw $E3FF, $E3FF, $E3FF, $E3FF ; $7B [Org][Org][Org][Org]
+    dw $E3FF, $E3FF, $E3FF, $E3FF ; $7C [Org][Org][Org][Org]
+    dw $E3FF, $E3FF, $E3FF, $E3FF ; $7D [Org][Org][Org][Org] <- Missing 5
+    dw $FFFF, $FFFF, $FFFF, $E7FF ; $7E [Grn][Grn][Grn][Red]
+    dw $FFFF, $FFFF, $FFFF, $E7FF ; $7F [Grn][Grn][Grn][Red]
+    dw $FFFF, $FFFF, $FFFF, $E7FF ; $80 [Grn][Grn][Grn][Red]
+    dw $FFFF, $FFFF, $FFFF, $E7FF ; $81 [Grn][Grn][Grn][Red]
+    dw $FFFF, $FFFF, $EFFF, $E7FF ; $82 [Grn][Grn][Blu][Red]
+    dw $FFFF, $FFFF, $EFFF, $E7FF ; $83 [Grn][Grn][Blu][Red]
+    dw $FFFF, $FFFF, $EFFF, $E7FF ; $84 [Grn][Grn][Blu][Red]
+    dw $FFFF, $FFFF, $EFFF, $E7FF ; $85 [Grn][Grn][Blu][Red]
+    dw $FFFF, $EFFF, $EFFF, $E7FF ; $86 [Grn][Blu][Blu][Red]
+    dw $FFFF, $EFFF, $EFFF, $E7FF ; $87 [Grn][Blu][Blu][Red]
+    dw $FFFF, $EFFF, $EFFF, $E7FF ; $88 [Grn][Blu][Blu][Red]
+    dw $EFFF, $EFFF, $EFFF, $E7FF ; $89 [Blu][Blu][Blu][Red] ← REHEAT!
+    dw $EFFF, $EFFF, $EFFF, $E7FF ; $8A [Blu][Blu][Blu][Red]
+    dw $EFFF, $EFFF, $EFFF, $E7FF ; $8B [Blu][Blu][Blu][Red]
+    dw $EFFF, $EFFF, $EFFF, $E7FF ; $8C [Blu][Blu][Blu][Red]
+    dw $FFFF, $FFFF, $EBFF, $E7FF ; $8D [Grn][Grn][Yel][Red]
+    dw $FFFF, $FFFF, $EBFF, $E7FF ; $8E [Grn][Grn][Yel][Red]
+    dw $FFFF, $FFFF, $EBFF, $E7FF ; $8F [Grn][Grn][Yel][Red]
+    dw $FFFF, $FFFF, $EBFF, $E7FF ; $90 [Grn][Grn][Yel][Red]
+    dw $FFFF, $EFFF, $EBFF, $E7FF ; $91 [Grn][Blu][Yel][Red]
+    dw $FFFF, $EFFF, $EBFF, $E7FF ; $92 [Grn][Blu][Yel][Red]
+    dw $FFFF, $EFFF, $EBFF, $E7FF ; $93 [Grn][Blu][Yel][Red]
+    dw $EFFF, $EFFF, $EBFF, $E7FF ; $94 [Blu][Blu][Yel][Red] ← REHEAT!
+    dw $EFFF, $EFFF, $EBFF, $E7FF ; $95 [Blu][Blu][Yel][Red]
+    dw $EFFF, $EFFF, $EBFF, $E7FF ; $96 [Blu][Blu][Yel][Red]
+    dw $EFFF, $EFFF, $EBFF, $E7FF ; $97 [Blu][Blu][Yel][Red]
+    dw $FFFF, $EBFF, $EBFF, $E7FF ; $98 [Grn][Yel][Yel][Red]
+    dw $FFFF, $EBFF, $EBFF, $E7FF ; $99 [Grn][Yel][Yel][Red]
+    dw $FFFF, $EBFF, $EBFF, $E7FF ; $9A [Grn][Yel][Yel][Red]
+    dw $FFFF, $EBFF, $EBFF, $E7FF ; $9B [Grn][Yel][Yel][Red]
+    dw $EFFF, $EBFF, $EBFF, $E7FF ; $9C [Blu][Yel][Yel][Red] ← REHEAT!
+    dw $EFFF, $EBFF, $EBFF, $E7FF ; $9D [Blu][Yel][Yel][Red]
+    dw $EFFF, $EBFF, $EBFF, $E7FF ; $9E [Blu][Yel][Yel][Red]
+    dw $EBFF, $EBFF, $EBFF, $E7FF ; $9F [Yel][Yel][Yel][Red] ← REHEAT!
+    dw $EBFF, $EBFF, $EBFF, $E7FF ; $A0 [Yel][Yel][Yel][Red]
+    dw $EBFF, $EBFF, $EBFF, $E7FF ; $A1 [Yel][Yel][Yel][Red]
+    dw $EBFF, $EBFF, $EBFF, $E7FF ; $A2 [Yel][Yel][Yel][Red]
+    dw $FFFF, $FFFF, $E3FF, $E7FF ; $A3 [Grn][Grn][Org][Red]
+    dw $FFFF, $FFFF, $E3FF, $E7FF ; $A4 [Grn][Grn][Org][Red]
+    dw $FFFF, $FFFF, $E3FF, $E7FF ; $A5 [Grn][Grn][Org][Red]
+    dw $FFFF, $FFFF, $E3FF, $E7FF ; $A6 [Grn][Grn][Org][Red]
+    dw $FFFF, $EFFF, $E3FF, $E7FF ; $A7 [Grn][Blu][Org][Red]
+    dw $FFFF, $EFFF, $E3FF, $E7FF ; $A8 [Grn][Blu][Org][Red]
+    dw $FFFF, $EFFF, $E3FF, $E7FF ; $A9 [Grn][Blu][Org][Red]
+    dw $FFFF, $EFFF, $E3FF, $E7FF ; $AA [Grn][Blu][Org][Red]
+    dw $EFFF, $EFFF, $E3FF, $E7FF ; $AB [Blu][Blu][Org][Red] ← REHEAT!
+    dw $EFFF, $EFFF, $E3FF, $E7FF ; $AC [Blu][Blu][Org][Red]
+    dw $EFFF, $EFFF, $E3FF, $E7FF ; $AD [Blu][Blu][Org][Red]
+    dw $FFFF, $EBFF, $E3FF, $E7FF ; $AE [Grn][Yel][Org][Red]
+    dw $FFFF, $EBFF, $E3FF, $E7FF ; $AF [Grn][Yel][Org][Red]
+    dw $FFFF, $EBFF, $E3FF, $E7FF ; $B0 [Grn][Yel][Org][Red]
+    dw $FFFF, $EBFF, $E3FF, $E7FF ; $B1 [Grn][Yel][Org][Red]
+    dw $EFFF, $EBFF, $E3FF, $E7FF ; $B2 [Blu][Yel][Org][Red] ← REHEAT!
+    dw $EFFF, $EBFF, $E3FF, $E7FF ; $B3 [Blu][Yel][Org][Red]
+    dw $EFFF, $EBFF, $E3FF, $E7FF ; $B4 [Blu][Yel][Org][Red]
+    dw $EFFF, $EBFF, $E3FF, $E7FF ; $B5 [Blu][Yel][Org][Red]
+    dw $EBFF, $EBFF, $E3FF, $E7FF ; $B6 [Yel][Yel][Org][Red] ← REHEAT!
+    dw $EBFF, $EBFF, $E3FF, $E7FF ; $B7 [Yel][Yel][Org][Red]
+    dw $EBFF, $EBFF, $E3FF, $E7FF ; $B8 [Yel][Yel][Org][Red]
+    dw $FFFF, $E3FF, $E3FF, $E7FF ; $B9 [Grn][Org][Org][Red]
+    dw $FFFF, $E3FF, $E3FF, $E7FF ; $BA [Grn][Org][Org][Red]
+    dw $FFFF, $E3FF, $E3FF, $E7FF ; $BB [Grn][Org][Org][Red]
+    dw $FFFF, $E3FF, $E3FF, $E7FF ; $BC [Grn][Org][Org][Red]
+    dw $EFFF, $E3FF, $E3FF, $E7FF ; $BD [Blu][Org][Org][Red] ← REHEAT!
+    dw $EFFF, $E3FF, $E3FF, $E7FF ; $BE [Blu][Org][Org][Red]
+    dw $EFFF, $E3FF, $E3FF, $E7FF ; $BF [Blu][Org][Org][Red]
+    dw $EFFF, $E3FF, $E3FF, $E7FF ; $C0 [Blu][Org][Org][Red]
+    dw $EBFF, $E3FF, $E3FF, $E7FF ; $C1 [Yel][Org][Org][Red] ← REHEAT!
+    dw $EBFF, $E3FF, $E3FF, $E7FF ; $C2 [Yel][Org][Org][Red]
+    dw $EBFF, $E3FF, $E3FF, $E7FF ; $C3 [Yel][Org][Org][Red]
+    dw $E3FF, $E3FF, $E3FF, $E7FF ; $C4 [Org][Org][Org][Red] ← REHEAT!
+    dw $E3FF, $E3FF, $E3FF, $E7FF ; $C5 [Org][Org][Org][Red]
+    dw $E3FF, $E3FF, $E3FF, $E7FF ; $C6 [Org][Org][Org][Red]
+    dw $E3FF, $E3FF, $E3FF, $E7FF ; $C7 [Org][Org][Org][Red]
+    dw $FFFF, $FFFF, $E7FF, $E7FF ; $C8 [Grn][Grn][Red][Red]
+    dw $FFFF, $FFFF, $E7FF, $E7FF ; $C9 [Grn][Grn][Red][Red]
+    dw $FFFF, $FFFF, $E7FF, $E7FF ; $CA [Grn][Grn][Red][Red]
+    dw $FFFF, $FFFF, $E7FF, $E7FF ; $CB [Grn][Grn][Red][Red]
+    dw $FFFF, $EFFF, $E7FF, $E7FF ; $CC [Grn][Blu][Red][Red]
+    dw $FFFF, $EFFF, $E7FF, $E7FF ; $CD [Grn][Blu][Red][Red]
+    dw $FFFF, $EFFF, $E7FF, $E7FF ; $CE [Grn][Blu][Red][Red]
+    dw $EFFF, $EFFF, $E7FF, $E7FF ; $CF [Blu][Blu][Red][Red] ← REHEAT!
+    dw $EFFF, $EFFF, $E7FF, $E7FF ; $D0 [Blu][Blu][Red][Red]
+    dw $EFFF, $EFFF, $E7FF, $E7FF ; $D1 [Blu][Blu][Red][Red]
+    dw $EFFF, $EFFF, $E7FF, $E7FF ; $D2 [Blu][Blu][Red][Red]
+    dw $FFFF, $EBFF, $E7FF, $E7FF ; $D3 [Grn][Yel][Red][Red]
+    dw $FFFF, $EBFF, $E7FF, $E7FF ; $D4 [Grn][Yel][Red][Red]
+    dw $FFFF, $EBFF, $E7FF, $E7FF ; $D5 [Grn][Yel][Red][Red]
+    dw $FFFF, $EBFF, $E7FF, $E7FF ; $D6 [Grn][Yel][Red][Red]
+    dw $EFFF, $EBFF, $E7FF, $E7FF ; $D7 [Blu][Yel][Red][Red] ← REHEAT!
+    dw $EFFF, $EBFF, $E7FF, $E7FF ; $D8 [Blu][Yel][Red][Red]
+    dw $EFFF, $EBFF, $E7FF, $E7FF ; $D9 [Blu][Yel][Red][Red]
+    dw $EFFF, $EBFF, $E7FF, $E7FF ; $DA [Blu][Yel][Red][Red]
+    dw $EBFF, $EBFF, $E7FF, $E7FF ; $DB [Yel][Yel][Red][Red] ← REHEAT!
+    dw $EBFF, $EBFF, $E7FF, $E7FF ; $DC [Yel][Yel][Red][Red]
+    dw $EBFF, $EBFF, $E7FF, $E7FF ; $DD [Yel][Yel][Red][Red]
+    dw $FFFF, $E3FF, $E7FF, $E7FF ; $DE [Grn][Org][Red][Red]
+    dw $FFFF, $E3FF, $E7FF, $E7FF ; $DF [Grn][Org][Red][Red]
+    dw $FFFF, $E3FF, $E7FF, $E7FF ; $E0 [Grn][Org][Red][Red]
+    dw $FFFF, $E3FF, $E7FF, $E7FF ; $E1 [Grn][Org][Red][Red]
+    dw $EFFF, $E3FF, $E7FF, $E7FF ; $E2 [Blu][Org][Red][Red] ← REHEAT!
+    dw $EFFF, $E3FF, $E7FF, $E7FF ; $E3 [Blu][Org][Red][Red]
+    dw $EFFF, $E3FF, $E7FF, $E7FF ; $E4 [Blu][Org][Red][Red]
+    dw $EFFF, $E3FF, $E7FF, $E7FF ; $E5 [Blu][Org][Red][Red]
+    dw $EBFF, $E3FF, $E7FF, $E7FF ; $E6 [Yel][Org][Red][Red] ← REHEAT!
+    dw $EBFF, $E3FF, $E7FF, $E7FF ; $E7 [Yel][Org][Red][Red]
+    dw $EBFF, $E3FF, $E7FF, $E7FF ; $E8 [Yel][Org][Red][Red]
+    dw $E3FF, $E3FF, $E7FF, $E7FF ; $E9 [Org][Org][Red][Red] ← REHEAT!
+    dw $E3FF, $E3FF, $E7FF, $E7FF ; $EA [Org][Org][Red][Red]
+    dw $E3FF, $E3FF, $E7FF, $E7FF ; $EB [Org][Org][Red][Red]
+    dw $E3FF, $E3FF, $E7FF, $E7FF ; $EC [Org][Org][Red][Red]
+    dw $FFFF, $E7FF, $E7FF, $E7FF ; $ED [Grn][Red][Red][Red]
+    dw $FFFF, $E7FF, $E7FF, $E7FF ; $EE [Grn][Red][Red][Red]
+    dw $FFFF, $E7FF, $E7FF, $E7FF ; $EF [Grn][Red][Red][Red]
+    dw $FFFF, $E7FF, $E7FF, $E7FF ; $F0 [Grn][Red][Red][Red]
+    dw $EFFF, $E7FF, $E7FF, $E7FF ; $F1 [Blu][Red][Red][Red] ← REHEAT!
+    dw $EFFF, $E7FF, $E7FF, $E7FF ; $F2 [Blu][Red][Red][Red]
+    dw $EFFF, $E7FF, $E7FF, $E7FF ; $F3 [Blu][Red][Red][Red]
+    dw $EBFF, $E7FF, $E7FF, $E7FF ; $F4 [Yel][Red][Red][Red] ← REHEAT!
+    dw $EBFF, $E7FF, $E7FF, $E7FF ; $F5 [Yel][Red][Red][Red]
+    dw $EBFF, $E7FF, $E7FF, $E7FF ; $F6 [Yel][Red][Red][Red]
+    dw $EBFF, $E7FF, $E7FF, $E7FF ; $F7 [Yel][Red][Red][Red]
+    dw $E3FF, $E7FF, $E7FF, $E7FF ; $F8 [Org][Red][Red][Red] ← REHEAT!
+    dw $E3FF, $E7FF, $E7FF, $E7FF ; $F9 [Org][Red][Red][Red]
+    dw $E3FF, $E7FF, $E7FF, $E7FF ; $FA [Org][Red][Red][Red]
+    dw $E3FF, $E7FF, $E7FF, $E7FF ; $FB [Org][Red][Red][Red]
+    dw $E7FF, $E7FF, $E7FF, $E7FF ; $FC [Red][Red][Red][Red] ← REHEAT!
+    dw $E7FF, $E7FF, $E7FF, $E7FF ; $FD [Red][Red][Red][Red]
+    dw $E7FF, $E7FF, $E7FF, $E7FF ; $FE [Red][Red][Red][Red]
+    dw $E7FF, $E7FF, $E7FF, $E7FF ; $FF [Red][Red][Red][Red] <- Missing 6
+
+; Table size: 256 entries × 8 bytes = 2048 bytes (2KB)
+; Table spans $0800 bytes
+
+warnpc $AE8000

@@ -777,6 +777,12 @@ ResolveLootID:
         .skip
         JMP .have_item
 
+        if !FEATURE_LIMITED_RUN == 2604
+                .puzzle
+                JSL LimitedRun_ReceiveRewardItem
+                JMP .have_item
+        endif
+
         .bottles
         SEP #$30
         JSR CountBottles : CMP.l BottleLimit : BCC +

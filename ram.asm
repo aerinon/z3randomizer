@@ -362,6 +362,7 @@ DynamicDropGFXSlots = $7E07F1     ; Assume future use of this up to $0E bytes, t
 OAMBuffer = $7E0800               ; Main OAM buffer sent to OAM. $200 bytes.
 OAMBuffer2 = $7E0A00              ;
                                   ;
+; $7E0AB9-0ABC                    ; Reserved for limited run use
 TransparencyFlag = $7E0ABD        ; Flags transparency effects e.g. in Thieves Town Hellway
                                   ;
 OWTransitionFlag = $7E0ABF        ; Used for certain transitions like smith, witch, etc.
