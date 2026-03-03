@@ -17,7 +17,7 @@ Limited_LoadEggGoalHUDGfx:
     LDA.b #.gfx>>16 : STA.b Scrap02
     REP #$30
     LDA.w #.gfx : STA.b Scrap00
-    LDA.w #$7070 : STA.w VMADDR ; VRAM $E0E0
+    LDA.w #$E0E0>>1 : STA.w VMADDR
     LDX.w #$0007
     - LDA.b [$00] : STA.w VMDATA
     INC.b Scrap00 : INC.b Scrap00
@@ -34,7 +34,7 @@ Limited_OverworldPedestalTileChanges:
 	    LDA.w #$02CA : STA.w $2128
         RTL
     + CMP.w #$001E : BNE +
-        LDA.b #$00 : STA.l !StatueGFXLoaded
+        LDA.w #$0000 : STA.l !StatueGFXLoaded
         LDA.l OverworldEventDataWRAM+$1E : AND.w #$0040 : BEQ ++
 		LDA.w #$0912 : STA.w $3318
             INC : STA.w $331A
