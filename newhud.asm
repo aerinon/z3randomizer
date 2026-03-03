@@ -371,6 +371,7 @@ RTS
 ;================================================================================
 DrawMapCounts:
         LDA.l MapHUDMode : BEQ .done
+        LDA.l GenericKeys : BNE .done ; generator don't have an accurrate count of key doors in this case
 
         ; no map needed if this bit is set
         BIT.b #$02 : BNE .draw_map_count
