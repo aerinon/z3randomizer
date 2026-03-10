@@ -323,12 +323,12 @@ endmacro
 %ReceiptProps($B7, -4, 0, $49, $F36A, $FF, skip, skip) ; B7 - Reserved
 if !FEATURE_LIMITED_RUN == 2604
 	%ReceiptProps($B8, -2, 5, $10, $F358, $FF, skip, puzzle) ; B8 - Puzzle reward
-  %ReceiptProps($B9, -2, 5, $10, $F358, $FF, skip, puzzle_book) ; B9 - Puzzle reward (book)
-  %ReceiptProps($BA, -2, 5, $10, $F358, $FF, skip, puzzle_silver_boom) ; BA - Puzzle reward (silver boomerang)
+	%ReceiptProps($B9, -2, 5, $10, $F358, $FF, skip, puzzle_book) ; B9 - Puzzle reward (book)
+	%ReceiptProps($BA, -2, 5, $10, $F358, $FF, skip, puzzle_silver_boom) ; BA - Puzzle reward (silver boomerang)
 else
 	%ReceiptProps($B8, -4, 0, $49, $F36A, $FF, skip, skip) ; B8 -
-  %ReceiptProps($B9, -4, 0, $49, $F36A, $FF, skip, skip) ; B9 -
-  %ReceiptProps($BA, -4, 0, $49, $F36A, $FF, skip, skip) ; BA -
+	%ReceiptProps($B9, -4, 0, $49, $F36A, $FF, skip, skip) ; B9 -
+	%ReceiptProps($BA, -4, 0, $49, $F36A, $FF, skip, skip) ; BA -
 endif
 %ReceiptProps($BB, -4, 0, $49, $F36A, $FF, skip, skip) ; BB - 
 %ReceiptProps($BC, -4, 0, $49, $F36A, $FF, skip, skip) ; BC - 
@@ -608,12 +608,12 @@ endmacro
 %SpriteProps($B7, 2, 2, $80, $80, $0000)                                ; B7 - Reserved
 if !FEATURE_LIMITED_RUN == 2604
 	%SpriteProps($B8, 0, 0, $01, $01, PalettesVanilla_red_melon+$0E)        ; B8 - Puzzle reward
-  %SpriteProps($B9, 2, 2, $04, $04, PalettesVanilla_green_blue_guard+$0E) ; B9 - Puzzle reward (book)
-  %SpriteProps($BA, 0, 0, $02, $02, PalettesCustom_mirror_shield)         ; BA - Puzzle reward (silver boomerang)
+	%SpriteProps($B9, 2, 2, $04, $04, PalettesVanilla_green_blue_guard+$0E) ; B9 - Puzzle reward (book)
+	%SpriteProps($BA, 0, 0, $02, $02, PalettesCustom_mirror_shield)         ; BA - Puzzle reward (silver boomerang)
 else
 	%SpriteProps($B8, 2, 2, $04, $04, $0000)                            ; B8 -
-  %SpriteProps($B9, 2, 2, $04, $04, $0000)                            ; B9 -
-  %SpriteProps($BA, 2, 2, $04, $04, $0000)                            ; BA -
+	%SpriteProps($B9, 2, 2, $04, $04, $0000)                            ; B9 -
+	%SpriteProps($BA, 2, 2, $04, $04, $0000)                            ; BA -
 endif
 %SpriteProps($BB, 2, 2, $04, $04, $0000)                                ; BB - 
 %SpriteProps($BC, 2, 2, $04, $04, $0000)                                ; BC - 
@@ -890,12 +890,12 @@ endmacro
 %InventoryItem($B7, $0000, $0000, $0000) ; B7 - Reserved
 if !FEATURE_LIMITED_RUN == 2604
 	%InventoryItem($B8, $0000, $0000, $0000) ; B8 - Puzzle Reward
-  %InventoryItem($B9, $0000, $0000, $0000) ; B9 - Puzzle Reward (book)
-  %InventoryItem($BA, $0000, $0000, $0000) ; BA - Puzzle Reward (silver boomerang)
+	%InventoryItem($B9, $0000, $0000, $0000) ; B9 - Puzzle Reward (book)
+	%InventoryItem($BA, $0000, $0000, $0000) ; BA - Puzzle Reward (silver boomerang)
 else
 	%InventoryItem($B8, $0001, $0000, $0000) ; B8 -
-  %InventoryItem($B9, $0001, $0000, $0000) ; B9 -
-  %InventoryItem($BA, $0001, $0000, $0000) ; BA -
+	%InventoryItem($B9, $0001, $0000, $0000) ; B9 -
+	%InventoryItem($BA, $0001, $0000, $0000) ; BA -
 endif
 %InventoryItem($BB, $0001, $0000, $0000) ; BB -
 %InventoryItem($BC, $0001, $0000, $0000) ; BC -
@@ -1160,12 +1160,12 @@ ItemReceiptGraphicsOffsets:
 	dw $0                                  ; B7 - Reserved
 	if !FEATURE_LIMITED_RUN == 2604
 		dw BigDecompressionBuffer+$1DE0    ; B8 - Puzzle Reward
-    dw BigDecompressionBuffer+$1D80    ; B9 - Puzzle Reward (Book)
-	  dw BigDecompressionBuffer+$1DE0    ; BA - Puzzle Reward (Silver Boom)
+		dw BigDecompressionBuffer+$1D80    ; B9 - Puzzle Reward (Book)
+		dw BigDecompressionBuffer+$1DE0    ; BA - Puzzle Reward (Silver Boom)
 	else
 		dw $0                              ; B8 -
-    dw $0                              ; B9 -
-	  dw $0                              ; BA -
+		dw $0                              ; B9 -
+		dw $0                              ; BA -
 	endif
 	dw $0                                  ; BB -
 	dw $0                                  ; BC -
@@ -1436,14 +1436,14 @@ StandingItemGraphicsOffsets:
 	dw $0                                  ; B7 - Reserved
 	if !FEATURE_LIMITED_RUN == 2604
 		dw BigDecompressionBuffer+$1DE0      ; B8 - Puzzle reward
-    dw BigDecompressionBuffer+$1D80      ; B9 - Puzzle Reward (Book)
-	  dw BigDecompressionBuffer+$1DE0      ; BA - Puzzle Reward (Silver Boom)
+		dw BigDecompressionBuffer+$1D80      ; B9 - Puzzle Reward (Book)
+		dw BigDecompressionBuffer+$1DE0      ; BA - Puzzle Reward (Silver Boom)
 	else
 		dw $0                                ; B8 -
-    dw $0                                ; B9 -
-	  dw $0                                ; BA -
+		dw $0                                ; B9 -
+		dw $0                                ; BA -
 	endif
-  dw $0                                  ; BB -
+	dw $0                                  ; BB -
 	dw $0                                  ; BC -
 	dw $0                                  ; BD -
 	dw $0                                  ; BE -

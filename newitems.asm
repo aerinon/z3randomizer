@@ -778,23 +778,23 @@ ResolveLootID:
         JMP .have_item
 
         if !FEATURE_LIMITED_RUN == 2604
-          .puzzle_book
-          JSL LimitedRun_ReceiveBookItem
-          JMP .have_item
+                .puzzle_book
+                JSL LimitedRun_ReceiveBookItem
+                JMP .have_item
 
-          .puzzle
-          JSL LimitedRun_ReceiveRewardItem
-          JMP .have_item
+                .puzzle
+                JSL LimitedRun_ReceiveRewardItem
+                JMP .have_item
 
-          .puzzle_silver_boom
-          JSL LimitedRun_ReceiveBoomItem
-          JMP .have_item
+                .puzzle_silver_boom
+                JSL LimitedRun_ReceiveBoomItem
+                JMP .have_item
         endif
 
         .bottles
         SEP #$30
         JSR CountBottles : CMP.l BottleLimit : BCC +
-        		LDA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID : BNE +
+                LDA.l !MULTIWORLD_SPRITEITEM_PLAYER_ID : BNE +
                 LDA.l BottleLimitReplacement
                 JMP .get_item
         +
