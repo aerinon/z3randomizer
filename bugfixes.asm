@@ -246,7 +246,7 @@ FixSwimBump:
 .normal
 	LDA.b LinkJumping : BNE .continue ; what we wrote over
 .not_diving
-	PLA : PLA : PEA.w $87964E ; skip ahead, not diving
+	PLA : PLA : PEA.w $87964D ; skip ahead, not diving
 .continue
 	RTL
 ;--------------------------------------------------------------------------------

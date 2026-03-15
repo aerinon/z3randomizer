@@ -859,6 +859,7 @@ RTL
 Kiki_DontScareTheMonke:
     LDA.b LinkJumping : BEQ .return
     CMP.b #$02 : BEQ .no_spook ; needed for quake usage
+    LDA.b GameMode : CMP.b #$0F : BEQ .no_spook ; needed for entrance transitions
     LDA.w NoDamage : BNE .no_spook
     LDA.w LinkThud : BNE .no_spook
 .spook
