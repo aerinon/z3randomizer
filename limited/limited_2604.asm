@@ -156,6 +156,8 @@ Limited_PedestalBeeSecrets:
         LDA.b #$04 : BRA .set_secret
     + CMP.b #$11 : BNE +
         LDA.b #$06 : BRA .set_secret
+    + CMP.b #$1E : BNE +
+        LDA.b #$00 : BRA .set_secret
     + CMP.b #$43 : BNE +
         LDA.b #$08 : BRA .set_secret
     + CMP.b #$12 : BNE +
@@ -196,11 +198,11 @@ Limited_PedestalBeeSecrets:
     RTL
 
 .secret_xpos
-dw $0000, $0FA8, $0B40, $02F8, $0688, $04A0, $0460, $06E8 ; pedestals
+dw $0CC8, $0FA8, $0B40, $02F8, $0688, $04A0, $0460, $06E8 ; pedestals
 dw $0280, $0000, $0000, $0000
 
 .secret_ypos
-dw $0000, $0770, $0418, $0520, $0068, $05F0, $0F10, $07C8 ; pedestals
+dw $0870, $0770, $0418, $0520, $0068, $05F0, $0F10, $07C8 ; pedestals
 dw $0060, $0000, $0000, $0000
 
 pushpc
@@ -789,10 +791,10 @@ AncillaAdd_Z1ArmosStatue:
     db $51
     db $51
 
+ArmosKnight_KnightDead_vanilla
+    JML $89AF32 ; CheckIfScreenIsClear - what we wrote over
 ArmosKnight_KnightDead:
-    JSL $89AF32 ; CheckIfScreenIsClear - what we wrote over
-    BCC .exit
-    LDA.b IndoorsFlag : BNE .exit
+    LDA.b IndoorsFlag : BNE .vanilla
         ; reveal entrance
         LDA.b #$1A : STA.w SFX3
         LDA.l OverworldEventDataWRAM+$1E : ORA.b #$40
@@ -951,9 +953,9 @@ Sprite_03_KikiBanana:
     LDA.w SpriteDirectionTable, X : BNE +
         TYA : INC : STA.w SpriteDirectionTable, X
     + BCS .skip_instance ; offscreen
-    REP #$20
         ; check if link is close to banana
         LDA.w SpriteTimer, X : BNE ++
+            REP #$20
             LDA.w SpriteCoordCacheX : SEC : SBC.w LinkPosX : BPL +
                 EOR.w #$FFFF : INC
             + CMP.w #$0018 : BCS ++
