@@ -791,7 +791,7 @@ AncillaAdd_Z1ArmosStatue:
     db $51
     db $51
 
-ArmosKnight_KnightDead_vanilla
+ArmosKnight_KnightDead_vanilla:
     JML $89AF32 ; CheckIfScreenIsClear - what we wrote over
 ArmosKnight_KnightDead:
     LDA.b IndoorsFlag : BNE .vanilla
@@ -1760,16 +1760,16 @@ CONE_FAR_WIDTH = $5E      ; 94 pixels wide at far
 CONE_NEAR_RANGE = $10     ; 16 pixels ahead (near portion)
 
 ; Near rectangle bounds
-ConeNearLeft  = Scrap00
-ConeNearRight = Scrap02
-ConeNearTop   = Scrap04
-ConeNearBottom = Scrap06
+ConeNearLeft  = $00
+ConeNearRight = $02
+ConeNearTop   = $04
+ConeNearBottom = $06
 
 ; Far rectangle bounds
-ConeFarLeft   = Scrap08
-ConeFarRight  = Scrap0A
-ConeFarTop    = Scrap0C
-ConeFarBottom = Scrap0E
+ConeFarLeft   = $08
+ConeFarRight  = $0A
+ConeFarTop    = $0C
+ConeFarBottom = $0E
 
 DirectionRoutine:
 dw TrapezoidUp
