@@ -1758,16 +1758,16 @@ CONE_FAR_WIDTH = $5E      ; 94 pixels wide at far
 CONE_NEAR_RANGE = $10     ; 16 pixels ahead (near portion)
 
 ; Near rectangle bounds
-ConeNearLeft  = $00
-ConeNearRight = $02
-ConeNearTop   = $04
-ConeNearBottom = $06
+ConeNearLeft  = Scrap00
+ConeNearRight = Scrap02
+ConeNearTop   = Scrap04
+ConeNearBottom = Scrap06
 
 ; Far rectangle bounds
-ConeFarLeft   = $08
-ConeFarRight  = $0A
-ConeFarTop    = $0C
-ConeFarBottom = $0E
+ConeFarLeft   = Scrap08
+ConeFarRight  = Scrap0A
+ConeFarTop    = Scrap0C
+ConeFarBottom = Scrap0E
 
 DirectionRoutine:
 dw TrapezoidUp
