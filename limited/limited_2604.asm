@@ -8,7 +8,7 @@
 !GFXLoadFlag = LimitedRunStore+$20
 !UnderworldPuzzlesSolved = LimitedRunStore+$21 ; equals how many puzzle items link's collected
 !BlinkTimer = LimitedRunStore+$22 ; Blink timer - must be zero to activate
-!SerectItemFlags = LimitedRunStore+$23 ; - - - - - - k m (bit field)
+!SecretItemFlags = LimitedRunStore+$23 ; - - - - - - k m (bit field)
                                        ; k = book reward | m = boomerang reward
 !NewTagTimer = $7E0AB9 ; Timer for new room tag effects
 !NewTagIndex = $7E0ABA ; Index for new room tag effects
@@ -36,7 +36,7 @@ Limited_LoadEggGoalHUDGfx:
     LDA.w #.gfx : STA.b Scrap00
     LDA.w #$E0E0>>1 : STA.w VMADDR
     LDX.w #$0007
-    - LDA.b [$00] : STA.w VMDATA
+    - LDA.b [Scrap00] : STA.w VMDATA
     INC.b Scrap00 : INC.b Scrap00
     DEX : BPL -
     LDA.w #$7C00 : STA.w VMADDR ; restore VMADDR
@@ -1477,7 +1477,7 @@ pullpc
 
 ; Check the new tags that have chests hidden
 HideChestForNewTags:
-  STA.b $00
+  STA.b Scrap00
   CMP.w #$0040 : BEQ .exit ; new tag - 40, if equal then hide chest
   ; didn't need to add one for 42 because room already qualified
   ; chests for tag 43 only hides one chest. - How to do that?
@@ -1487,7 +1487,7 @@ HideChestForNewTags:
   LDX.w #$0008 ; need to set X to check for this particular chest
   TDC : RTL ; set zero flag and leave
 .continue
-  LDA.b $00
+  LDA.b Scrap00
   CMP.w #$0044 : BEQ .exit ; new tag - 44, if equal then hide chest
   CMP.w #$0045 : BEQ .exit ; new tag - 45, if equal then hide chest
   CMP.w #$0046 : BEQ .exit ; new tag - 46, if equal then hide chest
@@ -1515,7 +1515,7 @@ CheckSkipChestCollision:
   CPY.w #$0008 : BNE .write_collision
 
   PHA
-  LDA.b $AE : AND.w #$00FF
+  LDA.b RoomTag : AND.w #$00FF
   CMP.w #$0043
   BNE .not_tag43   ; Branch before PLA!
   ; Tag $43 active, skip writing collision
@@ -1526,13 +1526,13 @@ CheckSkipChestCollision:
 .not_tag43
   PLA              ; Restore A
 .write_collision
-  LDA.b $00        ; Original instruction (load collision value)
+  LDA.b Scrap00        ; Original instruction (load collision value)
   CLC              ; Clear carry = write collision
   RTL
 
 HandleNewTags1:
-  STZ.b $0E
-  LDA.b $AE
+  STZ.b Scrap0E
+  LDA.b RoomTag
   ASL A
   TAX
   CMP.b #$80
@@ -1543,7 +1543,7 @@ HandleNewTags1:
   RTL
 
 HandleNewTags2:
-  STA.b $0E
+  STA.b Scrap0E
   LDA.b $AF
   ASL A
   TAX
@@ -1660,8 +1660,8 @@ HandleQuantumChestTag:
   CMP.b #$02 : BNE .not_revealing_new_chest
 
   REP #$30
-  LDA.w #$0004 : STA.w $0200
-  LDA.w #$5A5A : STA.b $0C
+  LDA.w #$0004 : STA.w SubModuleInterface
+  LDA.w #$5A5A : STA.b Scrap0C
 ;  STZ.w $1000
   LDA.w #$0006 : STA.w $0496
   ; need to set X appropriately
@@ -1717,19 +1717,19 @@ MoveChestToNewPosition:
   LDA.w $06E0, Y ; get old tilemap offset
   TAX
   LDA.w #$1CC6 ; Carpet tile
-  STA.l $7E2000, X ; clear top-left
-  STA.l $7E2002, X ; clear top-right
-  STA.l $7E2080, X ; clear bottom-left
-  STA.l $7E2082, X ; clear bottom-right
-  STA.b $02 : STA.b $04 : STA.b $06 : STA.b $08
+  STA.l TileMapA, X ; clear top-left
+  STA.l TileMapA+2, X ; clear top-right
+  STA.l TileMapA+$80, X ; clear bottom-left
+  STA.l TileMapA+$82, X ; clear bottom-right
+  STA.b Scrap02 : STA.b Scrap04 : STA.b Scrap06 : STA.b Scrap08
 
   TXA : LSR : TAX ; divided by two since collision map is byte per tile
   LDA.w #$0000 ; empty collision
   STA.l $7F2000, X
   STA.l $7F2040, X
 
-  STZ.w $1000
-  STZ.w $0200
+  STZ.w GFXStripes
+  STZ.w SubModuleInterface
   LDA.w #$0002
   STA.w $0496
   PHK : PEA.w .jslrtsreturn-1
@@ -1758,16 +1758,16 @@ CONE_FAR_WIDTH = $5E      ; 94 pixels wide at far
 CONE_NEAR_RANGE = $10     ; 16 pixels ahead (near portion)
 
 ; Near rectangle bounds
-ConeNearLeft  = $00
-ConeNearRight = $02
-ConeNearTop   = $04
-ConeNearBottom = $06
+ConeNearLeft  = Scrap00
+ConeNearRight = Scrap02
+ConeNearTop   = Scrap04
+ConeNearBottom = Scrap06
 
 ; Far rectangle bounds
-ConeFarLeft   = $08
-ConeFarRight  = $0A
-ConeFarTop    = $0C
-ConeFarBottom = $0E
+ConeFarLeft   = Scrap08
+ConeFarRight  = Scrap0A
+ConeFarTop    = Scrap0C
+ConeFarBottom = Scrap0E
 
 DirectionRoutine:
 dw TrapezoidUp
@@ -1992,7 +1992,7 @@ CheckFarRectangle:
 ;--------------------------------------------------------------------------------
 
 SpritePrep_SwitchExtended:
-  LDA.w $048E
+  LDA.w RoomIndexMirror
   CMP.b #$CE
   BEQ .done
   CMP.b #$5F
@@ -2004,10 +2004,10 @@ SwitchOrder:
 db $09, $05, $07, $06, $04, $03, $08 ; sprite index of switches
 
 PullSwitch_GoodSound:
-  LDA $A0 : CMP.b #$5F : BNE .normal
-  STX.b $00
+  LDA.b RoomIndex : CMP.b #$5F : BNE .normal
+  STX.b Scrap00
   LDX.w !NewTagIndex : LDA.l SwitchOrder, X
-  CMP.b $00 : BNE .noMatch
+  CMP.b Scrap00 : BNE .noMatch
   INC.w !NewTagIndex
   BRA .exit
 .noMatch
@@ -2015,7 +2015,7 @@ PullSwitch_GoodSound:
   BRA .exit
 .normal
   LDA.b #$1B ; good switch sound
-  STA.w $012F
+  STA.w SFX3
 .exit
   RTL
 
@@ -2025,9 +2025,9 @@ HandlePullSwitchChestTag:
   ; operate chest reveal
   STZ.b $AF ; clear tag
   REP #$30
-  STZ.w $1000
-  LDA.w #$0002 : STA.w $0200 ; start at chest 2
-  LDA.w #$5959 : STA.b $0C ; chest 2
+  STZ.w GFXStripes
+  LDA.w #$0002 : STA.w SubModuleInterface ; start at chest 2
+  LDA.w #$5959 : STA.b Scrap0C ; chest 2
   LDA.w #$0004 : STA.w $0496 ; 2 chest in room
   PHK : PEA.w .exit-1
   PEA.w $81CF8C ; an rtl address - 1 in Bank01
@@ -2036,11 +2036,11 @@ HandlePullSwitchChestTag:
   RTS
 
 OperateChestRevealModForPullSwitchTag:
-  INC : STA.w $0200
+  INC : STA.w SubModuleInterface
   LDA.b $AF : CMP.w #$0042 : BNE .normal
-  LDA.w $0200 : INC #2 : STA.w $0200 ; skips a chest
+  LDA.w SubModuleInterface : INC #2 : STA.w SubModuleInterface ; skips a chest
 .normal
-  LDA.w $0200
+  LDA.w SubModuleInterface
   RTL
 
 ;--------------------------------------------------------------------------------
@@ -2078,11 +2078,11 @@ HandleMapRoomTag:
   BCC .exit
 
   ; All conditions met - reveal chest
-  STZ.b $AE ; clear tag (or $AF depending on which tag slot)
+  STZ.b RoomTag ; clear tag (or $AF depending on which tag slot)
   REP #$30
-  STZ.w $1000
-  LDA.w #$0008 : STA.w $0200 ; chest index * 2, 5th chest
-  LDA.w #$5C5C : STA.b $0C ; chest data, 5th chest (58, 0th chest etc)
+  STZ.w GFXStripes
+  LDA.w #$0008 : STA.w SubModuleInterface ; chest index * 2, 5th chest
+  LDA.w #$5C5C : STA.b Scrap0C ; chest data, 5th chest (58, 0th chest etc)
   LDA.w #$000A : STA.w $0496 ; number of chests * 2
   PHK : PEA.w .exit-1
   PEA.w $81CF8C ; an rtl address - 1 in Bank01
@@ -2111,10 +2111,10 @@ CheckPushBlock:
   LDY.b #$00
 
   ; Get tilemap offset from $0540,Y
-  LDA.w $0540, Y ; load tilemap offset (low byte) x or y?
+  LDA.w ManipTileMapX, Y ; load tilemap offset (low byte) x or y?
   CMP.b #$EC : BNE .fail ; check bounds
 
-  LDA.w $0541, Y ; load tilemap offset (high byte) x or y?
+  LDA.w ManipTileMapX+1, Y ; load tilemap offset (high byte) x or y?
   CMP.b #$1A : BNE .fail ; check bounds
   SEC : RTS
 
@@ -2124,9 +2124,9 @@ CheckPushBlock:
 
 CheckStatue:
   LDX.b #$06
-  LDA.w $0D00, X : CMP.b #$6C : BCC .fail
+  LDA.w SpritePosYLow, X : CMP.b #$6C : BCC .fail
   CMP.b #$7C : BCS .fail
-  LDA.w $0D10, X : CMP.b #$3C : BCC .fail
+  LDA.w SpritePosXLow, X : CMP.b #$3C : BCC .fail
   CMP.b #$4C : BCS .fail
   SEC : RTS
 .fail
@@ -2134,9 +2134,9 @@ CheckStatue:
 
 CheckChicken:
   LDX.b #$05
-  LDA.w $0D00, X : CMP.b #$70 : BCC .fail
+  LDA.w SpritePosYLow, X : CMP.b #$70 : BCC .fail
   CMP.b #$80 : BCS .fail
-  LDA.w $0D10, X : CMP.b #$70 : BCC .fail
+  LDA.w SpritePosXLow, X : CMP.b #$70 : BCC .fail
   CMP.b #$80 : BCS .fail
   SEC : RTS
 .fail
@@ -2197,18 +2197,18 @@ HandleTilePuzzleTag:
   REP #$30  ; 16-bit A and X/Y
   ; Calculate full room 8x8 coordinates for VRAM (0-63)
   ; Add 4 pixels before dividing to shift tile boundaries to ...4 and ...C
-  LDA.b LinkPosX : AND.w #$01FF : CLC : ADC.w #$0004 : LSR #3 : STA.b $00  ; X (0-63)
-  LDA.b LinkPosY : AND.w #$01FF : CLC : ADC.w #$0004 : LSR #3 : INC : STA.b $02  ; Y (0-63) +4px, +1 for visual
+  LDA.b LinkPosX : AND.w #$01FF : CLC : ADC.w #$0004 : LSR #3 : STA.b Scrap00  ; X (0-63)
+  LDA.b LinkPosY : AND.w #$01FF : CLC : ADC.w #$0004 : LSR #3 : INC : STA.b Scrap02  ; Y (0-63) +4px, +1 for visual
 
   ; Calculate VRAM tilemap offset: ((Y × 64) + X) × 2
-  LDA.b $02 : XBA : LSR #2 : CLC : ADC.b $00 : ASL : STA.b $0E
+  LDA.b Scrap02 : XBA : LSR #2 : CLC : ADC.b Scrap00 : ASL : STA.b Scrap0E
 
   ; Ensure coordinates are within 0-63 range for 64-wide tilemap
-  LDA.b $00 : AND.w #$003F : STA.b $04  ; X (0-63)
-  LDA.b $02 : AND.w #$003F : STA.b $06  ; Y (0-63)
+  LDA.b Scrap00 : AND.w #$003F : STA.b Scrap04  ; X (0-63)
+  LDA.b Scrap02 : AND.w #$003F : STA.b Scrap06  ; Y (0-63)
 
   ; Calculate tilemap offset for 64-wide layout: (Y8 * 128) + (X8 * 2)
-  LDA.b $06 : XBA : LSR #2 : CLC : ADC.b $04 : ASL : TAX
+  LDA.b Scrap06 : XBA : LSR #2 : CLC : ADC.b Scrap04 : ASL : TAX
 
   ; Check if it's any valid floor tile (checks TL and TR)
   JSR IsFloorTile
@@ -2216,11 +2216,11 @@ HandleTilePuzzleTag:
 
   ; Change to carpet
   LDA.w #CARPET_TILE
-  STA.l $7E2000, X      ; Top-left
-  STA.b $02             ; Save tile value once
-  STA.l $7E2002, X      ; Top-right
-  STA.l $7E2080, X      ; Bottom-left
-  STA.l $7E2082, X      ; Bottom-right
+  STA.l TileMapA, X      ; Top-left
+  STA.l TileMapA+2, X    ; Top-right
+  STA.l TileMapA+$80, X  ; Bottom-left
+  STA.l TileMapA+$82, X  ; Bottom-right
+  STA.b Scrap02          ; Save tile value once
 
   ; Build NMI stripe to update VRAM ($0E already contains VRAM offset)
   JSR BuildTileStripe
@@ -2246,17 +2246,17 @@ CheckCompletePattern:
   CPX.w #SHOULD_BE_CARPET_COUNT*2 : BCS .check_floor
 
   ; Convert 16x16 tile coords to 8x8 top-left position (X=odd, Y=odd)
-  LDA.l ShouldBeCarpetTiles, X : AND.w #$00FF : ASL : INC : STA.b $00  ; X8 = (X16 * 2) + 1 (odd)
+  LDA.l ShouldBeCarpetTiles, X : AND.w #$00FF : ASL : INC : STA.b Scrap00  ; X8 = (X16 * 2) + 1 (odd)
   INX
-  LDA.l ShouldBeCarpetTiles, X : AND.w #$00FF : ASL : INC : STA.b $02  ; Y8 = (Y16 * 2) + 1 (odd)
+  LDA.l ShouldBeCarpetTiles, X : AND.w #$00FF : ASL : INC : STA.b Scrap02  ; Y8 = (Y16 * 2) + 1 (odd)
   INX
   PHX  ; Save loop counter
 
   ; Calculate offset for 64-wide layout: (Y8 * 128) + (X8 * 2)
-  LDA.b $02 : XBA : LSR #2 : CLC : ADC.b $00 : ASL : TAX
+  LDA.b Scrap02 : XBA : LSR #2 : CLC : ADC.b Scrap00 : ASL : TAX
 
   ; Check if tile is carpet
-  LDA.l $7E2000, X
+  LDA.l TileMapA, X
   PLX  ; Restore loop counter before comparison
   CMP.w #CARPET_TILE
   BNE .fail
@@ -2270,14 +2270,14 @@ CheckCompletePattern:
   CPX.w #SHOULD_BE_FLOOR_COUNT*2 : BCS .success
 
   ; Convert 16x16 tile coords to 8x8 top-left position (X=odd, Y=odd)
-  LDA.l ShouldBeFloorTiles, X : AND.w #$00FF : ASL : INC : STA.b $00  ; X8 = (X16 * 2) + 1 (odd)
+  LDA.l ShouldBeFloorTiles, X : AND.w #$00FF : ASL : INC : STA.b Scrap00  ; X8 = (X16 * 2) + 1 (odd)
   INX
-  LDA.l ShouldBeFloorTiles, X : AND.w #$00FF : ASL : INC : STA.b $02  ; Y8 = (Y16 * 2) + 1 (odd)
+  LDA.l ShouldBeFloorTiles, X : AND.w #$00FF : ASL : INC : STA.b Scrap02  ; Y8 = (Y16 * 2) + 1 (odd)
   INX
   PHX  ; Save loop counter
 
   ; Calculate offset for 64-wide layout: (Y8 * 128) + (X8 * 2)
-  LDA.b $02 : XBA : LSR #2 : CLC : ADC.b $00 : ASL : TAX
+  LDA.b Scrap02 : XBA : LSR #2 : CLC : ADC.b Scrap00 : ASL : TAX
 
   ; Check if tile is floor (checks TL and TR)
   JSR IsFloorTile
@@ -2304,12 +2304,12 @@ IsFloorTile:
   PHX  ; Save X
 
   ; Check if TL=18DB (left half of green floor)
-  LDA.l $7E2000, X
+  LDA.l TileMapA, X
   CMP.w #$18DB
   BEQ .valid
 
   ; Check if TR=18DA (right half of green floor)
-  LDA.l $7E2002, X
+  LDA.l TileMapA+2, X
   CMP.w #$18DA
   BEQ .valid
 
@@ -2327,55 +2327,55 @@ IsFloorTile:
 ; Input: $0E = tilemap offset (word offset into $7E2000)
 ;        $02, $04, $06, $08 = tile data for 4 8x8 tiles
 BuildTileStripe:
-  LDX.w $1000  ; Get current stripe buffer position
+  LDX.w GFXStripes  ; Get current stripe buffer position
 
   ; Build stripe for top-left 8x8 tile (offset +$0000)
-  LDA.b $0E
+  LDA.b Scrap0E
   JSR TilemapOffsetToVRAM
-  STA.w $1002, X
+  STA.w GFXStripes+2, X
 
   ; Build stripe for top-right 8x8 tile (offset +$0002)
-  LDA.b $0E : CLC : ADC.w #$0002
+  LDA.b Scrap0E : CLC : ADC.w #$0002
   JSR TilemapOffsetToVRAM
-  STA.w $1008, X
+  STA.w GFXStripes+8, X
 
   ; Build stripe for bottom-left 8x8 tile (offset +$0080)
-  LDA.b $0E : CLC : ADC.w #$0080
+  LDA.b Scrap0E : CLC : ADC.w #$0080
   JSR TilemapOffsetToVRAM
-  STA.w $100E, X
+  STA.w GFXStripes+$E, X
 
   ; Build stripe for bottom-right 8x8 tile (offset +$0082)
-  LDA.b $0E : CLC : ADC.w #$0082
+  LDA.b Scrap0E : CLC : ADC.w #$0082
   JSR TilemapOffsetToVRAM
-  STA.w $1014, X
+  STA.w GFXStripes+$14, X
 
   ; Store tile data (reuse same value)
-  LDA.b $02
-  STA.w $1006, X
-  STA.w $100C, X
-  STA.w $1012, X
-  STA.w $1018, X
+  LDA.b Scrap02
+  STA.w GFXStripes+$06, X
+  STA.w GFXStripes+$0C, X
+  STA.w GFXStripes+$12, X
+  STA.w GFXStripes+$18, X
 
   ; Set stripe size (1 tile = $0100)
   LDA.w #$0100
-  STA.w $1004, X
-  STA.w $100A, X
-  STA.w $1010, X
-  STA.w $1016, X
+  STA.w GFXStripes+$04, X
+  STA.w GFXStripes+$0A, X
+  STA.w GFXStripes+$10, X
+  STA.w GFXStripes+$16, X
 
   ; Terminate stripe list
   LDA.w #$FFFF
-  STA.w $101A, X
+  STA.w GFXStripes+$1A, X
 
   ; Update stripe buffer position
   TXA
   CLC : ADC.w #$001A
-  STA.w $1000
+  STA.w GFXStripes
 
   ; Set NMI flag to upload stripes
   SEP #$20
   LDA.b #$01
-  STA.b $14
+  STA.b NMISTRIPES
   REP #$20
 
   RTS
@@ -2385,23 +2385,23 @@ BuildTileStripe:
 ; Output: A = VRAM address (byte-swapped for stripe format)
 ; Based on RoomTag_BuildChestStripes at $01EF0D
 TilemapOffsetToVRAM:
-  STA.b $04
+  STA.b Scrap04
 
   AND.w #$0040
   LSR #4
   XBA
-  STA.b $06
+  STA.b Scrap06
 
-  LDA.b $04
+  LDA.b Scrap04
   AND.w #$303F
   LSR
-  ORA.b $06
-  STA.b $06
+  ORA.b Scrap06
+  STA.b Scrap06
 
-  LDA.b $04
+  LDA.b Scrap04
   AND.w #$0F80
   LSR #2
-  ORA.b $06
+  ORA.b Scrap06
   XBA
 
   RTS
@@ -2436,8 +2436,8 @@ HandleSokobanTag:
 
   ; Load pressure plate position
   LDA.l PressurePlatePositions, X
-  STA.b $00  ; Store plate position in $00
-  PHX        ; Save plate index
+  STA.b Scrap00  ; Store plate position in Scrap00
+  PHX            ; Save plate index
 
   ; Search all pushblocks (slots 0-15) for a match
   LDY.w #$0000
@@ -2445,11 +2445,11 @@ HandleSokobanTag:
   CPY.w #$0020 : BCS .no_block_found  ; 16 blocks * 2 bytes = $20
 
   ; Load pushblock position and mask off flags
-  LDA.w $0540, Y
+  LDA.w ManipTileMapX, Y
   AND.w #$3FFF
 
   ; Compare with plate position
-  CMP.b $00
+  CMP.b Scrap00
   BEQ .block_found
 
   INY : INY
@@ -2480,7 +2480,7 @@ HandleSokobanTag:
 ;--------------------------------------------------------------------------------
 
 HandlePortalRoomTag:
-  LDA.b $14
+  LDA.b NMISTRIPES
   BNE .exit
 
   LDA.w $0B2E       ; FallingBridge tile counter (overlord slot 1, counts backward)
@@ -2498,10 +2498,10 @@ HandlePortalRoomTag:
 RTS
 
 ExtendRoomsWithPitDamage:
-  LDA.b $1B
+  LDA.b IndoorsFlag
   AND.w #$00FF
   BEQ .not_custom
-  LDA.b $A0
+  LDA.b RoomIndex
   CMP.w #$0091
   BNE .not_custom
   SEP #$30
@@ -2509,7 +2509,7 @@ ExtendRoomsWithPitDamage:
   JML UnderworldPitDoDamage
 .not_custom:
   SEP #$20
-  LDA.b $A0
+  LDA.b RoomIndex
 RTL
 
 
@@ -2519,7 +2519,7 @@ RTL
 ;--------------------------------------------------------------------------------
 
 HandleFinalPuzzleTag:
-  LDA.b $14
+  LDA.b NMISTRIPES
   BNE .exit
 
   LDA.b LinkQuadrantH : BNE .exit
@@ -2591,7 +2591,7 @@ PushBlock_TileTypeMod:
   CMP.w #$0120 : BNE .normal
 .multipush
 ; ;figure out manipulable index
-  TYA : LSR : ORA.w #$0070 : STA.b $00 : XBA : ORA.b $00
+  TYA : LSR : ORA.w #$0070 : STA.b Scrap00 : XBA : ORA.b Scrap00
   RTL
 .normal
   LDA.w #$2727 : RTL
@@ -2618,19 +2618,19 @@ NormalTiles:
 ; Called in 16-bit mode (REP #$20 already active)
 PushBlock_FloorTileCheck:
   ; Check if room $0038
-  LDA.b RoomIndex            ; Room index is 16-bit
+  LDA.b RoomIndex       ; Room index is 16-bit
   CMP.w #$0038
   BNE .execute_original
 
   ; Check if tag $45 active
-  LDA.b $AE
-  AND.w #$00FF         ; Mask to 8-bit value (tag is 8-bit)
+  LDA.b RoomTag
+  AND.w #$00FF          ; Mask to 8-bit value (tag is 8-bit)
   CMP.w #$0045
   BNE .execute_original
 
   ; Check if block is at pressure plate position
-  LDA.w $0540,Y        ; Load tilemap position
-  AND.w #$3FFF         ; Mask off flags
+  LDA.w ManipTileMapX,Y ; Load tilemap position
+  AND.w #$3FFF          ; Mask off flags
 
   LDX.w #$0000
 .check_loop
@@ -2641,25 +2641,25 @@ PushBlock_FloorTileCheck:
   BNE .check_loop
 
   LDA.l NormalTiles+0
-  STA.w $0560,Y
+  STA.w ManipTileMapX+$20,Y
   LDA.l NormalTiles+2
-  STA.w $0580,Y
+  STA.w ManipTileMapX+$40,Y
   LDA.l NormalTiles+4
-  STA.w $05A0,Y
+  STA.w ManipTileMapX+$60,Y
   LDA.l NormalTiles+6
-  STA.w $05C0,Y
+  STA.w ManipTileMapX+$80,Y
   BRA .execute_original
 
 .found_match
   ; Override stored floor tiles with pressure plate tiles
   LDA.l PressurePlateTiles+0
-  STA.w $0560,Y
+  STA.w ManipTileMapX+$20,Y
   LDA.l PressurePlateTiles+2
-  STA.w $0580,Y
+  STA.w ManipTileMapX+$40,Y
   LDA.l PressurePlateTiles+4
-  STA.w $05A0,Y
+  STA.w ManipTileMapX+$60,Y
   LDA.l PressurePlateTiles+6
-  STA.w $05C0,Y
+  STA.w ManipTileMapX+$80,Y
 
 .execute_original
   ; Call original drawing function using jslrts (stays in 16-bit mode)
@@ -2721,19 +2721,19 @@ LoadExtendedPushBlocks:
 
   ; Loop through extended RAM slots (99+)
   TDC                  ; Start index (slot 99)
-  STA.b $BA
+  STA.b ObjPtrOffset
 
 .loop
-  LDX.b $BA
+  LDX.b ObjPtrOffset
 
   ; Check if room ID matches current room
   LDA.w $0250,X        ; Load room ID from RAM
-  CMP.b $A0            ; Compare with current room
+  CMP.b RoomIndex      ; Compare with current room
   BNE .next
 
   ; Match found - load and draw pushblock
   LDA.w $0252,X        ; Load tilemap index
-  STA.b $08
+  STA.b Scrap08
   TAY
 
   ; Call vanilla draw function using jslrts technique
@@ -2744,15 +2744,15 @@ LoadExtendedPushBlocks:
   REP #$30               ; Restore 16-bit A and X/Y mode after draw function
 
 .next
-  LDA.b $BA
+  LDA.b ObjPtrOffset
   CLC
   ADC.w #$0004           ; Next entry (+4 bytes)
-  STA.b $BA
+  STA.b ObjPtrOffset
   CMP.w #!EXTENDED_PUSHBLOCK_COUNT*4  ; End index
   BCC .loop              ; Continue if less than limit
 
     ; Execute replaced instruction
-  LDA.w $042C            ; Original instruction (already in 16-bit mode)
+  LDA.w ManipIndex       ; Original instruction (already in 16-bit mode)
   RTL
 
 ;--------------------------------------------------------------------------------
@@ -2760,7 +2760,7 @@ LoadExtendedPushBlocks:
 ;--------------------------------------------------------------------------------
 
 LimitedRun_ReceiveBookItem:
-  LDA.l !SerectItemFlags : ORA.b #$02 : STA.l !SerectItemFlags
+  LDA.l !SecretItemFlags : ORA.b #$02 : STA.l !SecretItemFlags
   ; fall through
 LimitedRun_ReceiveRewardItem:
   LDA.l !UnderworldPuzzlesSolved : INC : STA.l !UnderworldPuzzlesSolved
@@ -2768,7 +2768,7 @@ LimitedRun_ReceiveRewardItem:
   RTL
 
 LimitedRun_ReceiveBoomItem:
-  LDA.l !SerectItemFlags : ORA.b #$01 : STA.l !SerectItemFlags
+  LDA.l !SecretItemFlags : ORA.b #$01 : STA.l !SecretItemFlags
   TYA
   RTL
 
@@ -2788,12 +2788,12 @@ SecretBoomerang:
   LDA.w AncillaGeneralD, X : BEQ .set_exit  ; $0394,X is eiher 0 or 1 (blue or red)
 
   ; switch boomerange coords and links coords (Link teleports 8 pixels higher than boomerang)
-  LDA.w AncillaCoordYHigh, X : STA.b $01
-  LDA.w AncillaCoordYLow, X : SEC : SBC #$08 : STA $00
+  LDA.w AncillaCoordYHigh, X : STA.b Scrap01
+  LDA.w AncillaCoordYLow, X : SEC : SBC.b #$08 : STA.b Scrap00
   BCS +                                   ; If carry set, no borrow needed
-  DEC $01                                 ; Else decrement high byte for borrow
+  DEC.b Scrap01                           ; Else decrement high byte for borrow
 +
-  LDA.w AncillaCoordXHigh, X : STA.b $03 : LDA.w AncillaCoordXLow, X : STA $02
+  LDA.w AncillaCoordXHigh, X : STA.b Scrap03 : LDA.w AncillaCoordXLow, X : STA.b Scrap02
   LDA.b LinkPosY : STA.w AncillaCoordYLow, X : LDA.b LinkPosY+1 : STA.w AncillaCoordYHigh, X
   LDA.b LinkPosX : STA.w AncillaCoordXLow, X : LDA.b LinkPosX+1 : STA.w AncillaCoordXHigh, X
   LDA.b IndoorsFlag : BEQ .overworld_teleport
@@ -2835,14 +2835,14 @@ TeleportLink_Underworld:
   ;-----------------------------------------------------------------------------------------------
 
   ; Save old camera X
-  LDA.w BG2H : STA.b $04 ; Temp: old camera X
+  LDA.w BG2H : STA.b Scrap04 ; Temp: old camera X
 
   ; Calculate X delta
-  LDA.b $02 : SEC : SBC.w LinkPosX
+  LDA.b Scrap02 : SEC : SBC.w LinkPosX
   PHA                  ; Save delta on stack
 
   ; Update Link X position
-  LDA.b $02  : STA.w LinkPosX
+  LDA.b Scrap02  : STA.w LinkPosX
 
   ; Apply delta to camera
   PLA                  ; Restore X delta
@@ -2860,7 +2860,7 @@ TeleportLink_Underworld:
   LDA.w $060C,X
 + STA.w BG2H : STA.w BG1H   ; Store clamped camera X
 
-  SEC : SBC.b $04           ; Actual delta = new camera - old camera
+  SEC : SBC.b Scrap04       ; Actual delta = new camera - old camera
 
   ; Update horizontal scroll triggers
   CLC : ADC.w CameraScrollW : STA.w CameraScrollW
@@ -2872,14 +2872,14 @@ TeleportLink_Underworld:
   ;-----------------------------------------------------------------------------------------------
 
   ; Save old camera Y
-  LDA.w BG2V : STA.b $04  ; Temp: old camera Y
+  LDA.w BG2V : STA.b Scrap04  ; Temp: old camera Y
 
   ; Calculate Y delta
-  LDA.b $00 : SEC : SBC.w LinkPosY
+  LDA.b Scrap00 : SEC : SBC.w LinkPosY
   PHA                 ; Save delta on stack
 
   ; Update Link Y position
-  LDA.b $00 : STA.w LinkPosY
+  LDA.b Scrap00 : STA.w LinkPosY
 
   ; Apply delta to camera
   PLA                 ; Restore Y delta
@@ -2897,7 +2897,7 @@ TeleportLink_Underworld:
   LDA.w $0604,X
 + STA.w BG2V : STA.w BG1V  ; Store clamped camera Y
 
-  SEC : SBC.b $04     ; Actual delta = new camera - old camera
+  SEC : SBC.b Scrap04     ; Actual delta = new camera - old camera
 
   ; Update vertical scroll triggers
   CLC : ADC.w CameraScrollN : STA.w CameraScrollN
@@ -2905,12 +2905,12 @@ TeleportLink_Underworld:
   STA.w CameraScrollS
 
   ; Adjust small-room camera bounds by quadrant delta, mirroring AdjustCameraBoundaries logic.
-  LDA.b $A6 : AND.w #$00FF           ; CameraBoundH
+  LDA.b CameraBoundH : AND.w #$00FF
   BEQ .no_hfix
-  LDA.b $A9 : AND.w #$00FF : XBA : AND.w #$0100  ; old H offset: $0000 or $0100
-  STA.b $04
+  LDA.b LinkQuadrantH : AND.w #$00FF : XBA : AND.w #$0100  ; old H offset: $0000 or $0100
+  STA.b Scrap04
   LDA.w LinkPosX : AND.w #$0100      ; new H offset
-  SEC : SBC.b $04                    ; delta = new - old
+  SEC : SBC.b Scrap04                ; delta = new - old
   BEQ .no_hfix
   PHA
   CLC : ADC.w $0608 : STA.w $0608
@@ -2918,12 +2918,12 @@ TeleportLink_Underworld:
   CLC : ADC.w $060C : STA.w $060C
 .no_hfix
 
-  LDA.b $A6 : AND.w #$FF00           ; CameraBoundV
+  LDA.b CameraBoundV : AND.w #$FF00
   BEQ .no_vfix
-  LDA.b $AA : AND.w #$00FF : LSR : XBA : AND.w #$0100  ; old V offset: $0000 or $0100
-  STA.b $04
+  LDA.b LinkQuadrantV : AND.w #$00FF : LSR : XBA : AND.w #$0100  ; old V offset: $0000 or $0100
+  STA.b Scrap04
   LDA.w LinkPosY : AND.w #$0100      ; new V offset
-  SEC : SBC.b $04                    ; delta = new - old
+  SEC : SBC.b Scrap04                ; delta = new - old
   BEQ .no_vfix
   PHA
   CLC : ADC.w $0600 : STA.w $0600
@@ -2939,12 +2939,12 @@ TeleportLink_Underworld:
   ; Recalculate quadrants.
   SEP #$20
   LDA.b LinkPosX+1
-  AND.b #$01        : STA.b LinkQuadrantH                ; 0 or 1
+  AND.b #$01 : STA.b LinkQuadrantH                       ; 0 or 1
   LDA.b LinkPosY+1
-  AND.b #$01 : ASL  : STA.b LinkQuadrantV                ; 0 or 2
+  AND.b #$01 : ASL : STA.b LinkQuadrantV                 ; 0 or 2
   ORA.b LinkQuadrantH                                    ; bit1=QUADV/2, bit0=QUADH
-  STA.b $00
-  LDA.b $A8 : AND.b #$FC : ORA.b $00 : STA.b $A8        ; update ROOMLAYOUT ($A8) low 2 bits
+  STA.b Scrap00
+  LDA.b $A8 : AND.b #$FC : ORA.b Scrap00 : STA.b $A8     ; update ROOMLAYOUT ($A8) low 2 bits
   RTS
 
 ;===================================================================================================
@@ -2962,81 +2962,81 @@ TeleportLink_Overworld:
   ; Process X (horizontal) position and camera
   ;-----------------------------------------------------------------------------------------------
 
-  LDA.w BG2H : STA.b $04        ; $04 = old FULL camera X (absolute coords)
+  LDA.w BG2H : STA.b Scrap       ; $04 = old FULL camera X (absolute coords)
 
-  LDA.b $02 : SEC : SBC.w LinkPosX
-  PHA                           ; Save X delta
+  LDA.b Scrap02 : SEC : SBC.w LinkPosX
+  PHA                            ; Save X delta
 
-  LDA.b $02 : STA.w LinkPosX    ; Update Link X
+  LDA.b Scrap02 : STA.w LinkPosX ; Update Link X
 
-  PLA                           ; Restore X delta
-  CLC : ADC.b $04               ; Apply delta to FULL camera value
-  STA.b $08                     ; $08 = new camera X (full pixels, before clamping)
+  PLA                            ; Restore X delta
+  CLC : ADC.b Scrap04            ; Apply delta to FULL camera value
+  STA.b Scrap08                  ; $08 = new camera X (full pixels, before clamping)
 
   ; X boundaries are in /8 space, need to scale coordinates
-  LSR A : LSR A : LSR A         ; Divide by 8 (discard low 3 bits)
-  STA.b $0A                     ; $0A = camera X in /8 space
+  LSR A : LSR A : LSR A          ; Divide by 8 (discard low 3 bits)
+  STA.b Scrap0A                  ; $0A = camera X in /8 space
 
   ; Clamp camera X to overworld boundaries (/8 space)
   ; Check min X (west edge)
   CMP.w $070C
   BCS +
-  LDA.w $070C                   ; Clamp to min boundary
-  STA.b $0A
+  LDA.w $070C                    ; Clamp to min boundary
+  STA.b Scrap0A
 
 + ; Check max X (east edge)
   LDA.w $070C : CLC : ADC.w $070E
-  STA.b $0C                     ; $0C = max X boundary
+  STA.b Scrap0C                  ; $0C = max X boundary
 
-  LDA.b $0A                     ; Reload camera X (/8 space)
-  CMP.b $0C
+  LDA.b Scrap0A                  ; Reload camera X (/8 space)
+  CMP.b Scrap0C
   BCC +
   BEQ +
-  LDA.b $0C                     ; Clamp to max boundary
-  STA.b $0A
+  LDA.b Scrap0C                  ; Clamp to max boundary
+  STA.b Scrap0A
 
 + ; Convert back to full pixel space
-  LDA.b $0A
-  ASL A : ASL A : ASL A         ; Multiply by 8
-  STA.b $0A                     ; $0A = clamped camera X (full pixels, but low 3 bits = 0)
+  LDA.b Scrap0A
+  ASL A : ASL A : ASL A          ; Multiply by 8
+  STA.b Scrap0A                  ; $0A = clamped camera X (full pixels, but low 3 bits = 0)
 
   ; Preserve low 3 bits from original unclamped camera
-  LDA.b $08 : AND.w #$0007      ; Get low 3 bits
-  ORA.b $0A                     ; Combine with clamped value
-  STA.w BG2H                    ; Store final camera X
+  LDA.b Scrap08 : AND.w #$0007   ; Get low 3 bits
+  ORA.b Scrap0A                  ; Combine with clamped value
+  STA.w BG2H                     ; Store final camera X
 
-  SEC : SBC.b $04               ; Calculate actual X delta
-  STA.b $06                     ; Save delta
+  SEC : SBC.b Scrap04            ; Calculate actual X delta
+  STA.b Scrap06                  ; Save delta
 
   ; Apply scaled delta to BG1H for parallax effect
   ; Check if we're on Death Mountain screens (quarter rate) or normal (half rate)
   SEP #$20
-  LDA.b $8C                     ; Check overlay screen number
-  CMP.b #$95                    ; OW 95 (Death Mountain)
+  LDA.b OverlayID                ; Check overlay screen number
+  CMP.b #$95                     ; OW 95 (Death Mountain)
   BEQ .quarter_rate_x
-  CMP.b #$9E                    ; OW 9E (Death Mountain)
+  CMP.b #$9E                     ; OW 9E (Death Mountain)
   BEQ .quarter_rate_x
 
   ; Standard parallax: BG1 moves at half rate
   REP #$20
-  LDA.b $06 : LSR A             ; Divide by 2 (unsigned)
-  CMP.w #$7000 : BCC +          ; Check if needs sign extension
-  ORA.w #$F000                  ; Restore sign bits
+  LDA.b Scrap06 : LSR A          ; Divide by 2 (unsigned)
+  CMP.w #$7000 : BCC +           ; Check if needs sign extension
+  ORA.w #$F000                   ; Restore sign bits
 + CLC : ADC.w BG1H : STA.w BG1H
   BRA .done_bg1h
 
 .quarter_rate_x
   ; Death Mountain parallax: BG1 moves at quarter rate
   REP #$20
-  LDA.b $06 : LSR A : LSR A     ; Divide by 4 (unsigned)
-  CMP.w #$3000 : BCC +          ; Check if needs sign extension
-  ORA.w #$F000                  ; Restore sign bits
+  LDA.b Scrap06 : LSR A : LSR A  ; Divide by 4 (unsigned)
+  CMP.w #$3000 : BCC +           ; Check if needs sign extension
+  ORA.w #$F000                   ; Restore sign bits
 + CLC : ADC.w BG1H : STA.w BG1H
 
 .done_bg1h
 
   ; Update horizontal scroll triggers (OVERWORLD: inverted)
-  LDA.b $06                     ; Reload actual X delta
+  LDA.b Scrap06                  ; Reload actual X delta
   CLC : ADC.w CameraScrollW : STA.w CameraScrollW
   DEC #2              ; East = West - 2 (inverted!)
   STA.w CameraScrollE
@@ -3045,65 +3045,65 @@ TeleportLink_Overworld:
   ; Process Y (vertical) position and camera
   ;-----------------------------------------------------------------------------------------------
 
-  LDA.w BG2V : STA.b $04        ; $04 = old FULL camera Y (absolute coords)
+  LDA.w BG2V : STA.b Scrap04     ; $04 = old FULL camera Y (absolute coords)
 
-  LDA.b $00 : SEC : SBC.w LinkPosY
-  PHA                           ; Save Y delta
+  LDA.b Scrap00 : SEC : SBC.w LinkPosY
+  PHA                            ; Save Y delta
 
-  LDA.b $00 : STA.w LinkPosY    ; Update Link Y
+  LDA.b Scrap00 : STA.w LinkPosY ; Update Link Y
 
-  PLA                           ; Restore Y delta
-  CLC : ADC.b $04               ; Apply delta to FULL camera value
-  STA.b $08                     ; $08 = new camera Y (before clamping)
+  PLA                            ; Restore Y delta
+  CLC : ADC.b Scrap04            ; Apply delta to FULL camera value
+  STA.b Scrap08                  ; $08 = new camera Y (before clamping)
 
   ; Clamp camera Y to overworld boundaries (absolute coordinate space)
   ; Check min Y (north edge)
   CMP.w $0708
   BCS +
-  LDA.w $0708                   ; Clamp to min boundary
-  STA.b $08
+  LDA.w $0708                    ; Clamp to min boundary
+  STA.b Scrap08
 
 + ; Check max Y (south edge = boundary + size)
   LDA.w $0708 : CLC : ADC.w $070A
-  STA.b $0A                     ; $0A = max Y boundary
+  STA.b Scrap0A                  ; $0A = max Y boundary
 
-  LDA.b $08                     ; Reload camera Y
-  CMP.b $0A
+  LDA.b Scrap08                  ; Reload camera Y
+  CMP.b Scrap0A
   BCC +
   BEQ +
-  LDA.b $0A                     ; Clamp to max boundary
-  STA.b $08
+  LDA.b Scrap0A                  ; Clamp to max boundary
+  STA.b Scrap08
 
-+ LDA.b $08                     ; Final clamped camera Y
-  STA.w BG2V                    ; Store final camera Y
++ LDA.b Scrap08                  ; Final clamped camera Y
+  STA.w BG2V                     ; Store final camera Y
 
-  SEC : SBC.b $04               ; Calculate actual Y delta (full coords)
-  STA.b $06                     ; Save actual Y delta in $06
+  SEC : SBC.b Scrap04            ; Calculate actual Y delta (full coords)
+  STA.b Scrap06                  ; Save actual Y delta in $06
 
   ; Apply scaled delta to BG1V for parallax effect
   SEP #$20
-  LDA.b $8C                     ; Check overlay screen number
-  CMP.b #$97                    ; OW 97 (no parallax)
+  LDA.b OverlayID                ; Check overlay screen number
+  CMP.b #$97                     ; OW 97 (no parallax)
   BEQ .no_parallax_y
-  CMP.b #$9D                    ; OW 9D (no parallax)
+  CMP.b #$9D                     ; OW 9D (no parallax)
   BEQ .no_parallax_y
-  CMP.b #$B5                    ; OW B5 (quarter rate)
+  CMP.b #$B5                     ; OW B5 (quarter rate)
   BEQ .quarter_rate_y
-  CMP.b #$BE                    ; OW BE (quarter rate)
+  CMP.b #$BE                     ; OW BE (quarter rate)
   BEQ .quarter_rate_y
 
   ; Standard parallax: BG1 moves at half rate
   REP #$20
-  LDA.b $06 : LSR A             ; Divide by 2 (unsigned)
-  CMP.w #$7000 : BCC +          ; Check if needs sign extension
-  ORA.w #$F000                  ; Restore sign bits
+  LDA.b Scrap06 : LSR A          ; Divide by 2 (unsigned)
+  CMP.w #$7000 : BCC +           ; Check if needs sign extension
+  ORA.w #$F000                   ; Restore sign bits
 + CLC : ADC.w BG1V : STA.w BG1V
   BRA .done_bg1v
 
 .quarter_rate_y
   ; Quarter rate parallax
   REP #$20
-  LDA.b $06 : LSR A : LSR A     ; Divide by 4 (unsigned)
+  LDA.b Scrap06 : LSR A : LSR A ; Divide by 4 (unsigned)
   CMP.w #$3000 : BCC +          ; Check if needs sign extension
   ORA.w #$F000                  ; Restore sign bits
 + CLC : ADC.w BG1V : STA.w BG1V
@@ -3116,7 +3116,7 @@ TeleportLink_Overworld:
 .done_bg1v
 
   ; Update vertical scroll triggers (OVERWORLD: inverted)
-  LDA.b $06                     ; Reload actual Y delta
+  LDA.b Scrap06                  ; Reload actual Y delta
   CLC : ADC.w CameraScrollN : STA.w CameraScrollN
   DEC #2              ; South = North - 2 (inverted!)
   STA.w CameraScrollS
@@ -3126,40 +3126,40 @@ TeleportLink_Overworld:
   ; Save Y delta for reuse
   LDA.w BG2V
   SEC : SBC.w $0708
-  STA.b $0C            ; Save Y delta
+  STA.b Scrap0C         ; Save Y delta
 
   ; Y component for $84: (delta_Y & $FFF0) * 8
   AND.w #$FFF0
   ASL #3
-  STA.b $06            ; Temporary Y component
+  STA.b Scrap06         ; Temporary Y component
 
   ; Calculate and save screen_left in pixels
-  LDA.w $070C : ASL #3 : STA.b $0E
+  LDA.w $070C : ASL #3 : STA.b Scrap0E
 
   ; Save X delta for reuse
   LDA.w BG2H
-  SEC : SBC.b $0E
-  STA.b $08            ; Save X delta
+  SEC : SBC.b Scrap0E
+  STA.b Scrap08            ; Save X delta
 
   ; X component for $84: (delta_X & $FFF0) / 8
   AND.w #$FFF0
   LSR #3
-  CLC : ADC.b $06      ; Add Y component
-  STA.b $84            ; Final $84
+  CLC : ADC.b Scrap06  ; Add Y component
+  STA.b OverworldMap16Buffer  ; Final $84
 
   ; $86 = (X_delta / 16 + 0x18) & 0x1F
-  LDA.b $08            ; Reuse saved X delta
+  LDA.b Scrap08        ; Reuse saved X delta
   LSR #4
   CLC : ADC.w #$0018
   AND.w #$001F
-  STA.b $86
+  STA.b OverworldTilemapIndexX
 
   ; $88 = (Y_delta / 16 + 0x18) & 0x1F
-  LDA.b $0C            ; Reuse saved Y delta
+  LDA.b Scrap0C        ; Reuse saved Y delta
   LSR #4
   CLC : ADC.w #$0018
   AND.w #$001F
-  STA.b $88
+  STA.b OverworldTilemapIndexY
 
   ;-----------------------------------------------------------------------------------------------
   ; Rebuild VRAM tilemap if on a big screen (fixes off-screen corruption)
@@ -3168,7 +3168,7 @@ TeleportLink_Overworld:
   SEP #$20
 
   ; Check if big screen: OverworldScreenSize[$8A] == 0
-  LDX.b $8A
+  LDX.b OverworldIndex
   LDA.l OverworldScreenSize,X      ; OverworldScreenSize table
   BNE .skip_rebuild    ; Non-zero = small screen, skip rebuild
 
@@ -3176,9 +3176,9 @@ TeleportLink_Overworld:
   REP #$20
 
   ; Save current $84/$86/$88 values (same as Module09_21 does)
-  LDA.b $84 : PHA
-  LDA.b $86 : PHA
-  LDA.b $88 : PHA
+  LDA.b OverworldMap16Buffer : PHA
+  LDA.b OverworldTilemapIndexX : PHA
+  LDA.b OverworldTilemapIndexY : PHA
 
   ; Set up parameters for BuildOverworldMapFromMap16
   LDA.w #$FFFF : STA.b $C8  ; Mark all quadrants for rebuild
@@ -3195,14 +3195,14 @@ TeleportLink_Overworld:
 
   ; Set NMI dispatch to upload stripe data to VRAM
   LDA.b #$04               ; NMI_UpdateSubscreenOverlay
-  STA.b $17                ; NMI dispatch index
+  STA.b NMIINCR            ; NMI dispatch index
   STA.w $0710              ; Backup/frame counter
 
   ; Restore original $84/$86/$88 values
   REP #$20
-  PLA : STA.b $88
-  PLA : STA.b $86
-  PLA : STA.b $84
+  PLA : STA.b OverworldTilemapIndexY
+  PLA : STA.b OverworldTilemapIndexX
+  PLA : STA.b OverworldMap16Buffer
 
   SEP #$20
 .skip_rebuild
@@ -3537,11 +3537,11 @@ BlinkMeterColorTable:
 ;#_07A472: STA.b $3A
 
 SecretBook:
-  AND.b #$BF : STA.b $3A ; code we wrote over and A is free
+  AND.b #$BF : STA.b FlagBY ; code we wrote over and A is free
 
   LDA.b IndoorsFlag : BEQ .exit
-  LDA.b $A0 : CMP.b #$91 : BEQ .can_portal  ; special exception for room were mechanic is introduced
-  LDA.l !SerectItemFlags : AND.b #$02 : BEQ .exit
+  LDA.b RoomIndex : CMP.b #$91 : BEQ .can_portal  ; special exception for room were mechanic is introduced
+  LDA.l !SecretItemFlags : AND.b #$02 : BEQ .exit
 
 .can_portal
   ; Y button pressed indoors - check portal state
@@ -3552,10 +3552,10 @@ SecretBook:
 .place_portal
   REP #$20 ; we are currently in 8-bit mode , I think
   ; Save Link's position
-  LDA.b $20 : STA.w !BookPortalPosYLow
-  LDA.b $22 : STA.w !BookPortalPosXLow
-  LDA.b $E2 : STA.w !BookPortalBG2HLow
-  LDA.b $E8 : STA.w !BookPortalBG2VLow
+  LDA.b LinkPosY : STA.w !BookPortalPosYLow
+  LDA.b LinkPosX : STA.w !BookPortalPosXLow
+  LDA.b BG2H : STA.w !BookPortalBG2HLow
+  LDA.b BG2V : STA.w !BookPortalBG2VLow
   SEP #$20
 
   ; Mark portal as active
@@ -3565,21 +3565,21 @@ SecretBook:
   JSL Sprite_SpawnDynamically
   BMI .exit  ; just accept the invisible one?
   TAY
-  LDA.b LinkPosY   : STA.w $0D00,Y
-  LDA.b LinkPosY+1 : STA.w $0D20,Y
-  LDA.b LinkPosX   : STA.w $0D10,Y
-  LDA.b LinkPosX+1 : STA.w $0D30,Y
+  LDA.b LinkPosY   : STA.w SpritePosYLow,Y
+  LDA.b LinkPosY+1 : STA.w SpritePosYHigh,Y
+  LDA.b LinkPosX   : STA.w SpritePosXLow,Y
+  LDA.b LinkPosX+1 : STA.w SpritePosXHigh,Y
 .exit
 RTL
     ; Restore to Portal - Teleport Link back to saved position
 .restore_to_portal
   ; Restore Link's position
   REP #$20 ; we are currently in 8-bit mode , I think
-  LDA.w !BookPortalPosYLow : STA.b $20
-  LDA.w !BookPortalPosXLow : STA.b $22
+  LDA.w !BookPortalPosYLow : STA.b LinkPosY
+  LDA.w !BookPortalPosXLow : STA.b LinkPosX
   ; Restore camera scroll position
-  LDA.w !BookPortalBG2HLow : STA.b $E2
-  LDA.w !BookPortalBG2VLow : STA.b $E8
+  LDA.w !BookPortalBG2HLow : STA.b BG2H
+  LDA.w !BookPortalBG2VLow : STA.b BG2V
   SEP #$20
 
 RTL
@@ -3592,10 +3592,10 @@ SliverBoomDamageUpgrade:
   CPX.b #$05 : BNE .not_blue_boom
   LDA.l BoomerangEquipment  ; Load boomerang type
   CMP.b #$01 : BNE .not_blue_boom
-  LDA.l !SerectItemFlags : AND.b #$01 : BEQ .not_blue_boom ; not yet enabled
-  LDA $04, S : TAX
-  LDA.w $0E20,X : CMP.b #$D7 : BNE .not_ganon
-  LDA.b #$20 : STA.w $0F10, X
+  LDA.l !SecretItemFlags : AND.b #$01 : BEQ .not_blue_boom ; not yet enabled
+  LDA.b $04, S : TAX
+  LDA.w SpriteTypeTable, X : CMP.b #$D7 : BNE .not_ganon
+  LDA.b #$20 : STA.w SpriteTimerE, X
 .not_ganon
   LDA.b #$09
 RTL
