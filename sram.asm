@@ -391,8 +391,9 @@ ExtendedFileNameWRAM: skip 24    ; File name, 12 word-length characters.
 RoomPotData: skip 592            ; Table for expanded pot shuffle. One word per room.
 SpriteDropData: skip 592         ; Table for expanded drop shuffle. One word per room.
 PurchaseCounts: skip 96          ; Keeps track of shop purchases
+LimitedRunStore: skip $40        ; Easter Egg Buffer
 PrivateBlockPersistent: skip 513 ; Reserved for 3rd party developers
-skip 231
+skip 167
 
 ;================================================================================
 ; Direct SRAM Assignments ($700000 - $7080000)
@@ -645,7 +646,8 @@ endmacro
 %assertSRAM(RoomPotData, $7F6018)
 %assertSRAM(SpriteDropData, $7F6268)
 %assertSRAM(PurchaseCounts, $7F64B8)
-%assertSRAM(PrivateBlockPersistent, $7F6518)
+%assertSRAM(LimitedRunStore, $7F6518)
+%assertSRAM(PrivateBlockPersistent, $7F6558)
 
 ;================================================================================
 ; Direct SRAM Assertions
