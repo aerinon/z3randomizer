@@ -1467,11 +1467,19 @@ org $86ECC5
 
 ; Push block overrides:
 
-org $04EED2 ; Room CA Push blocks (unused)
+org $84EED2 ; Room CA Push blocks (unused)
 dw $0120, $09E0 ; for good bee room
 dw $00D5, $1AE0 ; for map room
 
 pullpc
+
+Limited_InitializeSnitchStatueTileset:
+    LDA.b IndoorsFlag : BEQ .exit
+    LDA.b RoomIndex+1 : BEQ .exit
+    LDA.b RoomIndex : DEC : BNE .exit ; check if snitch house
+        LDA.b #$52 : STA.l LastSpriteSet+3 : STA.b Scrap06 ; statue gfx
+.exit
+    RTL
 
 ;--------------------------------------------------------------------------------
 ;  New Tag Code

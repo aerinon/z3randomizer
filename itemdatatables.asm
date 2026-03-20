@@ -812,7 +812,11 @@ endmacro
 %InventoryItem($69, $0001, $0000, $0000) ; 69 -
 %InventoryItem($6A, $0081, $0000, $0000) ; 6A - Triforce
 %InventoryItem($6B, $0081, $0000, $0000) ; 6B - Power star
-%InventoryItem($6C, $0081, $0000, $0000) ; 6C - Triforce Piece
+if !FEATURE_LIMITED_RUN == 2604
+	%InventoryItem($6C, $0080, $0000, $0000) ; 6C - Triforce Piece
+else
+	%InventoryItem($6C, $0081, $0000, $0000) ; 6C - Triforce Piece
+endif
 %InventoryItem($6D, $0001, $0000, $0000) ; 6D - Server request item
 %InventoryItem($6E, $0001, $0000, $0000) ; 6E - Server request item (dungeon drop)
 %InventoryItem($6F, $0001, $0000, $0000) ; 6F -

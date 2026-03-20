@@ -74,6 +74,7 @@ if !FEATURE_LIMITED_RUN
     InitializeTilesets_Override:
         if !FEATURE_LIMITED_RUN == 2604
             JSL Limited_InitializeWallmasterTileset
+            JSL Limited_InitializeSnitchStatueTileset
         endif
     .exit
         LDY.b Scrap09 : LDA.b #$7E ; what we wrote over
