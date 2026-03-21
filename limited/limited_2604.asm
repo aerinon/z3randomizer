@@ -14,15 +14,11 @@
 !NewTagIndex = $7E0ABA ; Index for new room tag effects
 !NewTagFlag  = $7E0ABB ; Flag for new room tag effects
 
-!BookPortalActive   = $7E0270   ; 1 byte - Portal state (0=none, 1=placed)
-!BookPortalPosXLow  = $7E0271   ; 1 byte - Portal X position (low)
-!BookPortalPosXHigh = $7E0272   ; 1 byte - Portal X position (high)
-!BookPortalPosYLow  = $7E0273   ; 1 byte - Portal Y position (low)
-!BookPortalPosYHigh = $7E0274   ; 1 byte - Portal Y position (high)
-!BookPortalBG2HLow  = $7E0275   ; 1 byte - Camera H scroll (low)
-!BookPortalBG2HHigh = $7E0276   ; 1 byte - Camera H scroll (high)
-!BookPortalBG2VLow  = $7E0277   ; 1 byte - Camera V scroll (low)
-!BookPortalBG2VHigh = $7E0278   ; 1 byte - Camera V scroll (high)
+!BookPortalActive   = $7E0270   ; 1 byte  - Portal state (0=none, 1=placed)
+!BookPortalPosX     = $7E0271   ; 2 bytes - Portal X position
+!BookPortalPosY     = $7E0273   ; 2 bytes - Portal Y position
+!BookPortalBG2H     = $7E0275   ; 2 bytes - Camera H scroll
+!BookPortalBG2V     = $7E0277   ; 2 bytes - Camera V scroll
 
 !BananaXPos = LimitedRunData
 !BananaYPos = LimitedRunData+10
@@ -2844,6 +2840,7 @@ SecretBoomerang:
   JSR TeleportLink_Overworld
 
 .after_teleport
+  LDA.b #$0D : JSL Sound_SetSfx2PanLong ; powder sfx
   LDA.l !UnderworldPuzzlesSolved : DEC : TAX
   LDA.l CooldownTable, X
   STA.l !BlinkTimer
@@ -3593,10 +3590,9 @@ BlinkMeterColorTable:
 ; =========================================================================
 ; Book of Mudora Portal System
 ; =========================================================================
-; Original code:
-;#_07A470: AND.b #$BF
-;#_07A472: STA.b $3A
 
+SecretBook_exit:
+RTL
 SecretBook:
   AND.b #$BF : STA.b FlagBY ; code we wrote over and A is free
 
@@ -3611,39 +3607,68 @@ SecretBook:
 
   ; No portal exists - place one - Save current position and camera
 .place_portal
+  LDA.b #$03 : JSL Sprite_SpawnDynamically ; custom sprite
+  BMI .exit
+
   REP #$20 ; we are currently in 8-bit mode , I think
   ; Save Link's position
-  LDA.b LinkPosY : STA.w !BookPortalPosYLow
-  LDA.b LinkPosX : STA.w !BookPortalPosXLow
-  LDA.b BG2H : STA.w !BookPortalBG2HLow
-  LDA.b BG2V : STA.w !BookPortalBG2VLow
+  LDA.b LinkPosY : STA.w !BookPortalPosY
+  LDA.b LinkPosX : STA.w !BookPortalPosX
+  LDA.b BG2H : STA.w !BookPortalBG2H
+  LDA.b BG2V : STA.w !BookPortalBG2V
   SEP #$20
 
-  ; Mark portal as active
-  INC.w !BookPortalActive
-
-  LDA.b #$6C ; mirror portal sprite
-  JSL Sprite_SpawnDynamically
-  BMI .exit  ; just accept the invisible one?
-  TAY
   LDA.b LinkPosY   : STA.w SpritePosYLow,Y
   LDA.b LinkPosY+1 : STA.w SpritePosYHigh,Y
   LDA.b LinkPosX   : STA.w SpritePosXLow,Y
   LDA.b LinkPosX+1 : STA.w SpritePosXHigh,Y
-.exit
-RTL
-    ; Restore to Portal - Teleport Link back to saved position
+
+  ; Mark portal as active
+  INC.w !BookPortalActive
+  LDA.b #$37 : JSL Sound_SetSfx2PanLong ; sword charged sfx
+  BRA .skip_vanilla_sfx
+
 .restore_to_portal
   ; Restore Link's position
   REP #$20 ; we are currently in 8-bit mode , I think
-  LDA.w !BookPortalPosYLow : STA.b LinkPosY
-  LDA.w !BookPortalPosXLow : STA.b LinkPosX
+  LDA.w !BookPortalPosY : STA.b LinkPosY
+  LDA.w !BookPortalPosX : STA.b LinkPosX
   ; Restore camera scroll position
-  LDA.w !BookPortalBG2HLow : STA.b BG2H
-  LDA.w !BookPortalBG2VLow : STA.b BG2V
+  LDA.w !BookPortalBG2H : STA.b BG2H
+  LDA.w !BookPortalBG2V : STA.b BG2V
   SEP #$20
 
+  LDA.b #$0D : JSL Sound_SetSfx2PanLong ; powder sfx
+  STZ.w !BookPortalActive
+  LDY.b #$0F
+  - LDA.w SpriteTypeTable, Y : CMP.b #$03 : BEQ .kill_portal
+  DEY : BPL -
+  BRA .skip_vanilla_sfx
+.kill_portal
+  LDA.b #$00 : STA.w SpriteAITable, Y
+.skip_vanilla_sfx
+  PLA : PLA : PEA.w $A482 ; skip vanilla SFX on return
 RTL
+
+SpritePrep_BookPortal:
+RTL
+
+Sprite_03_BookPortal:
+LDA.w GfxChrHalfSlotVerify : CMP.b #$03 : BCS .skip_draw
+  PHB : PHK : PLB
+    LDA.b #$01 : STA.b Scrap06 : STZ.b Scrap07 ; number of gfx
+    LDA.b FrameCounter : AND.b #$0C : ASL
+    ADC.b #.oam_groups : STA.b Scrap08
+    LDA.b #.oam_groups>>8 : ADC.b #$00 : STA.b Scrap09
+    JSL Sprite_DrawMultiple_player_deferred
+  PLB
+.skip_draw
+RTL
+.oam_groups
+dw   4,  10 : db $A6, $03, $00, $00
+dw   4,  10 : db $B7, $43, $00, $00
+dw   4,  10 : db $B6, $C3, $00, $00
+dw   4,  10 : db $C7, $83, $00, $00
 
 ; =========================================================================
 ; Boomerang Damage Upgrade

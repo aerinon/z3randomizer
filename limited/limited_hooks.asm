@@ -101,14 +101,18 @@ ShowAwaitingMessage:
 
 SpritePrep_CustomSprite:
     if !FEATURE_LIMITED_RUN == 2604
-        JML SpritePrep_KikiBanana
+        LDA.b IndoorsFlag : BNE +
+            JML SpritePrep_KikiBanana
+        + JML SpritePrep_BookPortal
     endif
 .exit
     RTL
 
 Sprite_03_CustomSprite:
     if !FEATURE_LIMITED_RUN == 2604
-        JML Sprite_03_KikiBanana
+        LDA.b IndoorsFlag : BNE +
+            JML Sprite_03_KikiBanana
+        + JML Sprite_03_BookPortal
     endif
 .exit
     RTL
