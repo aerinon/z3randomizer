@@ -796,10 +796,10 @@ ArmosKnight_KnightDead:
         LDA.l OverworldEventDataWRAM+$1E : ORA.b #$40
         STA.l OverworldEventDataWRAM+$1E
         REP #$30
-            LDA.w #$0912 : LDX.w #$1318 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
-            LDA.w #$0913 : LDX.w #$131A : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
-            LDA.w #$0914 : LDX.w #$1398 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
-            LDA.w #$0915 : LDX.w #$139A : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0912 : LDX.w #$1318 : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0913 : LDX.w #$131A : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0914 : LDX.w #$1398 : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0915 : LDX.w #$139A : JSL Overworld_DrawPersistentMap16
         SEP #$30
         LDA.b #$01 : STA.b NMISTRIPES
         CLC
@@ -998,19 +998,26 @@ KikiBanana_Collect:
     LDA.b #$10 : STA.w SpriteTimer, X
     LDA.b #$FF : STA.w HUDTimerDelay
     LDA.w SpriteSpawnStep, X : STA.w HUDTimer
-    CMP.b #((!BananaYPos-!BananaXPos)<<1) : BNE +
+    CMP.b #((!BananaYPos-!BananaXPos)<<1) : BNE .return
         ; reveal entrance
         LDA.b #$1A : STA.w SFX3
         LDA.l OverworldEventDataWRAM+$5E : ORA.b #$40
         STA.l OverworldEventDataWRAM+$5E
-        REP #$30
-            LDA.w #$0912 : LDX.w #$0B74 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
-            LDA.w #$0914 : LDX.w #$0BF4 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
-            LDA.w #$0913 : LDX.w #$0B76 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
-            LDA.w #$0915 : LDX.w #$0BF6 : JSL Overworld_MemorizeMap16Change : JSL Overworld_DrawPersistentMap16
+        LDA.w OverworldSlotPosition : CMP.b #$3E : REP #$30 : BNE +
+            LDA.w #$0912 : LDX.w #$0B74 : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0914 : LDX.w #$0BF4 : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0913 : LDX.w #$0B76 : JSL Overworld_DrawPersistentMap16
+            LDA.w #$0915 : LDX.w #$0BF6 : JSL Overworld_DrawPersistentMap16
+            SEP #$30
+            LDA.b #$01 : STA.b NMISTRIPES
+            BRA .return
+        +
+        LDA.w #$0912 : STA.l $7E2B74
+        INC : STA.l $7E2B76
+        INC : STA.l $7E2BF4
+        INC : STA.l $7E2BF6
         SEP #$30
-        LDA.b #$01 : STA.b NMISTRIPES
-    +
+.return
     RTL
 
 ; X = sprite index
