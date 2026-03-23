@@ -673,6 +673,13 @@ AddCherryPickGfxToBigBuffer:
 		%CherryPickGfx($3140,$0140,$40) ; move chicken
 		LDA.b DecompBufferOffset : SEC : SBC.w #$1000 : STA.b DecompBufferOffset
 		SEP #$30
+	if !FEATURE_LIMITED_RUN == 2604
+		LDX.b #$23+$73 : JSR AddGfxSheetToBigBuffer
+			REP #$30
+			%CherryPickGfx($28C0,$4000,$140) ; move wallmaster
+			LDA.b DecompBufferOffset : SEC : SBC.w #$0800 : STA.b DecompBufferOffset
+			SEP #$30
+	endif
 
 	STZ.w $06FA
 	RTS

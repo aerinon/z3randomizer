@@ -425,12 +425,13 @@ Limited_UnderworldPrepWallmasterKickOut:
     LDA.b IndoorsFlag : BEQ .vanilla
     LDA.w OverworldIndexMirror : BNE .vanilla ; came in from lost woods
     LDA.w OWTransitionFlag : BEQ .vanilla
-        LDA.b #$90 : LDY.b #$09 : JSL Sprite_SpawnDynamically
-        LDA.b LinkPosX : STA.w SpritePosXLow,Y
-        LDA.b LinkPosX+1 : STA.w SpritePosXHigh,Y
-        LDA.b LinkTargetPosY : STA.w SpritePosYLow,Y
-        LDA.b LinkTargetPosY+1 : STA.w SpritePosYHigh,Y
-        LDA.b #$80 : STA.w SpriteZCoord,Y
+        LDA.b #$90 : LDY.b #$09 : JSL Sprite_SpawnDynamically_arbitrary
+        LDA.b LinkPosX : STA.w SpritePosXLow, Y
+        LDA.b LinkPosX+1 : STA.w SpritePosXHigh, Y
+        LDA.b LinkTargetPosY : STA.w SpritePosYLow, Y
+        LDA.b LinkTargetPosY+1 : STA.w SpritePosYHigh, Y
+        LDA.b LinkLayer : STA.w SpriteLayer, Y
+        LDA.b #$80 : STA.w SpriteZCoord, Y
         LDA.b #$01 : STA.w SpriteAuxTable, Y
             STA.w CutsceneFlag
             STA.l !KickedOutMessage
@@ -548,6 +549,48 @@ SpawnFlyingTile_FollowLink:
             LDA.b #$10
 .return
     RTS
+
+; Mirror Wallmaster Gimmick
+pushpc
+org $82A0AF
+LDA.b #$90 : LDY.b #$0C : JSL Sprite_SpawnDynamically_arbitrary
+NOP #2
+JSL Limited_MirrorWallmaster
+pullpc
+
+Limited_MirrorWallmaster:
+    LDA.b LinkPosX : STA.w SpritePosXLow, Y
+    LDA.b LinkPosX+1 : STA.w SpritePosXHigh, Y
+    LDA.b LinkPosY : STA.w SpritePosYLow, Y
+    LDA.b LinkPosY+1 : STA.w SpritePosYHigh, Y
+    LDA.b LinkLayer : STA.w SpriteLayer, Y
+    LDA.b #$A0 : STA.w SpriteZCoord, Y
+    INC.w CutsceneFlag
+    LDA.b #$20 : STA.w SFX2
+    REP #$30
+        LDA.w #BigDecompressionBuffer+$4000
+        LDX.w ItemStackPtr : STA.l ItemGFXStack, X
+        LDA.w #$B4C0>>1 : STA.l ItemTargetStack, X
+        
+        LDA.w #BigDecompressionBuffer+$4040
+        INX #2 : STA.l ItemGFXStack, X
+        LDA.w #$B500>>1 : STA.l ItemTargetStack, X
+        
+        LDA.w #BigDecompressionBuffer+$4080
+        INX #2 : STA.l ItemGFXStack, X
+        LDA.w #$B540>>1 : STA.l ItemTargetStack, X
+
+        LDA.w #BigDecompressionBuffer+$40C0
+        INX #2 : STA.l ItemGFXStack, X
+        LDA.w #$B580>>1 : STA.l ItemTargetStack, X
+
+        LDA.w #BigDecompressionBuffer+$4100
+        INX #2 : STA.l ItemGFXStack, X
+        LDA.w #$B5C0>>1 : STA.l ItemTargetStack, X
+
+        INX #2 : STX.w ItemStackPtr
+    SEP #$30
+RTL
 
 ; Desert Statue Gimmick
 pushpc
