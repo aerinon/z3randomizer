@@ -243,10 +243,7 @@ DialogItemReceive:
 	if !FEATURE_LIMITED_RUN == 2604
 		CPY.w #$170 : BCC .notSpecial      ; below $B8
 		CPY.w #$176 : BCS .notSpecial      ; above $BA
-		TYA : LSR                 ; A = item_id
-		SEC : SBC.w #$00B8        ; A = 0/1/2 offset into table
-		ASL : TAX
-		LDA.w #$0134
+		LDA.w #$0134 ; hardcoded to one message for now (previous commit had a per item table)
 		BRA .done
 	.notSpecial
 	endif

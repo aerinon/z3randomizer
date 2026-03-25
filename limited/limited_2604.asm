@@ -19,6 +19,9 @@
 !BookPortalPosY     = $7E0273   ; 2 bytes - Portal Y position
 !BookPortalBG2H     = $7E0275   ; 2 bytes - Camera H scroll
 !BookPortalBG2V     = $7E0277   ; 2 bytes - Camera V scroll
+!BookPortalLinkLayer = $7E0279  ; 1 byte  - Link layer (BG1/BG2)
+!BookPortalBG1H     = $7E027A   ; 2 bytes - BG1 H scroll
+!BookPortalBG1V     = $7E027C   ; 2 bytes - BG1 V scroll
 
 !BananaXPos = LimitedRunData
 !BananaYPos = LimitedRunData+10
@@ -3011,49 +3014,60 @@ TeleportLink_Underworld:
   INC #2        ; South = North + 2
   STA.w CameraScrollS
 
-  ; Adjust small-room camera bounds by quadrant delta, mirroring AdjustCameraBoundaries logic.
-  LDA.b CameraBoundH : AND.w #$00FF
-  BEQ .no_hfix
-  LDA.b LinkQuadrantH : AND.w #$00FF : XBA : AND.w #$0100  ; old H offset: $0000 or $0100
-  STA.b Scrap04
-  LDA.w LinkPosX : AND.w #$0100      ; new H offset
-  SEC : SBC.b Scrap04                ; delta = new - old
-  BEQ .no_hfix
-  PHA
-  CLC : ADC.w $0608 : STA.w $0608
-  PLA
-  CLC : ADC.w $060C : STA.w $060C
-.no_hfix
-
-  LDA.b CameraBoundV : AND.w #$FF00
-  BEQ .no_vfix
-  LDA.b LinkQuadrantV : AND.w #$00FF : LSR : XBA : AND.w #$0100  ; old V offset: $0000 or $0100
-  STA.b Scrap04
-  LDA.w LinkPosY : AND.w #$0100      ; new V offset
-  SEC : SBC.b Scrap04                ; delta = new - old
-  BEQ .no_vfix
-  PHA
-  CLC : ADC.w $0600 : STA.w $0600
-  PLA
-  CLC : ADC.w $0604 : STA.w $0604
-.no_vfix
-
-  ; Reset BG1 parallax sub-pixel accumulators ($0620/$0622).
-  ; Stale values cause BG1H/BG1V to diverge from BG2H/BG2V in parallax rooms.
-  STZ.w $0620
-  STZ.w $0622
-
-  ; Recalculate quadrants.
-  SEP #$20
-  LDA.b LinkPosX+1
-  AND.b #$01 : STA.b LinkQuadrantH                       ; 0 or 1
-  LDA.b LinkPosY+1
-  AND.b #$01 : ASL : STA.b LinkQuadrantV                 ; 0 or 2
-  ORA.b LinkQuadrantH                                    ; bit1=QUADV/2, bit0=QUADH
-  STA.b Scrap00
-  LDA.b $A8 : AND.b #$FC : ORA.b Scrap00 : STA.b $A8     ; update ROOMLAYOUT ($A8) low 2 bits
-  CLC                        ; signal success
+  ; Save old quadrant values before recalculation (LinkQuadrantH/V not yet updated)
+  LDA.b LinkQuadrantH : STA.b Scrap02        ; old H quadrant: 0 or 1
+  LDA.b LinkQuadrantV : LSR : STA.b Scrap00  ; old V quadrant: 0 or 2 -> 0 or 1
+  JSR Teleport_RecalcQuadrantsAndBounds
   RTS
+
+;===================================================================================================
+; Recalculate quadrants and adjust camera bounds after teleport
+; Input: Scrap00 = old V quadrant (0 or 1; LinkQuadrantV >> 1 before teleport)
+;        Scrap02 = old H quadrant (0 or 1; LinkQuadrantH before teleport)
+;        LinkPosX/Y already updated to new position
+;        Called after camera clamping (BG2H/V updated)
+;        Must be called with REP #$20 (16-bit accumulator) active
+; Clobbers: A, X, Scrap04, $0600-$060F, $0620-$0622
+; Returns: C=0
+;===================================================================================================
+Teleport_RecalcQuadrantsAndBounds:
+    ; Adjust small-room camera bounds by quadrant delta, mirroring AdjustCameraBoundaries logic.
+    ; Uses Teleport_Underworld canonical implementation.
+    ; Must be called with REP #$20 (16-bit accumulator) active.
+    LDA.b CameraBoundH : AND.w #$00FF
+    BEQ .no_hfix
+    LDA.b Scrap02 : AND.w #$0001 : XBA : AND.w #$0100  ; old H offset: $0000 or $0100
+    STA.b Scrap04
+    LDA.w LinkPosX : AND.w #$0100                    ; new H offset
+    SEC : SBC.b Scrap04 : BEQ .no_hfix
+    PHA
+    CLC : ADC.w $0608 : STA.w $0608
+    PLA
+    CLC : ADC.w $060C : STA.w $060C
+.no_hfix
+    LDA.b CameraBoundV : AND.w #$FF00
+    BEQ .no_vfix
+    LDA.b Scrap00 : AND.w #$0001 : XBA : AND.w #$0100  ; old V offset: $0000 or $0100
+    STA.b Scrap04
+    LDA.w LinkPosY : AND.w #$0100                        ; new V offset
+    SEC : SBC.b Scrap04 : BEQ .no_vfix
+    PHA
+    CLC : ADC.w $0600 : STA.w $0600
+    PLA
+    CLC : ADC.w $0604 : STA.w $0604
+.no_vfix
+    ; Reset BG1 parallax sub-pixel accumulators ($0620/$0622).
+    STZ.w $0620
+    STZ.w $0622
+    ; Recalculate quadrants.
+    SEP #$20
+    LDA.b LinkPosX+1 : AND.b #$01 : STA.b LinkQuadrantH  ; 0 or 1
+    LDA.b LinkPosY+1 : AND.b #$01 : ASL : STA.b LinkQuadrantV  ; 0 or 2
+    ORA.b LinkQuadrantH                                   ; bit1=QUADV/2, bit0=QUADH
+    STA.b Scrap00
+    LDA.b $A8 : AND.b #$FC : ORA.b Scrap00 : STA.b $A8   ; update ROOMLAYOUT ($A8) low 2 bits
+    CLC
+    RTS
 
 ;===================================================================================================
 ; Teleport Link - Overworld
@@ -3070,7 +3084,7 @@ TeleportLink_Overworld:
   ; Process X (horizontal) position and camera
   ;-----------------------------------------------------------------------------------------------
 
-  LDA.w BG2H : STA.b Scrap       ; $04 = old FULL camera X (absolute coords)
+  LDA.w BG2H : STA.b Scrap04     ; $04 = old FULL camera X (absolute coords)
 
   LDA.b Scrap02 : SEC : SBC.w LinkPosX
   PHA                            ; Save X delta
@@ -3666,6 +3680,9 @@ SecretBook:
   LDA.b LinkPosX : STA.w !BookPortalPosX
   LDA.b BG2H : STA.w !BookPortalBG2H
   LDA.b BG2V : STA.w !BookPortalBG2V
+  LDA.b LinkLayer : STA.w !BookPortalLinkLayer
+  LDA.b BG1H : STA.w !BookPortalBG1H
+  LDA.b BG1V : STA.w !BookPortalBG1V
   SEP #$20
 
   LDA.b LinkPosY   : STA.w SpritePosYLow,Y
@@ -3679,13 +3696,29 @@ SecretBook:
   BRA .skip_vanilla_sfx
 
 .restore_to_portal
-  ; Restore Link's position
+  ; Restore Link's position and camera
   REP #$20 ; we are currently in 8-bit mode , I think
   LDA.w !BookPortalPosY : STA.b LinkPosY
   LDA.w !BookPortalPosX : STA.b LinkPosX
-  ; Restore camera scroll position
+  ; Update camera scroll triggers by the delta between portal and current camera position
+  LDA.w !BookPortalBG2H : SEC : SBC.b BG2H  ; delta X = portal BG2H - current BG2H
+  STA.b Scrap04
+  LDA.w !BookPortalBG2V : SEC : SBC.b BG2V  ; delta Y = portal BG2V - current BG2V
+  CLC : ADC.w CameraScrollN : STA.w CameraScrollN
+  INC #2 : STA.w CameraScrollS              ; South = North + 2
+  LDA.b Scrap04
+  CLC : ADC.w CameraScrollW : STA.w CameraScrollW
+  INC #2 : STA.w CameraScrollE              ; East = West + 2
+  ; Restore camera positions
   LDA.w !BookPortalBG2H : STA.b BG2H
   LDA.w !BookPortalBG2V : STA.b BG2V
+  LDA.w !BookPortalLinkLayer : STA.b LinkLayer
+  LDA.w !BookPortalBG1H : STA.b BG1H
+  LDA.w !BookPortalBG1V : STA.b BG1V
+  ; Save old quadrant values before recalculation (LinkQuadrantH/V not yet updated)
+  LDA.b LinkQuadrantH : STA.b Scrap02        ; old H quadrant: 0 or 1
+  LDA.b LinkQuadrantV : LSR : STA.b Scrap00  ; old V quadrant: 0 or 2 -> 0 or 1
+  JSR Teleport_RecalcQuadrantsAndBounds
   SEP #$20
 
   LDA.b #$0D : JSL Sound_SetSfx2PanLong ; powder sfx
