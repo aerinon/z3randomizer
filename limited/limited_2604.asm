@@ -557,7 +557,7 @@ SpawnFlyingTile_FollowLink:
 pushpc
 org $82A0AF
 LDA.b #$90 : LDY.b #$0C : JSL Sprite_SpawnDynamically_arbitrary
-NOP #2
+NOP #3
 JSL Limited_MirrorWallmaster
 pullpc
 
