@@ -243,8 +243,8 @@ endmacro
 %ReceiptProps($67, -4, 0, $FF, $F36A, $FF, skip, skip) ; 67 - 
 %ReceiptProps($68, -4, 0, $FF, $F36A, $FF, skip, skip) ; 68 - 
 %ReceiptProps($69, -4, 0, $FF, $F36A, $FF, skip, skip) ; 69 - 
-%ReceiptProps($6A, -4, 0, $4A, $F36A, $FF, triforce, skip) ; 6A - Triforce
-%ReceiptProps($6B, -4, 0, $50, $F36A, $FF, goal_item, skip) ; 6B - Power star
+%ReceiptProps($6A, -4, 0, $49, $F36A, $FF, triforce, skip) ; 6A - Triforce
+%ReceiptProps($6B, -4, 0, $4A, $F36A, $FF, goal_item, skip) ; 6B - Power star
 %ReceiptProps($6C, -4, 0, $49, $F36A, $FF, goal_item, skip) ; 6C - Triforce Piece
 %ReceiptProps($6D, -4, 0, $FF, $F36A, $FF, request_F0, skip) ; 6D - Server request item
 %ReceiptProps($6E, -4, 0, $FF, $F36A, $FF, request_F1, skip) ; 6E - Server request item (dungeon drop)
@@ -812,11 +812,7 @@ endmacro
 %InventoryItem($69, $0001, $0000, $0000) ; 69 -
 %InventoryItem($6A, $0081, $0000, $0000) ; 6A - Triforce
 %InventoryItem($6B, $0081, $0000, $0000) ; 6B - Power star
-if !FEATURE_LIMITED_RUN == 2604
-	%InventoryItem($6C, $0080, $0000, $0000) ; 6C - Triforce Piece
-else
-	%InventoryItem($6C, $0081, $0000, $0000) ; 6C - Triforce Piece
-endif
+%InventoryItem($6C, $0081, $0000, $0000) ; 6C - Triforce Piece
 %InventoryItem($6D, $0001, $0000, $0000) ; 6D - Server request item
 %InventoryItem($6E, $0001, $0000, $0000) ; 6E - Server request item (dungeon drop)
 %InventoryItem($6F, $0001, $0000, $0000) ; 6F -
@@ -892,15 +888,9 @@ endif
 %InventoryItem($B5, $0080, $0000, $0000) ; B5 - Crystal 4
 %InventoryItem($B6, $0080, $0000, $0000) ; B6 - Crystal 3
 %InventoryItem($B7, $0000, $0000, $0000) ; B7 - Reserved
-if !FEATURE_LIMITED_RUN == 2604
-	%InventoryItem($B8, $0000, $0000, $0000) ; B8 - Puzzle Reward
-	%InventoryItem($B9, $0000, $0000, $0000) ; B9 - Puzzle Reward (book)
-	%InventoryItem($BA, $0000, $0000, $0000) ; BA - Puzzle Reward (silver boomerang)
-else
-	%InventoryItem($B8, $0001, $0000, $0000) ; B8 -
-	%InventoryItem($B9, $0001, $0000, $0000) ; B9 -
-	%InventoryItem($BA, $0001, $0000, $0000) ; BA -
-endif
+%InventoryItem($B8, $0001, $0000, $0000) ; B8 -
+%InventoryItem($B9, $0001, $0000, $0000) ; B9 -
+%InventoryItem($BA, $0001, $0000, $0000) ; BA -
 %InventoryItem($BB, $0001, $0000, $0000) ; BB -
 %InventoryItem($BC, $0001, $0000, $0000) ; BC -
 %InventoryItem($BD, $0001, $0000, $0000) ; BD -
@@ -1162,15 +1152,9 @@ ItemReceiptGraphicsOffsets:
 	dw BigDecompressionBuffer+$08A0        ; B5 - Crystal 4
 	dw BigDecompressionBuffer+$08A0        ; B6 - Crystal 3
 	dw $0                                  ; B7 - Reserved
-	if !FEATURE_LIMITED_RUN == 2604
-		dw BigDecompressionBuffer+$1DE0    ; B8 - Puzzle Reward
-		dw BigDecompressionBuffer+$1D80    ; B9 - Puzzle Reward (Book)
-		dw BigDecompressionBuffer+$1DE0    ; BA - Puzzle Reward (Silver Boom)
-	else
-		dw $0                              ; B8 -
-		dw $0                              ; B9 -
-		dw $0                              ; BA -
-	endif
+	dw $0                                  ; B8 -
+	dw $0                                  ; B9 -
+	dw $0                                  ; BA -
 	dw $0                                  ; BB -
 	dw $0                                  ; BC -
 	dw $0                                  ; BD -
@@ -1438,15 +1422,9 @@ StandingItemGraphicsOffsets:
 	dw BigDecompressionBuffer+$08A0        ; B5 - Crystal 4
 	dw BigDecompressionBuffer+$08A0        ; B6 - Crystal 3
 	dw $0                                  ; B7 - Reserved
-	if !FEATURE_LIMITED_RUN == 2604
-		dw BigDecompressionBuffer+$1DE0      ; B8 - Puzzle reward
-		dw BigDecompressionBuffer+$1D80      ; B9 - Puzzle Reward (Book)
-		dw BigDecompressionBuffer+$1DE0      ; BA - Puzzle Reward (Silver Boom)
-	else
-		dw $0                                ; B8 -
-		dw $0                                ; B9 -
-		dw $0                                ; BA -
-	endif
+	dw $0                                  ; B8 -
+	dw $0                                  ; B9 -
+	dw $0                                  ; BA -
 	dw $0                                  ; BB -
 	dw $0                                  ; BC -
 	dw $0                                  ; BD -

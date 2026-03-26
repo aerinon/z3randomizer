@@ -36,7 +36,10 @@ GetSpritePalette:
         JSR ResolveLootID
         .resolved
         TAX
-        LDA.l SpriteProperties_standing_palette, X : BIT #$80 : BNE .load_palette
+        LDA.l SpriteProperties_standing_palette, X : BMI .load_palette
+        BIT.b #$40 : BEQ +
+                JSL LoadRandomPalette
+        +
         ASL
 RTL
         .load_palette
@@ -419,15 +422,18 @@ CheckReceivedItemPropertiesBeforeLoad:
                         LDA.b RoomIndex+1 : CMP.b #$01 : BEQ .normalCode
                 + LDA.l RoomFade : BNE .load_palette
                         .normalCode
-                        LDA.l SpriteProperties_chest_palette,X : BIT #$80 : BNE .load_palette
+                        LDA.l SpriteProperties_chest_palette,X : - BMI .load_palette
+                        BIT.b #$40 : BEQ +
+                                JML LoadRandomPalette
+                        +
                         RTL
                         .load_palette
                         JSL LoadItemPalette
                         RTL
         .falling_sprite
         PLX
-        LDA.l SpriteProperties_standing_palette,X : BIT #$80 : BNE .load_palette
-RTL
+        LDA.l SpriteProperties_standing_palette,X
+        BRA -
 
 ;------------------------------------------------------------------------------
 LoadItemPalette:
@@ -480,6 +486,17 @@ RTL
         BPL -
         LDA.w #$0005
         BRA .done
+
+; not used currently, since this results in a random palette every frame rather than one per item
+; leaving this here in case we want to rework it later
+LoadRandomPalette:
+        PHX
+                JSL GetRandomInt : AND.b #$03 : TAX
+                LDA.l .table, X
+        PLX
+RTL
+.table
+db $01, $02, $04, $05
 
 TransferVRAMStripes:
         JSL TransferNewNameStripes

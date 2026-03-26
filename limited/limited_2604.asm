@@ -239,7 +239,7 @@ MasterSword_LimitedActivateCutscene:
 
 MasterSword_LimitedHandleReceipt:
     JSL MasterSword_LimitedCheckIfPulled : BEQ .exit
-    LDY.b #$6C
+    LDY.b #$6B
     PHX
         LDA.l !LoadedPedestalNumber : TAX
         SEC : LDA.b #$00
