@@ -51,8 +51,17 @@ ItemCheck_TreeKid:
 RTL
 
 ItemCheck_TreeKid2:
-	LDA.l NpcFlags : AND.b #$08
-	LSR #2
+	LDA.l NpcFlags
+	if !FEATURE_LIMITED_RUN == 2604
+		BIT.b #$08 : BNE +
+			LDA.b #$00 : RTL
+		+
+		AND.b #$40 : LSR #6
+		INC : INC : RTL
+	else
+		AND.b #$08
+		LSR #2
+	endif
 RTL
 
 ItemCheck_TreeKid3:

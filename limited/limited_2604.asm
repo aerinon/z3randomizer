@@ -1,7 +1,7 @@
 !LoadedPedestalNumber = LimitedRunStore
 !PedestalCollectedFlags = LimitedRunStore+1
 !KickedOutMessage = LimitedRunStore+2
-!FortuneRead = LimitedRunStore+3
+;!FortuneRead = LimitedRunStore+3
 !ScreenSequenceIndex = LimitedRunStore+4 ; 16-bit, screen temporary
 !BananaFlags = LimitedRunStore+4 ; 16-bit, screen temporary
 !StatueGFXLoaded = LimitedRunStore+4 ; 16-bit, screen temporary
@@ -153,7 +153,7 @@ Limited_PedestalBeeSecrets:
     LDA.b IndoorsFlag : BNE .noreveal
     LDA.b OverworldIndex : CMP.b #$15 : BNE +
         LDA.b #$04 : BRA .set_secret
-    + CMP.b #$11 : BNE +
+    + CMP.b #$6A : BNE +
         LDA.b #$06 : BRA .set_secret
     + CMP.b #$1E : BNE +
         LDA.b #$00 : BRA .set_secret
@@ -197,11 +197,11 @@ Limited_PedestalBeeSecrets:
     RTL
 
 .secret_xpos
-dw $0CC8, $0FA8, $0B40, $02F8, $0688, $04A0, $0460, $06E8 ; pedestals
+dw $0CC8, $0FA8, $0B40, $04E8, $0688, $04A0, $0460, $06E8 ; pedestals
 dw $0280, $0000, $0000, $0000
 
 .secret_ypos
-dw $0870, $0770, $0418, $0520, $0068, $05F0, $0F10, $07C8 ; pedestals
+dw $0870, $0770, $0418, $0AF0, $0068, $05F0, $0F10, $07C8 ; pedestals
 dw $0060, $0000, $0000, $0000
 
 pushpc
@@ -384,7 +384,7 @@ dw $0001, $0002, $0001, $0003, $0002, $0000
 dw $0006, $0007, $0006, $0005, $0006, $B080
 
 Limited_FluteMenu_PedestalDestination:
-    LDA.l !FortuneRead : BEQ .exit
+    LDA.l NpcFlags : AND.b #$40 : BEQ .exit
     LDA.w FluteSelection : CMP.b #($04-1)<<1 : BNE .exit
         LDA.b #$04 : STA.l !LoadedPedestalNumber
         STZ.w CutsceneFlag
@@ -396,17 +396,64 @@ Limited_FluteMenu_PedestalDestination:
     RTL
 
 pushpc
-org $8DC849
-LDA.b #$00 : NOP #2
-
-org $8DC986 : JSL FortuneTeller_TakeMoney_Additional
-org $8DCA89 : JSL FortuneTeller_TakeMoney_Additional
+org $86908D ; overwrites previous hook
+JSL ItemCheck_TreeKid_IsTree : CMP.b #$08 : BEQ $0A
+org $86B0CE
+INC.w SpriteActivity, X
+org $86B0D2
+JSL Stumpy_WaitForMusic_FinalWish : NOP
+org $86B0FD
+JSL Stumpy_BecomeTree_FinalGoodbye : NOP #2
+org $86B131
+JSL ItemSet_TreeKid_TurnToTree
+org $88DE0C
+JSL Ancilla27_Duck_MaybeSkip : NOP #3
 pullpc
 
-FortuneTeller_TakeMoney_Additional:
-    STA.l HeartsFiller ; what we wrote over
-    LDA.b #$01 : STA.l !FortuneRead
-    RTL
+ItemCheck_TreeKid_IsTree:
+		;LDA.l NpcFlags : BIT.b #$40 : BNE .is_tree ; restore this line if we want him to stay as tree
+		LDA.l NpcFlags : AND.b #$08 : BEQ .not_given
+		LDA.b #$03 : STA.w SpriteActivity, X
+		LDA.b #$00
+.not_given:
+RTL
+.is_tree:
+		LDA.b #$08
+RTL
+
+ItemSet_TreeKid_TurnToTree:
+		STA.l NpcFlagsVanilla ; what we wrote over
+		PHA
+			  LDA.l NpcFlags : ORA.b #$40 : STA.l NpcFlags
+		PLA
+RTL
+
+Stumpy_WaitForMusic_FinalWish:
+    LDA.b #$E6 : LDY.b #$00 : JSL Sprite_ShowSolicitedMessageIfPlayerFacing
+    LDA.w ItemCursor : CMP.b #$0D ; what we wrote over
+RTL 
+
+Stumpy_BecomeTree_FinalGoodbye:
+    CMP.b #$03 : BNE .return
+    PHY
+        LDA.b #$E7 : LDY.b #$00 : JSL Sprite_ShowMessageUnconditional
+    PLY
+.return
+    LDA.b #$33 : JSL Sound_SetSfx2PanLong ; what we wrote over
+RTL
+
+Ancilla27_Duck_MaybeSkip:
+    LDA.w LastSFX1 : CMP.b #$17 : BNE .continue
+    LDA.w CurrentControlRequest : CMP.b #$F2 : BNE .continue
+        ; conditions during Stumpy cutscene, despawn duck
+        STZ.w AncillaID, X
+        PLA : PLA : PEA.w $88DE3F ; return directly to RTS
+.return:
+RTL
+.continue:
+    LDA.b GameSubMode : BEQ .return ; what we wrote over
+    PLA : PLA : PLA
+    JML $88DF75 ; kinda what we wrote over
 
 ; Lost Woods Fake Master Sword Gimmick
 pushpc
