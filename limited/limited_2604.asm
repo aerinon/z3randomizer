@@ -1716,6 +1716,9 @@ HandleTunicTag:
   BEQ .reset_pattern
   DEC.w !NewTagTimer
 
+  LDA.b LinkQuadrantV    ; only count d-pad inputs in the top half of the room
+  BNE .exit
+
   LDA.b Joy1A_New
   AND.b #$0F
   BEQ .release_input
