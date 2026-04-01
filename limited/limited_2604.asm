@@ -285,6 +285,9 @@ Limited_HammerPegSwampNook:
 .exit
     RTL
 
+
+Limited_HandlePedestalEntrances_exit:
+    RTL
 Limited_HandlePedestalEntrances:
     LDA.w OverworldIndexMirror : CMP.w #$0015 : BNE +
         LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0B40 : BNE .exit
@@ -298,6 +301,7 @@ Limited_HandlePedestalEntrances:
         LDA.w #$0005 : BRA .load_pedestal
     + CMP.w #$005B : BNE +
         LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$06E8 : BNE .exit
+        LDA.l !PedestalCollectedFlags : AND.w #$0080 : BNE .exit
         LDA.w #$0008 : BRA .load_pedestal
     + CMP.w #$005E : BNE +
         LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0FA8 : BNE .exit
@@ -310,8 +314,6 @@ Limited_HandlePedestalEntrances:
     PLA : REP #$20 : PLX ; discard return address
     LDX.w #$0000
     JML Overworld_DoSpecialOverworldTrigger
-.exit
-    RTL
 
 pushpc
 org $9BC8BE
@@ -462,7 +464,7 @@ JSL ThrownSprite_FakeMasterSwordDeath : NOP
 pullpc
 
 Limited_InitializeWallmasterTileset:
-    LDA.b GameMode : CMP.b #$11 : BNE .exit
+    LDA.w EntranceIndex : CMP.b #$81 : BNE .exit
     LDA.b LinkFallPose : BEQ .exit
     LDA.b IndoorsFlag : BEQ .exit
     LDA.w OverworldIndexMirror : BNE .exit ; came in from lost woods
@@ -472,7 +474,7 @@ Limited_InitializeWallmasterTileset:
     RTL
 
 Limited_UnderworldPrepWallmasterKickOut:
-    LDA.b GameMode : CMP.b #$11 : BNE .vanilla
+    LDA.w EntranceIndex : CMP.b #$81 : BNE .vanilla
     LDA.b LinkFallPose : BEQ .vanilla
     LDA.b IndoorsFlag : BEQ .vanilla
     LDA.w OverworldIndexMirror : BNE .vanilla ; came in from lost woods
@@ -605,12 +607,18 @@ SpawnFlyingTile_FollowLink:
 ; Mirror Wallmaster Gimmick
 pushpc
 org $82A0AF
+STZ.w SpriteAITable+$C
 LDA.b #$90 : LDY.b #$0C : JSL Sprite_SpawnDynamically_arbitrary
-NOP #3
 JSL Limited_MirrorWallmaster
 pullpc
 
 Limited_MirrorWallmaster:
+    BPL +
+        ; if clearing $0C slot wasn't enough, kill all sprites
+        LDY.b #$0E
+        - LDA.b #$00 : STA.w SpriteAITable, Y : DEY : BPL -
+        LDA.b #$90 : LDY.b #$0C : JSL Sprite_SpawnDynamically_arbitrary
+    +
     LDA.b LinkPosX : STA.w SpritePosXLow, Y
     LDA.b LinkPosX+1 : STA.w SpritePosXHigh, Y
     LDA.b LinkPosY : STA.w SpritePosYLow, Y
@@ -618,6 +626,7 @@ Limited_MirrorWallmaster:
     LDA.b LinkLayer : STA.w SpriteLayer, Y
     LDA.b #$A0 : STA.w SpriteZCoord, Y
     INC.w CutsceneFlag
+    LDA.b #$40 : STA.w LinkIFrames
     LDA.b #$20 : STA.w SFX2
     REP #$30
         LDA.w #BigDecompressionBuffer+$4000
@@ -1309,6 +1318,7 @@ Ganon_Phase5_RelightTorches_advance:
     STZ.w SpriteAuxC, X
     STZ.w SpriteTimerB, X
     LDA.b #$20 : STA.w SpriteTimer, X
+    LDA.b #$D6 : STA.w SpriteTypeTable, X
 Ganon_Phase5_RelightTorches_exit:
     RTL
 Ganon_Phase5_RelightTorches:
