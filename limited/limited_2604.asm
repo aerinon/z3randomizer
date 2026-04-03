@@ -164,7 +164,11 @@ Limited_PedestalBeeSecrets:
     + CMP.b #$7A : BNE +
         LDA.b #$0C : BRA .set_secret
     + CMP.b #$5B : BNE +
+        PHX : TAX : LDA.l OWTileMapAlt, X : PLX : AND.b #$01 : BNE .noreveal
         LDA.b #$0E : BRA .set_secret
+    + CMP.b #$1B : BNE +
+        PHX : TAX : LDA.l OWTileMapAlt, X : PLX : AND.b #$01 : BEQ .noreveal
+        LDA.b #$12 : BRA .set_secret
     + CMP.b #$5E : BNE +
         LDA.b #$02 : BRA .set_secret
     + CMP.b #$00 : BNE +
@@ -198,11 +202,11 @@ Limited_PedestalBeeSecrets:
 
 .secret_xpos
 dw $0CC8, $0FA8, $0B40, $04E8, $0688, $04A0, $0460, $06E8 ; pedestals
-dw $0280, $0000, $0000, $0000
+dw $0280, $06E8, $0000, $0000
 
 .secret_ypos
 dw $0870, $0770, $0418, $0AF0, $0068, $05F0, $0F10, $07C8 ; pedestals
-dw $0060, $0000, $0000, $0000
+dw $0060, $0630, $0000, $0000
 
 pushpc
 org $82AE8E
@@ -291,7 +295,7 @@ Limited_HandlePedestalEntrances_exit:
 Limited_HandlePedestalEntrances:
     LDA.w OverworldIndexMirror : CMP.w #$0015 : BNE +
         LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0B40 : BNE .exit
-        LDA.w #$0003 : BRA .load_pedestal
+        LDA.w #$0003 : JMP .load_pedestal
     + CMP.w #$001E : BNE +
         LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0CC8 : BNE .exit
         LDA.w #$0000 : STA.l !StatueGFXLoaded
@@ -299,21 +303,27 @@ Limited_HandlePedestalEntrances:
     + CMP.w #$0043 : BNE +
         LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0688 : BNE .exit
         LDA.w #$0005 : BRA .load_pedestal
+    + CMP.w #$001B : BNE +
+        PHX : TAX : LDA.l OWTileMapAlt, X : PLX : AND.w #$0001 : BEQ .exit
+        BRA ++
     + CMP.w #$005B : BNE +
-        LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$06E8 : BNE .exit
+        PHX : TAX : LDA.l OWTileMapAlt, X : PLX : AND.w #$0001 : BNE .exit
+        ++ LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$06E8 : BNE .exit
         LDA.l !PedestalCollectedFlags : AND.w #$0080 : BNE .exit
         LDA.w #$0008 : BRA .load_pedestal
     + CMP.w #$005E : BNE +
-        LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0FA8 : BNE .exit
+        LDA.b LinkPosX : AND.w #$FFF8 : CMP.w #$0FA8 : BNE .exit2
         LDA.w #$0002 : BRA .load_pedestal
-    + CMP.w #$007A : BNE .exit
-        LDA.w #$0007 : BRA .load_pedestal
+    + CMP.w #$007A : BNE .exit2
+        LDA.w #$0007
 .load_pedestal
     SEP #$20
     STA.l !LoadedPedestalNumber
     PLA : REP #$20 : PLX ; discard return address
     LDX.w #$0000
     JML Overworld_DoSpecialOverworldTrigger
+.exit2
+    RTL
 
 pushpc
 org $9BC8BE
