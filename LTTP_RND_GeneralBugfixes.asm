@@ -204,7 +204,7 @@ incsrc doorrando/doorrando.asm ; bank 27/A7
 incsrc keydrop/standing_items.asm ; bank 28/A8
 incsrc enemizer/main.asm ; bank 36/B6
 
-org $B08000 ; bank #$30
+org $B08000 ; bank $30
 incsrc tables.asm
 warnpc $B18000
 
@@ -250,20 +250,18 @@ IcePalaceFloorGfx:
 incbin "data/ice_palace_floor.bin"
 warnpc $B1C801
 
-org $B1C800
-Damage_Table:
-incbin "data/damage_table.bin"
-warnpc $B1D001
+org $B1C800 ; DO NOT MOVE address used by front end
+DamageTable:
+incsrc "damage_table.asm"
+warnpc $B1D801
 
-org $B1D000
-FileSelectNewGraphics:
-incbin "data/fileselectgfx.2bpp"
-warnpc $B1E001
 
 org $B1E000
-InvertedCastleHole: ;address used by front end. DO NOT MOVE!
+InvertedCastleHole: ; DO NOT MOVE address used by front end
 incbin "data/sheet73.gfx"
-warnpc $B1E501
+
+FileSelectNewGraphics:
+incbin "data/fileselectgfx.2bpp"
 
 org $B38000
 GFX_HUD_Palette:
