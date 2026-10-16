@@ -80,6 +80,10 @@ dw $B395 ; change tile type to normal pot
 org $81B3D5
 JSL CheckIfPotIsSpecial
 
+; Mirror the SaveRoomFlags room-data store so supertile STC/YBA dupes also refill pots/drops
+org $82B899 ; <- Bank02.asm SaveRoomFlags: STA.l $7EF000,X
+	JSL MirrorRoomDataStore
+
 
 ; refs to other functions
 org $8681F4
@@ -891,6 +895,24 @@ SetTheSceneFix:
 	STZ.b $6C
 	JSL InitializeMirrorHDMA
 	JSL LoadCommonSprites_long
+RTL
+
+;===================================================================================================
+; Restore key-pot / enemy-drop dupe for supertile glitches (STC / YBA)
+;---------------------------------------------------------------------------------------------------
+; Replaces the SaveRoomFlags STA.l $7EF000,X. When a transition desync copies the current room's data
+; into a different room's slot (the dupe), mirror that copy into the pot/drop tables so those refill.
+; A normal save targets the loaded room's own slot, so the compare matches and we do nothing.
+;---------------------------------------------------------------------------------------------------
+MirrorRoomDataStore:
+	STA.l $7EF000, X ; what we wrote over
+	PHP : PHA : REP #$30
+	TXA : LSR : CMP.l LoadedRoom : BEQ .done ; normal save writes the loaded room
+	CMP.w #$0128 : BCS .done                 ; keep the write within the tables
+		PHX : LDA.l LoadedRoom : ASL : TAX : LDA.l RoomPotData, X    : PLX : STA.l RoomPotData, X
+		PHX : LDA.l LoadedRoom : ASL : TAX : LDA.l SpriteDropData, X : PLX : STA.l SpriteDropData, X
+	.done
+	PLA : PLP
 RTL
 
 incsrc dynamic_si_vram.asm

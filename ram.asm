@@ -604,7 +604,8 @@ BeeTrapDisguise: skip 1            ; Unused
 skip 2                             ; Reserved for OneMind
 OneMindId: skip 1                  ; Current OneMind player
 OneMindTimerRAM: skip 2            ; Frame counter for OneMind
-skip 9                             ; Unused
+LoadedRoom: skip 2                 ; Underworld room currently loaded; for the STC/YBA pot/drop mirror
+skip 7                             ; Unused
 ClockStatus: skip 2                ; 2 bytes second always zero padding
                                    ; ---- --dn
                                    ; d - DNF mode
@@ -1037,6 +1038,7 @@ endmacro
 %assertRAM(BeeTrapDisguise, $7F506F)
 %assertRAM(OneMindId, $7F5072)
 %assertRAM(OneMindTimerRAM, $7F5073)
+%assertRAM(LoadedRoom, $7F5075)
 %assertRAM(ClockStatus, $7F507E)
 %assertRAM(RNGLockIn, $7F5090)
 %assertRAM(BusyItem, $7F5091)

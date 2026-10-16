@@ -3,6 +3,7 @@ LoadRoomHook:
 
     .noStats
     JSL Dungeon_LoadRoom
+    PHP : REP #$20 : LDA.b RoomIndex : STA.l LoadedRoom : PLP ; track loaded room for STC/YBA dupe mirror
     REP #$10 ; 16 bit XY
         LDX.b RoomIndex ; Room ID
         LDA.l RoomCallbackTable, X
