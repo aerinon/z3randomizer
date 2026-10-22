@@ -2667,3 +2667,15 @@ NOP #2 ; this fixes Link's direction after mirroring and falling after entering 
 ;--------------------------------------------------------------------------------
 org $81B5E6
 LDA.b #$30
+
+;===================================================================================================
+; Fix Kholdstare's shell bug
+;===================================================================================================
+org $1E9460 : JSR ShellActivity
+
+org $1ECB85
+ShellActivity:
+	STZ.w $0F00,X ; This is normally set by the draw routine, but the shell lacks one
+	JMP.w $1EFE73
+
+warnpc $1ECB8D
