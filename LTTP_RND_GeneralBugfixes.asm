@@ -324,9 +324,10 @@ warnpc $B08000
 ;Bank Map
 ;$20 Code Bank
 ;$21 Reserved (Frame Hook & Init)
-;$22 Unused
+;$22 Item Graphics & Item Code
 ;$23 Stats & Credits
 ;$24 Code Bank
+;$25 DR Code Bank 2
 ;$26 Multiworld data
 ;$27 DR Code Bank
 ;$28 Keydrop / Standing Items Code bank

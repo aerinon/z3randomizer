@@ -57,3 +57,7 @@ warnpc $A79C00
 
 incsrc doortables.asm
 warnpc $A88000
+
+org $A58000 ; DR bank 2
+incsrc pitwarp.asm
+warnpc $A68000

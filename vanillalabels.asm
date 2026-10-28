@@ -184,6 +184,7 @@ RoomTag_GetHeartForPrize_delete_tag                        = $81C749
 Underworld_SetBossOrSancMusicUponEntry                     = $828AD9
 ResetThenCacheRoomEntryProperties                          = $828C73
 RecoverPositionAfterDrowning                               = $829485
+SetAndSaveVisitedQuadrantFlags                             = $82B803
 OverworldHandleTransitions_change_palettes                 = $82A9F3
 Palette_RestoreFixedColor                                  = $82FF58
 Sprite_EA_HeartContainer_main                              = $85EF47

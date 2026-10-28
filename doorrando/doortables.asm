@@ -614,42 +614,42 @@ dw Collision_Room9B
 
 Collision_Room17: ;C860
 dw 3
-dw $00ff, $00ff, $00ff, $00ff, $0028 ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $0029 ; Hera "Pot" (Fairy Route)
-dw $0000, $01ff, $0000, $01ff, $002A ; The Rest of the Room
+dw $0EA2, $0EC0, $0230, $025A, $0028 ; Hera PotPit
+dw $0EE0, $0F10, $0278, $02A3, $0029 ; Hera Big Chest Pit
+dw $0000, $FFFF, $0000, $FFFF, $002A ; The Rest of the Room
 
 Collision_Room3A: ;C880
 dw 3
-dw $00ff, $00ff, $00ff, $00ff, $002B ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $002C ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $002D ; Big Chest Pit
+dw $1537, $15B6, $06AF, $0728, $002B ; Pod Pit Room Freefall
+dw $1470, $1480, $0696, $06CA, $002C ; Pod Pit Room Bomb Hole
+dw $1510, $1560, $0660, $0694, $002D ; Pod Big Key Landing Hole
 
 Collision_Room7D: ;C8A0
 dw 9
-dw $00ff, $00ff, $00ff, $00ff, $002E ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $002F ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $0030 ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $0031 ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $0032 ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $0033 ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $0034 ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $0035 ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $0036 ; Big Chest Pit
+dw $1A60, $1A70, $0F37, $0F48, $002E ; GT Rail Choice Left
+dw $1A80, $1A90, $0F38, $0F48, $002F ; GT Rail Choice Right
+dw $1A80, $1A8E, $0F78, $0F97, $0030 ; nGT Warp Hub MidRight Warp
+dw $1AB3, $1AC8, $0F30, $0F42, $0031 ; GT Warp Hub Top Right Warp
+dw $1AB5, $1AC8, $0F70, $0F95, $0032 ; GT Warp Hub Bottom Right Warp
+dw $1A60, $1A70, $0F79, $0F92, $0033 ; Gt Warp Hub Mid Left HUB
+dw $1A28, $1A3E, $0FA8, $0FC0, $0034 ; GT Warp Hub Bottom Left Warp
+dw $1A28, $1A3C, $0F7B, $0F90, $0035 ; GT Rando Rail Warp
+dw $1B98, $1BB0, $0F38, $0F48, $0036 ; GT Arrow Pot Warp
 
 Collision_Room9B: ;C8FC
 dw 6
-dw $00ff, $00ff, $00ff, $00ff, $0037 ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $0038 ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $0039 ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $003A ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $003B ; Big Chest Pit
-dw $00ff, $00ff, $00ff, $00ff, $003C ; Big Chest Pit
+dw $17B5, $17C0, $1231, $128C, $0037 ; GT Spike Warp
+dw $1683, $1698, $1378, $1390, $0038 ; GT Warp Maze Mid Section Right Warp
+dw $1656, $166B, $1379, $1390, $0039 ; GT Warp Maze Mid Section Left Warp
+dw $16B8, $16C0, $135A, $1379, $003A ; GT Warp Maze Right Section Warp
+dw $1628, $1639, $133D, $1350, $003B ; GT Warp Maze Left Section Warp
+dw $1795, $17AD, $1339, $1360, $003C ; GT Warp Maze Pit Section Warp
 ;C93A
 
 org $A7C940
 LandingZoneData:
 ;RoomID 2 bytes, CameraBoundaries 8 bytes, ScrollX	ScrollY	LinkY	LinkX	CameraY	CameraX, 12 bytes,
-; bg setting 1 bytes (ee/0476) ; Camera Scroll Controller: 1 byte A6/A7, ScrollQuad 1 byte A9/AA
+; target layer 1 byte (063C: 0-2) ; Camera Scroll Controller: 1 byte A6/A7, ScrollQuad 1 byte A9/AA
 ; 25 bytes per entry Estimating 61 entries = 1525 bytes = 0x5F5
 ; Floor value? $A4 prob. just decrement it
 ; Dungeon value? only for portals
