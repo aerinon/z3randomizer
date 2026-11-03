@@ -903,10 +903,12 @@ RTL
 ; Replaces the SaveRoomFlags STA.l $7EF000,X. When a transition desync copies the current room's data
 ; into a different room's slot (the dupe), mirror that copy into the pot/drop tables so those refill.
 ; A normal save targets the loaded room's own slot, so the compare matches and we do nothing.
+; Only active when major glitches are allowed (glitched and no-logic modes).
 ;---------------------------------------------------------------------------------------------------
 MirrorRoomDataStore:
 	STA.l $7EF000, X ; what we wrote over
 	PHP : PHA : REP #$30
+	LDA.l AllowAccidentalMajorGlitch : AND.w #$00FF : BEQ .done
 	TXA : LSR : CMP.l LoadedRoom : BEQ .done ; normal save writes the loaded room
 	CMP.w #$0128 : BCS .done                 ; keep the write within the tables
 		PHX : LDA.l LoadedRoom : ASL : TAX : LDA.l RoomPotData, X    : PLX : STA.l RoomPotData, X
