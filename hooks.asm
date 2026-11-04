@@ -2684,3 +2684,17 @@ ShellActivity:
 	JMP.w $1EFE73
 
 warnpc $1ECB8D
+
+;===================================================================================================
+; Fix song bug with kak snitch
+;===================================================================================================
+org $09C081 : JML FinalizeSnitchGuard
+
+org $05CC50
+BoltGuard_TriggerChaseTheme:
+	JSL TryGuardMusic
+	RTS
+
+org $06F962
+	JSL TryUndoGuardMusic
+	JMP.w $06F976
