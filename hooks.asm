@@ -449,6 +449,8 @@ JSL AllowStartFromSingleEntranceCave
 org $828496 ; <- 15496 - Bank02.asm : 959  (LDA $7EF3C8 : PHA)
 JML AllowStartFromExit
 AllowStartFromExitReturn:
+org $82849E
+JSL SelectSpawnPointOverride
 ;--------------------------------------------------------------------------------
 org $9BC2A7 ; <- DC2A7 - Bank1B.asm : 1143 (Overworld_CreatePyramidHole:)
 JSL Overworld_CreatePyramidHoleModified : RTL
@@ -1892,6 +1894,9 @@ Ancilla_ReceiveItem_dontGiveRupees:
 org $9EE90A ; <- F690A
 JSL ItemCheck_OldMan : NOP #2
 ;--------------------------------------------------------------------------------
+org $8280E5 ; check for old man to allow save and quit selection
+JML TestOldManSQ
+;---------------------------------------------------------------------------------
 org $8280F2 ; <- 100F2
 JSL ItemCheck_OldMan : NOP #2
 ;--------------------------------------------------------------------------------
