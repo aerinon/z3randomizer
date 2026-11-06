@@ -1,6 +1,6 @@
 pushpc
 
-org $8794B1 ; overworld pit fall: replaces LDA.l $7EC000
+org $8794B1 ; pit and overworld hole fall (shared tail): replaces LDA.l $7EC000
 JSL PitWarpTransitionOverride
 
 org $87D12F ; underworld warp tile: replaces LDA.l $7EC000
@@ -20,6 +20,10 @@ pullpc
 ; If no override, returns the vanilla $7EC000 value unchanged.
 
 PitWarpTransitionOverride:
+  ; the fall hook also runs for overworld holes, where RoomIndex is the last dungeon room visited
+  LDA.b IndoorsFlag : BNE .indoors
+  LDA.l $7EC000 : RTL
+.indoors:
   LDA.l $7EC000   ; load vanilla destination (replaces the instruction we hooked)
   PHA             ; push it — will be returned in A or replaced on override path
 
