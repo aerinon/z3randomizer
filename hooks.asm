@@ -2698,3 +2698,15 @@ BoltGuard_TriggerChaseTheme:
 org $06F962
 	JSL TryUndoGuardMusic
 	JMP.w $06F976
+
+;===================================================================================================
+; Tektite, hardhat beetle and stalfos variant from subtype indoors
+;===================================================================================================
+org $0690E7 : JSL StalfosPrep : NOP
+
+org $06912B : JSL BeetlePrep : NOP
+
+org $068D9B
+	JSL TektitePrep
+	CMP.b #$01 : ROL
+warnpc $068DA2

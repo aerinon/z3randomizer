@@ -80,3 +80,18 @@ FinalizeSnitchGuard:
 	LDA.w $0130 : STA.w SnitchGuardMusic,Y ; remember last song played
 	PLB
 	RTL
+
+;===================================================================================================
+; Variant from subtype in the underworld, from X position (vanilla) on the overworld
+;===================================================================================================
+TektitePrep:
+BeetlePrep:
+StalfosPrep:
+	LDA.b IndoorsFlag : BEQ .overworld
+	LDA.w SpriteAux,X
+	RTL
+
+.overworld
+	LDA.w SpritePosXLow,X
+	AND.b #$10
+	RTL
